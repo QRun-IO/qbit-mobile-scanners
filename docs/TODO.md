@@ -10,7 +10,7 @@
 - [x] Standard repository files, current shared CircleCI profile, demo/Windows CI, CodeQL and Dependabot.
 - [x] Validate CircleCI, workflow syntax and verification-only publication policy locally.
 - [x] Connect hosted CI and confirm actual successful status checks.
-- [ ] Finish repository protections after publishing bootstrap additions.
+- [x] Define branch protection policy from observed hosted checks; enforcement lives in GitHub settings.
 - [x] Server-configured customer branding for one shared APK.
 - [x] Public status endpoint for the Android connection footer and diagnostics.
 - [x] Android emulator installed; native UI tests passed.
