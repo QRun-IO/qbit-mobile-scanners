@@ -9,7 +9,11 @@
 - [x] Android build and meaningful unit checks.
 - [x] Standard repository files, current shared CircleCI profile, demo/Windows CI, CodeQL and Dependabot.
 - [x] Validate CircleCI, workflow syntax and verification-only publication policy locally.
-- [ ] Connect hosted CI and confirm actual required status checks and repository protections.
+- [x] Connect hosted CI and confirm actual successful status checks.
+- [ ] Finish repository protections after publishing bootstrap additions.
+- [x] Server-configured customer branding for one shared APK.
+- [x] Public status endpoint for the Android connection footer and diagnostics.
+- [x] Android emulator installed; native UI tests passed.
 - [ ] TC22 physical scanner acceptance.
 - [x] TC22 install and DataWedge acceptance guide written; physical execution remains pending.
 

@@ -6,6 +6,7 @@
 package com.kingsrook.qbits.mobilescanners;
 
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QAuthenticationException;
@@ -57,9 +58,29 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
       {
          ApiBuilder.before("/qqq/*", this::bindDevice);
          ApiBuilder.after("/qqq/*", context -> MobilePermissions.REQUEST_DEVICE.remove());
+         ApiBuilder.get("/mobile/v1/branding", this::branding);
+         ApiBuilder.get("/mobile/v1/status", context -> context.header("Cache-Control", "no-store").json(Map.of("status", "ok")));
          ApiBuilder.post("/mobile/v1/devices/enroll", context -> handle(context, true));
          ApiBuilder.get("/mobile/v1/devices/current", context -> handle(context, false));
       };
+   }
+
+   /***************************************************************************
+    ** Public, explicitly allowlisted appearance data, available before login.
+    ***************************************************************************/
+   private void branding(Context context)
+   {
+      MobileScannersQBitConfig config = instance.getQBits().values().stream().map(bit -> bit.getConfig())
+         .filter(MobileScannersQBitConfig.class::isInstance).map(MobileScannersQBitConfig.class::cast)
+         .findFirst().orElseGet(MobileScannersQBitConfig::new);
+      Map<String, String> response = new LinkedHashMap<>();
+      response.put("displayName", config.getDisplayName());
+      response.put("primaryColor", config.getPrimaryColor());
+      if(config.getLogoUrl() != null)
+      {
+         response.put("logoUrl", config.getLogoUrl());
+      }
+      context.header("Cache-Control", "no-store").json(response);
    }
 
    /***************************************************************************

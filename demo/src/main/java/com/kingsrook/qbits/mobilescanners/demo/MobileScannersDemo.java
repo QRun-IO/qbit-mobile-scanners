@@ -37,6 +37,7 @@ import com.kingsrook.qqq.middleware.javalin.QApplicationJavalinServer;
 public class MobileScannersDemo extends AbstractQQQApplication
 {
    private final String jdbcUrl;
+   private MobileScannersQBitConfig mobileConfig = new MobileScannersQBitConfig().withBackendName("mobileDb");
    private QInstance instance;
 
 
@@ -47,6 +48,29 @@ public class MobileScannersDemo extends AbstractQQQApplication
    public MobileScannersDemo(String jdbcUrl)
    {
       this.jdbcUrl = jdbcUrl;
+   }
+
+   /*******************************************************************************
+    ** Configure the same public appearance for every client of this demo server.
+    *******************************************************************************/
+   public MobileScannersDemo withBranding(String displayName, String primaryColor, String logoUrl)
+   {
+      if(instance != null)
+      {
+         throw new IllegalStateException("Configure branding before defining the demo instance.");
+      }
+      MobileScannersQBitConfig configured = new MobileScannersQBitConfig().withBackendName("mobileDb");
+      if(displayName != null)
+      {
+         configured.withDisplayName(displayName);
+      }
+      if(primaryColor != null)
+      {
+         configured.withPrimaryColor(primaryColor);
+      }
+      configured.withLogoUrl(logoUrl);
+      mobileConfig = configured;
+      return this;
    }
 
 
@@ -81,7 +105,7 @@ public class MobileScannersDemo extends AbstractQQQApplication
          instance.addTable(table);
       }
       instance.getTable("demoUser").getField("passwordHash").setIsHidden(true);
-      new MobileScannersQBitProducer().withConfig(new MobileScannersQBitConfig().withBackendName("mobileDb")).produce(instance, "mobile");
+      new MobileScannersQBitProducer().withConfig(mobileConfig).produce(instance, "mobile");
       for(String name : List.of(MobileScannersQBitProducer.DEVICE, MobileScannersQBitProducer.CREDENTIAL, MobileScannersQBitProducer.SCAN))
       {
          QTableMetaData table = instance.getTable(name);
@@ -184,6 +208,7 @@ public class MobileScannersDemo extends AbstractQQQApplication
       Path database = Path.of("data", "mobile").toAbsolutePath().normalize();
       Files.createDirectories(database.getParent());
       MobileScannersDemo application = new MobileScannersDemo("jdbc:h2:file:" + database.toString().replace('\\', '/') + ";DATABASE_TO_UPPER=FALSE");
+      application.withBranding(System.getenv("MOBILE_BRAND_DISPLAY_NAME"), System.getenv("MOBILE_BRAND_PRIMARY_COLOR"), System.getenv("MOBILE_BRAND_LOGO_URL"));
       application.initializeDatabase(System.getenv("MOBILE_DEMO_SCANNER_PASSWORD"), System.getenv("MOBILE_DEMO_ADMIN_PASSWORD"));
       application.start(port);
    }

@@ -1,6 +1,6 @@
 # QQQ Mobile Scanners
 
-Server support for approved Android handhelds running native QQQ apps. The first app, **Scan Capture**, stores barcode events in a QQQ table. The companion Android application is [QQQ Android's scanner host](https://github.com/QRun-IO/qqq-android/tree/develop/scanner-host).
+Server support for approved Android handhelds running native QQQ apps. The first app, **Scan Capture**, stores barcode events in a QQQ table. The companion Android application is [QQQ Android's scanner host](https://github.com/QRun-IO/qqq-android/tree/feature/mobile-scanner-host/scanner-host), currently in [pull request #8](https://github.com/QRun-IO/qqq-android/pull/8).
 
 Version one is online only. Devices require an authenticated user and administrator approval. Android renders existing QQQ app, process, frontend-step and widget metadata; this qbit adds the scanner widget and enrollment lifecycle.
 
@@ -23,6 +23,12 @@ Use Java 21 and Maven 3.9+. The implementation targets QQQ `4.1.0-RC.20`; QQQ `4
 The wrapper pins Maven 3.9.9. On Unix, use `./mvnw` in place of `mvnw.cmd`. This is an initial implementation, with no published Maven artifact. Consult [session state](docs/SESSION-STATE.md) for actual verification status.
 
 For the Windows demo, follow [local startup and credentials](docs/LOCAL-DEMO.md). For the scanner, follow [TC22 installation and acceptance](docs/TC22-ACCEPTANCE.md).
+
+## Customer branding and connection diagnostics
+
+Configure the customer name, primary color and optional HTTPS logo on the server; the same Android APK applies them before login and throughout the mobile screens. See [branding configuration](docs/BRANDING.md). The shared launcher remains QQQ Mobile.
+
+The app footer checks server reachability while foregrounded. Tap it to inspect and copy recent safe diagnostic events. The public status endpoint reports reachability independently of user authentication and device approval.
 
 ## Contributing and CI
 

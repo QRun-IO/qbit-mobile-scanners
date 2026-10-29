@@ -20,7 +20,7 @@ Sign in with username `admin`, paste the password, then clear the clipboard with
 
 ## Emulator walkthrough
 
-Follow the Android repository's [emulator guide](https://github.com/QRun-IO/qqq-android/blob/main/docs/EMULATOR.md) to start a virtual device and install the debug APK. Forward its port to the host:
+Follow the Android repository's [emulator guide](https://github.com/QRun-IO/qqq-android/blob/feature/mobile-scanner-host/docs/EMULATOR.md) to start a virtual device and install the debug APK. Forward its port to the host:
 
 ```powershell
 adb reverse tcp:8080 tcp:8080
@@ -36,3 +36,5 @@ If the host server uses `-Port 18080`, use `adb reverse tcp:8080 tcp:18080` inst
 6. Revoke the device and confirm subsequent capture is refused.
 
 The emulator exercises native screens, login, approval, manual capture and persistence. Verify the physical trigger, DataWedge delivery and barcode decoding on the Zebra TC22 using [the hardware checklist](TC22-ACCEPTANCE.md).
+
+See [branding configuration](BRANDING.md) to test customer names, colors and logos with the same APK. Tap the Android connection footer to view or copy diagnostic events.

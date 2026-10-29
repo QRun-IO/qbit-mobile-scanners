@@ -50,7 +50,7 @@ class MobileHttpAcceptanceTest
       String database = "jdbc:h2:mem:mobileHttp" + UUID.randomUUID().toString().replace("-", "") + ";DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE";
       String scannerPassword = UUID.randomUUID().toString();
       String adminPassword = UUID.randomUUID().toString();
-      MobileScannersDemo application = new MobileScannersDemo(database);
+      MobileScannersDemo application = new MobileScannersDemo(database).withBranding("Warehouse Mobile", "#007a55", "https://example.com/logo.png");
       application.initializeDatabase(scannerPassword, adminPassword);
       Integer port;
       try(ServerSocket socket = new ServerSocket(0))
@@ -61,6 +61,14 @@ class MobileHttpAcceptanceTest
       QApplicationJavalinServer server = application.start(port);
       try
       {
+         var branding = request("GET", "/mobile/v1/branding", null, null, false);
+         assertEquals(200, branding.statusCode());
+         assertEquals("no-store", branding.headers().firstValue("Cache-Control").orElseThrow());
+         JSONObject brand = new JSONObject(branding.body());
+         assertEquals(3, brand.length());
+         assertEquals("Warehouse Mobile", brand.getString("displayName"));
+         assertEquals("#007A55", brand.getString("primaryColor"));
+         assertEquals("https://example.com/logo.png", brand.getString("logoUrl"));
          assertEquals(401, request("POST", "/mobile/v1/devices/enroll", null, "{}", false).statusCode());
          String scanner = login("scanner", scannerPassword);
          String admin = login("admin", adminPassword);

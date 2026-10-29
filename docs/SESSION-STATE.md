@@ -2,6 +2,15 @@
 
 Updated: 2026-10-29
 
+## Current repository and demo state
+
+- GitHub repository created at https://github.com/QRun-IO/qbit-mobile-scanners with `develop` as default. Initial signed commit `abbcc39` is published. Companion Android implementation is in https://github.com/QRun-IO/qqq-android/pull/8.
+- Hosted initial-commit checks passed: CircleCI `setup`/`verify`, CodeQL `analyze / Analyze branch source`, demo HTTP acceptance and Windows helper analysis. CircleCI dynamic configuration is enabled. Maven artifact publication remains disabled.
+- Runtime branding is configurable on the server before login; the shared Android APK uses the customer name, primary color and optional HTTPS logo. Public branding/status endpoints carry no credentials. Root tests now pass 13 cases; demo HTTP acceptance also passes.
+- Windows demo helpers store generated demo passwords using per-user Windows DPAPI outside the repository. An Android 15/API35 emulator is running with WHPX; six native UI instrumentation tests passed. Physical TC22 acceptance is still pending.
+- The current workstation demo uses loopback port 57832 because other services occupy the conventional ports. `adb reverse tcp:8080 tcp:57832` preserves the Android server URL `http://127.0.0.1:8080/`. Start it again with `pwsh -File scripts/Start-Demo.ps1 -SkipBuild -Port 57832` after stopping the existing instance. See `LOCAL-DEMO.md` for login helpers.
+- The earlier verification/handoff notes below describe the initial implementation before repository publication and emulator setup.
+
 ## Confirmed scope
 
 - Native Android host for Zebra TC22 and other handheld scanners, extending `qqq-android`.

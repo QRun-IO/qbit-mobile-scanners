@@ -28,7 +28,7 @@ To enable publishing later, submit a reviewed change to the manifest after TC22 
 
 These are external settings; files alone cannot enable them:
 
-1. Set the default branch to `develop`; protect `develop`, `main`, `release/*` and release tags. Require pull requests, code-owner review, resolved conversations and successful applicable checks; block force pushes/deletion.
+1. Set the default branch to `develop`; protect `develop`, `main` and `release/*`. Require pull requests, signed commits, resolved conversations and successful applicable checks; block force pushes/deletion. Bootstrap allows a pull request with zero mandatory human approvals, matching a maintainer-operated project. CODEOWNERS identifies the responsible maintainer; add mandatory reviewers when the organization assigns a review team. Protect release tags when releases are enabled.
 2. Connect the repository to the QRun-IO CircleCI organization and enable dynamic configuration. The shared QBit job expects its established `qqq-maven-registry-credentials` context even for test-only verification; grant only the intended trusted repositories and actors access. Do not put its values in this repository.
 3. Require CircleCI `setup` and `verify` plus demo acceptance and CodeQL using the actual check names/apps emitted by the first successful hosted run. Do not guess status contexts and leave every pull request permanently blocked.
 4. Enable Actions with read-only default workflow permissions, the dependency graph, Dependabot security updates, secret scanning/push protection and private vulnerability reporting when supported.
