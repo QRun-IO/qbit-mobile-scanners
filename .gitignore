@@ -1,0 +1,7 @@
+target/
+demo/target/
+demo/data/
+data/
+*.log
+.idea/
+.flattened-pom.xml

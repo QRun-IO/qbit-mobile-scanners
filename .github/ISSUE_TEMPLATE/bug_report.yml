@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a reproducible server or scanner integration problem.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 'For vulnerabilities, follow SECURITY.md. Do not include passwords, device tokens, real barcodes, or customer/device identifiers.'
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include a synthetic barcode example if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Qbit/QQQ version, Android app commit, device model, Android version and DataWedge version.
+    validations:
+      required: true

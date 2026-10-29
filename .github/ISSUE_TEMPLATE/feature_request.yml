@@ -1,0 +1,18 @@
+name: Feature request
+description: Propose a mobile workflow or integration improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or workflow
+      description: Explain who needs the change and what they need to accomplish.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include alternatives and compatibility requirements if known.
+    validations:
+      required: true

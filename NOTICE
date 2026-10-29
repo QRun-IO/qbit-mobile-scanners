@@ -1,0 +1,11 @@
+QQQ Mobile Scanners
+Copyright (c) 2026 Kingsrook, LLC
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+The Checkstyle configuration is derived from the Kingsrook QQQ configuration
+and the KofTwentyTwo coding standards. Its original copyright and Apache-2.0
+attribution are retained in checkstyle/checkstyle.xml.
+
+The Maven Wrapper scripts are from the Apache Maven Wrapper project and
+retain their Apache-2.0 notices.
