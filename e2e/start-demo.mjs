@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 export async function startDemo() {
    const port = Number(process.env.MOBILE_E2E_PORT);
    if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Set MOBILE_E2E_PORT to an unoccupied test port.');
-   const url = `http://127.0.0.1:${port}/mobile/v1/status`;
+   const url = `http://127.0.0.1:${port}/qqq/v1/qbit/mobile-scanners/status`;
    try {
       await fetch(url, { signal: AbortSignal.timeout(500) });
       throw new Error('Test port is already in use; refusing to reuse a server.');

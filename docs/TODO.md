@@ -18,9 +18,18 @@
 - [x] HTTP acceptance for checked rows, filtered bulk selection, persisted results and unselected-device isolation.
 - [x] Browser E2E acceptance for all administration processes from record and bulk menus (six scenarios passed).
 - [x] Scanner-host native E2E acceptance against an isolated real demo server.
-- [ ] Register enrollment, branding and status as a documented, semantically versioned UI API extension; current additional routes use `/mobile/v1`.
-- [ ] Coordinate Android `/qqq/v1/version` compatibility/feature checks and renderer conformance with the semantic UI/UX API contract.
+- [x] Register enrollment, branding and status as the documented mobile-scanners 1.0.0 semantic UI API extension; generate OpenAPI and check the versioned contract baseline.
+- [x] Verify extension discovery, real HTTP payload schemas, standard errors, public stale-credential behavior and rejection of legacy routes (root 23 tests and demo HTTP verification passed).
+- [x] Coordinate Android core/extension compatibility checks before login and native semantic process/form updates.
+- [x] Register the Android client channel while preserving host channel policies; verify the real HTTP suite sends Android-channel requests successfully.
+- [x] Rerun all six browser E2E scenarios against the migrated server (passed in 2.9 minutes).
+- [x] Verify the migrated client/server pair's incompatible-version, missing-extension, missing-channel, baseline scan and additive-metadata native scenarios with the OpenAPI request audit.
+- [x] Verify Android's 53 JVM tests, six shared native UI tests, lint and debug/E2E APK builds.
+- [ ] Complete the native approval/revocation/cancellation form scenario after the completion-state fix.
+- [ ] Publish and verify hosted checks for the semantic API migration; previous successful hosted heads do not verify this change.
 - [ ] TC22 physical scanner acceptance.
+- [x] Identify the physical TC22, install the debug app, sign in and enroll through USB forwarding.
+- [x] Approve the TC22 through its browser record Actions menu and open its native app catalog and Scan Capture process; preserve login across APK update.
 - [x] TC22 install and DataWedge acceptance guide written; physical execution remains pending.
 
 Future scope (not version one): offline queue, camera fallback, kiosk/MDM provisioning, broader native screen coverage, fleet rollout.

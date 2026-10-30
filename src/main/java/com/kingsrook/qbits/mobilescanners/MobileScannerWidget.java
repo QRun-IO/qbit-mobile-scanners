@@ -59,7 +59,8 @@ public class MobileScannerWidget extends AbstractWidgetRenderer
       public List<Map<String, Serializable>> getSubBlocks()
       {
          return List.of(Map.of("blockId", "barcodeScanner", "blockType", "SCANNER", "values",
-            new java.util.HashMap<>(Map.of("title", "Scan a barcode", "instructions", "Scan with the trigger or enter a barcode. Saved scans appear in Mobile Scanner Administration."))));
+            new java.util.HashMap<>(Map.of("title", "Scan a barcode", "instructions", "Scan with the trigger or enter a barcode. Saved scans appear in Mobile Scanner Administration.",
+               "manualLabel", "Manual barcode", "submitLabel", "Submit barcode", "maxLength", 4096))));
       }
    }
 }

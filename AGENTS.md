@@ -15,6 +15,7 @@ The Android host is maintained in [QRun-IO/qqq-android](https://github.com/QRun-
 ## Implementation conventions
 
 - Keep ordinary QQQ app/process/widget metadata and existing native API paths. Do not create a second generic mobile-screen framework.
+- All mobile endpoints must be registered in the versioned semantic UI API extension, with discovery, stable operation IDs, typed OpenAPI schemas and compatibility regressions. Keep the Android client channel registered and test real HTTP requests with that channel. Do not add parallel unversioned/custom business routes.
 - Kingsrook Java formatting: three spaces, Allman braces, banner documentation, explicit imports, Apache SPDX headers. `checkstyle/checkstyle.xml` is the enforced authority.
 - Preserve online-only semantics, idempotent event retries and server-derived user/device attribution.
 - Device credentials belong only in scoped HTTP headers and private hashed storage, never process inputs, responses beyond enrollment, fixtures, logs or notes.

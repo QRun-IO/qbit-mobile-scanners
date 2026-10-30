@@ -19,7 +19,7 @@ With Java 21:
 .\mvnw.cmd -f demo/pom.xml verify
 ```
 
-The HTTP suite uses an isolated H2 database and generated accounts. It exercises real login and process endpoints, asynchronous polling, confirmation/result steps, scan retry idempotency and authorization. SQL assertions independently check persisted values and unaffected devices. Root process tests additionally cover malformed/oversized selections, first-N limits, and stable selection snapshots despite later enrollment or changed submitted values.
+The HTTP suite uses an isolated H2 database and generated accounts. It sends the Android client-channel header on every request and exercises real login and process endpoints, asynchronous polling, confirmation/result steps, scan retry idempotency and authorization. Discovery must advertise the Android channel and the registered mobile-scanners extension. SQL assertions independently check persisted values and unaffected devices. Root process tests additionally cover malformed/oversized selections, first-N limits, and stable selection snapshots despite later enrollment or changed submitted values.
 
 ## Browser E2E
 
@@ -47,5 +47,7 @@ node scripts/ci/scanner-e2e.mjs ..\qbit-mobile-scanners
 ```
 
 The runner uses a separate `io.qrun.mobile.scanner.e2e` package, a temporary server database and generated credentials. It preserves the normal scanner app's data and refuses physical devices. The test drives the actual login, pending approval, app picker and Scan Capture screens, then independently checks the saved row and revocation denial.
+
+The semantic migration expands this to six scenarios: incompatible core version, missing extension, missing Android channel, baseline scan flow, additive future metadata, and native approval/revocation/cancellation forms. A test-only forwarding proxy matches requests to the real server's published OpenAPI operations and checks that rejected servers receive no credentials. Current verification results and remaining hardware checks are recorded in [session state](SESSION-STATE.md).
 
 Hardware trigger, decoding and DataWedge delivery still require [TC22 acceptance](TC22-ACCEPTANCE.md). Emulator success does not establish physical scanner acceptance.

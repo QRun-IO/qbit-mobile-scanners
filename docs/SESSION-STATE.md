@@ -2,6 +2,14 @@
 
 Updated: 2026-10-30
 
+## Current: semantic API migration
+
+The qbit registers mobile-scanners 1.0.0 through QQQ's extension registry. Device enrollment/current status, branding and connectivity use `/qqq/v1/qbit/mobile-scanners`; discovery advertises the relative prefix `/qbit/mobile-scanners`. The generated OpenAPI includes typed device and scanner event/acknowledgment schemas, stable operation IDs and standard errors. Legacy standalone mobile routes are removed. [UI-API.md](UI-API.md) describes the contract and versioning policy.
+
+Root `verify install` passed 23 tests, including the extension contract baseline checks; demo `verify` passed one real HTTP discovery/schema/error/lifecycle scenario. All six migrated browser E2E scenarios passed in 2.9 minutes. Native integration exposed an unregistered Android client channel returning HTTP400; the qbit now registers `android` without replacing existing channel policies. The real HTTP regression sends `X-QQQ-Client: android/qqq-mobile` on all requests and passes. Android requires `android` in discovery's `clientChannels`; its combined JVM suites passed 53 tests (core 21/mobileapp 23/scanner 9), with six shared native UI tests also passing. Final lint passed with zero errors and six warnings; debug and E2E APK builds passed. Five native scanner scenarios passed with the OpenAPI request audit: incompatible core version, missing extension, missing Android channel, baseline scan flow and additive future metadata. The final native administration form scenario is being rerun after correcting completion handling for a COMPLETE response without `nextStep`. Hosted checks for the new semantic changes remain pending.
+
+Active plan: finish the native administration scenario; publish the reviewed server branch and pin it in Android CI; verify hosted checks and physical scanner acceptance. The local server and emulator restarted after the workstation crash with data preserved; the backend administration UI was visibly signed in. The physical TC22 is identified through authorized USB debugging, running Android 14 and DataWedge 13.0.325. The debug app is installed and signed in. Approval from the browser record's Actions menu visibly reported one device approved; the handheld then opened the native app catalog and Scan Capture process. Updating the APK preserved its login. DataWedge profile setup and physical barcode acceptance are still in progress; no hardware scan success is claimed. The old semantic-gap note below is superseded by this implementation status and the current TODO.
+
 ## Verified: record and bulk device administration
 
 - User reported Approve Device did not work from a device record and required proper E2E coverage for every process, including single-record and bulk entry points.

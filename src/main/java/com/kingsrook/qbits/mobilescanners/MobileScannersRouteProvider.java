@@ -6,24 +6,21 @@
 package com.kingsrook.qbits.mobilescanners;
 
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Set;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QAuthenticationException;
-import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.middleware.javalin.QJavalinRouteProviderInterface;
+import com.kingsrook.qqq.middleware.javalin.QJavalinUtils;
 import com.kingsrook.qqq.middleware.javalin.executors.ExecutorSessionUtils;
 import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
-import io.javalin.http.ForbiddenResponse;
 
 
 /*******************************************************************************
- ** Enrollment plus request-scoped device credentials for native QQQ UI APIs.
+ ** Request-scoped device credentials for registered native QQQ UI APIs.
  *******************************************************************************/
 public class MobileScannersRouteProvider implements QJavalinRouteProviderInterface
 {
@@ -58,29 +55,7 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
       {
          ApiBuilder.before("/qqq/*", this::bindDevice);
          ApiBuilder.after("/qqq/*", context -> MobilePermissions.REQUEST_DEVICE.remove());
-         ApiBuilder.get("/mobile/v1/branding", this::branding);
-         ApiBuilder.get("/mobile/v1/status", context -> context.header("Cache-Control", "no-store").json(Map.of("status", "ok")));
-         ApiBuilder.post("/mobile/v1/devices/enroll", context -> handle(context, true));
-         ApiBuilder.get("/mobile/v1/devices/current", context -> handle(context, false));
       };
-   }
-
-   /***************************************************************************
-    ** Public, explicitly allowlisted appearance data, available before login.
-    ***************************************************************************/
-   private void branding(Context context)
-   {
-      MobileScannersQBitConfig config = instance.getQBits().values().stream().map(bit -> bit.getConfig())
-         .filter(MobileScannersQBitConfig.class::isInstance).map(MobileScannersQBitConfig.class::cast)
-         .findFirst().orElseGet(MobileScannersQBitConfig::new);
-      Map<String, String> response = new LinkedHashMap<>();
-      response.put("displayName", config.getDisplayName());
-      response.put("primaryColor", config.getPrimaryColor());
-      if(config.getLogoUrl() != null)
-      {
-         response.put("logoUrl", config.getLogoUrl());
-      }
-      context.header("Cache-Control", "no-store").json(response);
    }
 
    /***************************************************************************
@@ -91,7 +66,9 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
       MobilePermissions.REQUEST_DEVICE.remove();
       String id = context.header(DEVICE_HEADER);
       String token = context.header(TOKEN_HEADER);
-      if(context.path().equals("/qqq/v1/metaData/authentication") || context.path().endsWith("/manageSession") || context.path().endsWith("/authenticationMetaData") || context.path().endsWith("/logout"))
+      if(Set.of("/qqq/v1/version", "/qqq/v1/openapi.json", "/qqq/v1/openapi.yaml", "/qqq/v1/metaData/authentication",
+         "/qqq/v1/manageSession", "/qqq/v1/logout", "/qqq/v1" + MobileScannersUiApi.PREFIX + "/branding",
+         "/qqq/v1" + MobileScannersUiApi.PREFIX + "/status", "/qqq/v1" + MobileScannersUiApi.PREFIX + "/devices/enroll").contains(context.path()))
       {
          return;
       }
@@ -105,9 +82,17 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
          QRecord device = MobileService.authenticateDevice(id, token);
          MobilePermissions.REQUEST_DEVICE.set(device.getValueString("id"));
       }
-      catch(QException e)
+      catch(QAuthenticationException e)
       {
-         throw new ForbiddenResponse("Invalid device credential.");
+         context.contentType("application/json");
+         QJavalinUtils.respondWithError(context, org.eclipse.jetty.http.HttpStatus.Code.UNAUTHORIZED, "Sign in to continue.");
+         context.skipRemainingHandlers();
+      }
+      catch(Exception e)
+      {
+         context.contentType("application/json");
+         QJavalinUtils.respondWithError(context, org.eclipse.jetty.http.HttpStatus.Code.FORBIDDEN, "Invalid device credential.");
+         context.skipRemainingHandlers();
       }
       finally
       {
@@ -115,54 +100,4 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
       }
    }
 
-   /***************************************************************************
-    ** Require user authentication for registration and status, never anonymous.
-    ***************************************************************************/
-   @SuppressWarnings("unchecked")
-   private void handle(Context context, boolean enroll)
-   {
-      context.header("Cache-Control", "no-store");
-      try
-      {
-         ExecutorSessionUtils.setupSession(context, instance);
-         MobilePermissions.require(MobilePermissions.SCAN);
-         if(enroll)
-         {
-            if(context.body().length() > 4096)
-            {
-               context.status(413).json(Map.of("error", "Enrollment request is too large."));
-               return;
-            }
-            Map<String, Object> input = context.bodyAsClass(Map.class);
-            context.status(201).json(MobileService.enroll(input));
-         }
-         else
-         {
-            QRecord device = MobileService.authenticateDevice(context.header(DEVICE_HEADER), context.header(TOKEN_HEADER));
-            context.json(Map.of("deviceId", device.getValueString("id"), "status", device.getValueString("status"),
-               "displayName", device.getValueString("displayName") == null ? "" : device.getValueString("displayName")));
-         }
-      }
-      catch(QAuthenticationException e)
-      {
-         context.status(401).json(Map.of("error", "Sign in to continue."));
-      }
-      catch(QPermissionDeniedException e)
-      {
-         context.status(403).json(Map.of("error", "User or device is not authorized."));
-      }
-      catch(MobileService.EnrollmentConflictException e)
-      {
-         context.status(409).json(Map.of("error", e.getMessage()));
-      }
-      catch(Exception e)
-      {
-         context.status(400).json(Map.of("error", "The mobile request could not be completed."));
-      }
-      finally
-      {
-         QContext.clear();
-         MobilePermissions.REQUEST_DEVICE.remove();
-      }
-   }
 }

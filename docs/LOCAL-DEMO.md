@@ -8,6 +8,8 @@ pwsh -File scripts/Start-Demo.ps1
 
 The launcher verifies both Maven projects, then keeps the server running at <http://127.0.0.1:8080/>. Stop it with Ctrl+C. After a successful build, `-SkipBuild` starts it directly. If port 8080 is unavailable, use `-Port 18080` and open <http://127.0.0.1:18080/>. The database persists under `demo/data`; the server binds only to loopback.
 
+Use the matching Android build with the [mobile-scanners semantic API extension](UI-API.md). Public discovery is at `/qqq/v1/version`; the extension's connectivity endpoint is `/qqq/v1/qbit/mobile-scanners/status`. This migration removes the former standalone mobile routes, so upgrade the local server and APK together. Installing the APK with `adb install -r` and restarting the server preserves the existing application data and database; no account or device reset is required.
+
 First startup creates random passwords for the `admin` and `scanner` accounts. The launcher stores them using Windows DPAPI under `%LOCALAPPDATA%/QRunIO/MobileScannersDemo/credentials.clixml`, readable only through the same Windows user/machine protection. They are never written to the repository or printed. Keep that credential file with this local database; the launcher never changes existing account passwords.
 
 In another PowerShell window, copy the admin password when ready to log into the browser:

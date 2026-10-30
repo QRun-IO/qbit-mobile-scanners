@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import com.kingsrook.qqq.middleware.javalin.QApplicationJavalinServer;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,6 +41,7 @@ class MobileHttpAcceptanceTest
    private String origin;
    private String deviceId;
    private String deviceToken;
+   private JSONObject schemas;
 
 
 
@@ -63,37 +65,51 @@ class MobileHttpAcceptanceTest
       QApplicationJavalinServer server = application.start(port);
       try
       {
-         var branding = request("GET", "/mobile/v1/branding", null, null, false);
+         assertSemanticDiscovery(false);
+         var branding = request("GET", "/qqq/v1/qbit/mobile-scanners/branding", null, null, false);
          assertEquals(200, branding.statusCode());
          assertEquals("no-store", branding.headers().firstValue("Cache-Control").orElseThrow());
          JSONObject brand = new JSONObject(branding.body());
+         assertSchema("MobileScannersBrandingV1", brand);
          assertEquals(3, brand.length());
          assertEquals("Warehouse Mobile", brand.getString("displayName"));
          assertEquals("#007A55", brand.getString("primaryColor"));
          assertEquals("https://example.com/logo.png", brand.getString("logoUrl"));
-         assertEquals(401, request("POST", "/mobile/v1/devices/enroll", null, "{}", false).statusCode());
+         assertError(request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", null, "{}", false), 401, "UNAUTHENTICATED");
          deviceId = UUID.randomUUID().toString();
          deviceToken = "stale-device-token";
+         assertSemanticDiscovery(true);
+         assertSchema("MobileScannersBrandingV1", new JSONObject(request("GET", "/qqq/v1/qbit/mobile-scanners/branding", null, null, true).body()));
+         assertSchema("MobileScannersStatusV1", new JSONObject(request("GET", "/qqq/v1/qbit/mobile-scanners/status", null, null, true).body()));
          assertPublicAuthenticationMetadata();
          assertDenied(request("GET", "/qqq/v1/metaData", null, null, true));
          assertDenied(request("GET", "/qqq/v1/metaData/process/mobileScanCapture", null, null, true));
          String scanner = login("scanner", scannerPassword);
          String admin = login("admin", adminPassword);
+         assertError(request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner, "{}", false), 400, "BAD_REQUEST");
+         assertError(request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner, "{invalid", false), 400, "BAD_REQUEST");
+         assertError(request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, false), 403, "PERMISSION_DENIED");
          JSONObject enrollment = new JSONObject().put("installationId", UUID.randomUUID().toString())
             .put("displayName", "TC22 HTTP acceptance").put("manufacturer", "Zebra").put("model", "TC22")
             .put("osVersion", "acceptance-fixture").put("appVersion", "0.1.0");
-         var enrolled = request("POST", "/mobile/v1/devices/enroll", scanner, enrollment.toString(), false);
+         var enrolled = request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner, enrollment.toString(), false);
          assertTrue(enrolled.statusCode() == 200 || enrolled.statusCode() == 201, "Enrollment must succeed");
          JSONObject device = new JSONObject(enrolled.body());
+         assertSchema("MobileScannersEnrollmentV1", device);
+         assertError(request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner, enrollment.toString(), false), 409, "CONFLICT");
          deviceId = device.getString("deviceId");
          deviceToken = device.getString("deviceToken");
          assertEquals("PENDING", device.getString("status"));
+         var pending = request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, true);
+         assertEquals(200, pending.statusCode());
+         assertSchema("MobileScannersDeviceV1", new JSONObject(pending.body()));
          assertPublicAuthenticationMetadata();
          assertDenied(processInit("mobileScanCapture", scanner, true));
          assertDenied(processInit("mobileDeviceApprove", scanner, false));
          runAdminFromRecord("mobileDeviceApprove", admin);
-         var current = request("GET", "/mobile/v1/devices/current", scanner, null, true);
+         var current = request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, true);
          assertEquals(200, current.statusCode());
+         assertSchema("MobileScannersDeviceV1", new JSONObject(current.body()));
          assertEquals("APPROVED", new JSONObject(current.body()).getString("status"));
          assertFalse(current.body().contains(deviceToken), "Status must never echo the token");
 
@@ -112,12 +128,15 @@ class MobileHttpAcceptanceTest
          String processId = launch.getString("processUUID");
          assertEquals("scan", launch.getString("nextStep"));
          JSONObject widget = launch.getJSONObject("values").getJSONObject("mobileScanner");
+         assertSchema("MobileScannersScannerBlockV1", widget.getJSONArray("subBlocks").getJSONObject(0));
          assertEquals("SCANNER", widget.getJSONArray("subBlocks").getJSONObject(0).getString("blockType"));
          String eventId = UUID.randomUUID().toString();
          JSONObject values = new JSONObject().put("barcode", "000123456789").put("symbology", "LABEL-TYPE-CODE128")
             .put("scanSource", "scanner").put("eventId", eventId).put("capturedAt", Instant.now().toString())
             .put("userId", "forged-admin").put("deviceId", "forged-device");
+         assertSchema("MobileScannersScanEventV1", values);
          JSONObject first = complete(processStep("mobileScanCapture", processId, "scan", scanner, values, true), "mobileScanCapture", scanner, true);
+         assertSchema("MobileScannersScanAcknowledgmentV1", first.getJSONObject("values"));
          assertEquals(eventId, first.getJSONObject("values").getString("acknowledgedEventId"));
          JSONObject retry = complete(processStep("mobileScanCapture", processId, "scan", scanner, values, true), "mobileScanCapture", scanner, true);
          assertEquals(first.getJSONObject("values").getString("scanId"), retry.getJSONObject("values").getString("scanId"));
@@ -134,6 +153,7 @@ class MobileHttpAcceptanceTest
 
          String validToken = deviceToken;
          deviceToken = "incorrect-token";
+         assertError(request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, true), 403, "PERMISSION_DENIED");
          assertPublicAuthenticationMetadata();
          assertDenied(request("GET", "/qqq/v1/metaData", scanner, null, true));
          assertDenied(request("GET", "/qqq/v1/metaData/process/mobileScanCapture", scanner, null, true));
@@ -147,11 +167,184 @@ class MobileHttpAcceptanceTest
          assertDenied(processStep("mobileScanCapture", processId, "scan", scanner, values, true));
          assertEquals(1, scanCount(database));
          assertEquals(200, request("POST", "/qqq/v1/logout", scanner, "{}", false).statusCode());
-         assertEquals(401, request("GET", "/mobile/v1/devices/current", scanner, null, true).statusCode());
+         assertEquals(401, request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, true).statusCode());
       }
       finally
       {
          server.stop();
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Real server discovery and merged OpenAPI resolve every extension reference.
+    *******************************************************************************/
+   private void assertSemanticDiscovery(boolean device) throws Exception
+   {
+      var response = request("GET", "/qqq/v1/version", null, null, device);
+      assertEquals(200, response.statusCode());
+      JSONObject version = new JSONObject(response.body());
+      assertTrue(version.getString("apiVersion").startsWith("1."));
+      assertEquals("/qqq/v1", version.getString("basePath"));
+      assertTrue(version.getJSONArray("clientChannels").toList().contains("android"), "The native Android channel must be advertised before sign-in");
+      JSONArray extensions = version.getJSONArray("extensions");
+      JSONObject mobile = null;
+      for(int i = 0; i < extensions.length(); i++)
+      {
+         if("mobile-scanners".equals(extensions.getJSONObject(i).getString("name")))
+         {
+            mobile = extensions.getJSONObject(i);
+         }
+      }
+      assertNotNull(mobile);
+      assertEquals("1.0.0", mobile.getString("version"));
+      assertEquals("/qbit/mobile-scanners", mobile.getString("pathPrefix"));
+      var openApiResponse = request("GET", "/qqq/v1/openapi.json", null, null, device);
+      assertEquals(200, openApiResponse.statusCode());
+      JSONObject openApi = new JSONObject(openApiResponse.body());
+      schemas = openApi.getJSONObject("components").getJSONObject("schemas");
+      JSONObject paths = openApi.getJSONObject("paths");
+      for(String[] operation : List.of(new String[] { "branding", "get", "mobileScannersBranding" },
+         new String[] { "status", "get", "mobileScannersStatus" },
+         new String[] { "devices/enroll", "post", "mobileScannersEnrollDevice" },
+         new String[] { "devices/current", "get", "mobileScannersCurrentDevice" }))
+      {
+         JSONObject method = paths.getJSONObject("/qqq/v1/qbit/mobile-scanners/" + operation[0]).getJSONObject(operation[1]);
+         assertEquals(operation[2], method.getString("operationId"));
+         if(operation[0].startsWith("devices/"))
+         {
+            assertTrue(method.getJSONArray("security").length() > 0);
+         }
+         else
+         {
+            assertFalse(method.has("security"));
+         }
+         assertReferencesResolve(method, openApi);
+      }
+      for(String name : schemas.keySet())
+      {
+         if(name.startsWith("MobileScanners"))
+         {
+            assertReferencesResolve(schemas.getJSONObject(name), openApi);
+         }
+      }
+      assertEquals(404, request("GET", "/mobile/v1/branding", null, null, false).statusCode());
+      Path fixtures = Path.of("target", "android-contract");
+      Files.createDirectories(fixtures);
+      Files.writeString(fixtures.resolve("version.json"), version.toString(2));
+      Files.writeString(fixtures.resolve("openapi.json"), openApi.toString(2));
+   }
+
+
+
+   /*******************************************************************************
+    ** Walk request/response schemas rather than merely checking path existence.
+    *******************************************************************************/
+   private void assertReferencesResolve(Object value, JSONObject document)
+   {
+      if(value instanceof JSONObject object)
+      {
+         if(object.has("$ref"))
+         {
+            assertNotNull(document.query(object.getString("$ref")));
+         }
+         for(String key : object.keySet())
+         {
+            assertReferencesResolve(object.get(key), document);
+         }
+      }
+      else if(value instanceof JSONArray array)
+      {
+         for(Object item : array)
+         {
+            assertReferencesResolve(item, document);
+         }
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Validate actual mobile payloads against the served versioned schema.
+    *******************************************************************************/
+   private void assertSchema(String name, Object value)
+   {
+      assertSchemaValue(schemas.getJSONObject(name), value);
+   }
+
+
+
+   /*******************************************************************************
+    ** The extension uses objects, bounded strings, numbers and booleans only.
+    *******************************************************************************/
+   private void assertSchemaValue(JSONObject schema, Object value)
+   {
+      if(schema.has("$ref"))
+      {
+         assertSchema(schema.getString("$ref").substring("#/components/schemas/".length()), value);
+         return;
+      }
+      switch(schema.getString("type"))
+      {
+         case "object" ->
+         {
+            assertTrue(value instanceof JSONObject);
+            JSONObject object = (JSONObject) value;
+            JSONArray required = schema.optJSONArray("required");
+            if(required != null)
+            {
+               for(Object key : required)
+               {
+                  assertTrue(object.has(key.toString()) && !object.isNull(key.toString()), "Missing required property: " + key);
+               }
+            }
+            JSONObject properties = schema.getJSONObject("properties");
+            for(String key : properties.keySet())
+            {
+               if(object.has(key))
+               {
+                  assertSchemaValue(properties.getJSONObject(key), object.get(key));
+               }
+            }
+         }
+         case "string" ->
+         {
+            assertTrue(value instanceof String);
+            assertTrue(((String) value).length() <= schema.optInt("maxLength", Integer.MAX_VALUE));
+            if(schema.has("enum"))
+            {
+               assertTrue(schema.getJSONArray("enum").toList().contains(value));
+            }
+         }
+         case "boolean" -> assertTrue(value instanceof Boolean);
+         case "integer" ->
+         {
+            assertTrue(value instanceof Integer);
+            assertTrue(((Integer) value) >= schema.optInt("minimum", Integer.MIN_VALUE));
+            assertTrue(((Integer) value) <= schema.optInt("maximum", Integer.MAX_VALUE));
+         }
+         default -> throw new AssertionError("Unexpected mobile schema type");
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Error status, stable code and trace ID share the core semantic envelope.
+    *******************************************************************************/
+   private void assertError(HttpResponse<String> response, int status, String code)
+   {
+      assertEquals(status, response.statusCode());
+      JSONObject error = new JSONObject(response.body());
+      assertSchema("BasicErrorResponseV1", error);
+      assertEquals(code, error.getString("code"));
+      assertEquals(error.getString("error"), error.getString("message"));
+      assertFalse(error.getString("traceId").isEmpty());
+      assertEquals(error.getString("traceId"), response.headers().firstValue("X-QQQ-Trace-Id").orElseThrow());
+      if(deviceToken != null)
+      {
+         assertFalse(response.body().contains(deviceToken));
       }
    }
 
@@ -178,7 +371,7 @@ class MobileHttpAcceptanceTest
    {
       String basic = Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
       var response = client.send(HttpRequest.newBuilder(URI.create(origin + "/qqq/v1/manageSession"))
-         .header("Authorization", "Basic " + basic).header("Content-Type", "application/json")
+         .header("Authorization", "Basic " + basic).header("Content-Type", "application/json").header("X-QQQ-Client", "android/qqq-mobile")
          .POST(HttpRequest.BodyPublishers.ofString("{}")).build(), HttpResponse.BodyHandlers.ofString());
       assertEquals(200, response.statusCode(), "Native login failed");
       return response.headers().allValues("Set-Cookie").stream().flatMap(value -> HttpCookie.parse(value).stream())
@@ -208,7 +401,7 @@ class MobileHttpAcceptanceTest
       JSONObject launched = complete(form("/qqq/v1/processes/" + name + "/init", session, selection, false), name, session, false);
       assertEquals("input", launched.getString("nextStep"));
       assertEquals(deviceId, launched.getJSONObject("values").optString("deviceId"), "Record launch must prefill the selected device for confirmation");
-      var beforeConfirmation = request("GET", "/mobile/v1/devices/current", session, null, true);
+      var beforeConfirmation = request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", session, null, true);
       assertEquals("PENDING", new JSONObject(beforeConfirmation.body()).getString("status"), "Opening the process must not approve the device");
       JSONObject applied = complete(processStep(name, launched.getString("processUUID"), "input", session, new JSONObject(), false), name, session, false);
       finishAdmin(name, session, applied, 1);
@@ -270,7 +463,7 @@ class MobileHttpAcceptanceTest
    {
       JSONObject enrollment = new JSONObject().put("installationId", UUID.randomUUID().toString()).put("displayName", label)
          .put("manufacturer", "Zebra").put("model", "TC22").put("osVersion", "acceptance-fixture").put("appVersion", "0.1.0");
-      var response = request("POST", "/mobile/v1/devices/enroll", session, enrollment.toString(), false);
+      var response = request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", session, enrollment.toString(), false);
       assertTrue(response.statusCode() == 200 || response.statusCode() == 201);
       return new JSONObject(response.body()).getString("deviceId");
    }
@@ -376,7 +569,8 @@ class MobileHttpAcceptanceTest
     *******************************************************************************/
    private HttpRequest.Builder headers(String path, String session, boolean device)
    {
-      HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(origin + path)).timeout(Duration.ofSeconds(20));
+      HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(origin + path)).timeout(Duration.ofSeconds(20))
+         .header("X-QQQ-Client", "android/qqq-mobile");
       if(session != null)
       {
          builder.header("Cookie", "sessionUUID=" + session);

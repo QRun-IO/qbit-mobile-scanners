@@ -66,6 +66,7 @@ public class MobileScannersQBitProducer implements QBitProducer
       config.validate(instance);
       instance.addQBit(new QBitMetaData().withGroupId("com.kingsrook.qbits").withArtifactId("qbit-mobile-scanners")
          .withVersion("0.1.0-SNAPSHOT").withNamespace(namespace).withConfig(config));
+      MobileScannersUiApi.register(instance);
       QTableMetaData device = table(DEVICE, "Mobile Devices", 36);
       for(String field : List.of("installationId", "displayName", "manufacturer", "model", "osVersion", "appVersion", "status", "enrolledBy", "approvedBy"))
       {

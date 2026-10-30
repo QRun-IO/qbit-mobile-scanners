@@ -20,6 +20,7 @@ import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
+import com.kingsrook.qqq.backend.core.exceptions.QBadRequestException;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
@@ -283,7 +284,7 @@ public final class MobileService
       String value = optional(input, name, maximum);
       if(value == null || value.isEmpty())
       {
-         throw new QException(name + " is required.");
+         throw new QBadRequestException(name + " is required.");
       }
       return value;
    }
@@ -300,7 +301,7 @@ public final class MobileService
       }
       if(!(value instanceof String text) || text.length() > maximum)
       {
-         throw new QException(name + " must be a string of at most " + maximum + " characters.");
+         throw new QBadRequestException(name + " must be a string of at most " + maximum + " characters.");
       }
       return text;
    }
@@ -321,7 +322,7 @@ public final class MobileService
       }
       catch(IllegalArgumentException e)
       {
-         throw new QException("A canonical UUID is required.");
+         throw new QBadRequestException("A canonical UUID is required.");
       }
    }
 

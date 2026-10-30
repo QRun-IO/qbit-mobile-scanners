@@ -13,7 +13,7 @@ async function loginApi(request, account) {
 }
 
 async function enroll(request, name) {
-   const response = await request.post('/mobile/v1/devices/enroll', {
+   const response = await request.post('/qqq/v1/qbit/mobile-scanners/devices/enroll', {
       data: { installationId: randomUUID(), displayName: name, manufacturer: 'Test', model: 'Browser fixture', osVersion: 'test', appVersion: 'test' },
    });
    expect(response.ok()).toBeTruthy();
@@ -31,7 +31,7 @@ async function loginBrowser(page) {
 }
 
 async function status(request, device) {
-   const response = await request.get('/mobile/v1/devices/current', {
+   const response = await request.get('/qqq/v1/qbit/mobile-scanners/devices/current', {
       headers: { 'X-QQQ-Device-Id': device.deviceId, 'X-QQQ-Device-Token': device.deviceToken },
    });
    expect(response.status()).toBe(200);

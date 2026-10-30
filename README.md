@@ -4,7 +4,7 @@ Server support for approved Android handhelds running native QQQ apps. The first
 
 Version one is online only. Devices require an authenticated user and administrator approval. Android renders existing QQQ app, process, frontend-step and widget metadata; this qbit adds the scanner widget and enrollment lifecycle.
 
-App discovery and process execution use the versioned UI/UX API at `/qqq/v1`. The current native renderer supports a subset of components and does not yet perform semantic-version/feature negotiation. Enrollment, branding and status currently use separate `/mobile/v1` endpoints; registering these as a UI API extension remains outstanding. Metadata changes using supported components can be delivered by the server; new native component types require a shared Android client update.
+App discovery and process execution use the versioned semantic UI/UX API at `/qqq/v1`. Enrollment, branding and status are registered operations in the independently versioned `mobile-scanners` extension at `/qqq/v1/qbit/mobile-scanners`. The Android host checks core and extension compatibility before login. See [the semantic API contract](docs/UI-API.md). Metadata changes using supported native components can be delivered by the server; new required component types need a shared Android client update. This contract does not imply full web-client feature coverage.
 
 ## Project layout
 
