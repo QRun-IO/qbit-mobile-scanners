@@ -91,7 +91,7 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
       MobilePermissions.REQUEST_DEVICE.remove();
       String id = context.header(DEVICE_HEADER);
       String token = context.header(TOKEN_HEADER);
-      if(context.path().endsWith("/manageSession") || context.path().endsWith("/authenticationMetaData") || context.path().endsWith("/logout"))
+      if(context.path().equals("/qqq/v1/metaData/authentication") || context.path().endsWith("/manageSession") || context.path().endsWith("/authenticationMetaData") || context.path().endsWith("/logout"))
       {
          return;
       }

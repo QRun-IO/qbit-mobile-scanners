@@ -2,6 +2,8 @@
 
 Updated: 2026-10-29
 
+2026-10-30 correction: native authentication metadata is served at `/qqq/v1/metaData/authentication`. The device-header guard now exempts that exact public path; the previous legacy-only exemption caused HTTP403 on app restart after enrollment when device headers were present before a user session was restored. A real HTTP regression failed before the fix and passed afterward with stale, pending, invalid-token and revoked device headers. Protected metadata/process/scan authorization still fails appropriately. Root13 tests, Checkstyle and demo HTTP acceptance passed; the local demo was restarted on57832 with its persistent database and accounts preserved.
+
 ## Current repository and demo state
 
 - GitHub repository created at https://github.com/QRun-IO/qbit-mobile-scanners with `develop` as default. Initial signed commit `abbcc39` is published. Companion Android implementation is in https://github.com/QRun-IO/qqq-android/pull/8.

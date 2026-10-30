@@ -70,6 +70,11 @@ class MobileHttpAcceptanceTest
          assertEquals("#007A55", brand.getString("primaryColor"));
          assertEquals("https://example.com/logo.png", brand.getString("logoUrl"));
          assertEquals(401, request("POST", "/mobile/v1/devices/enroll", null, "{}", false).statusCode());
+         deviceId = UUID.randomUUID().toString();
+         deviceToken = "stale-device-token";
+         assertPublicAuthenticationMetadata();
+         assertDenied(request("GET", "/qqq/v1/metaData", null, null, true));
+         assertDenied(request("GET", "/qqq/v1/metaData/process/mobileScanCapture", null, null, true));
          String scanner = login("scanner", scannerPassword);
          String admin = login("admin", adminPassword);
          JSONObject enrollment = new JSONObject().put("installationId", UUID.randomUUID().toString())
@@ -81,6 +86,7 @@ class MobileHttpAcceptanceTest
          deviceId = device.getString("deviceId");
          deviceToken = device.getString("deviceToken");
          assertEquals("PENDING", device.getString("status"));
+         assertPublicAuthenticationMetadata();
          assertDenied(processInit("mobileScanCapture", scanner, true));
          assertDenied(processInit("mobileDeviceApprove", scanner, false));
          runAdmin("mobileDeviceApprove", admin);
@@ -126,10 +132,14 @@ class MobileHttpAcceptanceTest
 
          String validToken = deviceToken;
          deviceToken = "incorrect-token";
+         assertPublicAuthenticationMetadata();
+         assertDenied(request("GET", "/qqq/v1/metaData", scanner, null, true));
+         assertDenied(request("GET", "/qqq/v1/metaData/process/mobileScanCapture", scanner, null, true));
          assertDenied(processInit("mobileScanCapture", scanner, true));
          deviceToken = validToken;
          assertDenied(processInit("mobileScanCapture", scanner, false));
          runAdmin("mobileDeviceRevoke", admin);
+         assertPublicAuthenticationMetadata();
          values.put("eventId", UUID.randomUUID().toString());
          assertDenied(processStep("mobileScanCapture", processId, "scan", scanner, values, true));
          assertEquals(1, scanCount(database));
@@ -140,6 +150,20 @@ class MobileHttpAcceptanceTest
       {
          server.stop();
       }
+   }
+
+
+
+   /*******************************************************************************
+    ** A returning handheld can discover login without a session or valid device.
+    *******************************************************************************/
+   private void assertPublicAuthenticationMetadata() throws Exception
+   {
+      var anonymous = request("GET", "/qqq/v1/metaData/authentication", null, null, false);
+      var returningDevice = request("GET", "/qqq/v1/metaData/authentication", null, null, true);
+      assertEquals(200, anonymous.statusCode());
+      assertEquals(200, returningDevice.statusCode(), "Login discovery must ignore persisted device credentials");
+      assertEquals(new JSONObject(anonymous.body()).toMap(), new JSONObject(returningDevice.body()).toMap());
    }
 
 
