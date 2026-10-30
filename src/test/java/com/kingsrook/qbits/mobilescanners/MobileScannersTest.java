@@ -15,12 +15,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper;
+import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.instances.QInstanceValidator;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
@@ -295,6 +297,192 @@ class MobileScannersTest
    private Map<String, Object> enroll() throws QException
    {
       return MobileService.enroll(Map.of("installationId", UUID.randomUUID().toString(), "displayName", "Test TC22", "manufacturer", "Zebra", "model", "TC22"));
+   }
+
+   /***************************************************************************
+    ** Record-screen launches prefill the selected device without applying early.
+    ***************************************************************************/
+   @Test
+   void recordLaunchPrefillsDeviceBeforeConfirmation() throws Exception
+   {
+      String id = (String) enroll().get("deviceId");
+      QContext.init(instance, admin);
+      var launched = new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+         .withValue("recordsParam", "recordIds").withValue("recordIds", id).withValue("tableName", MobileScannersQBitProducer.DEVICE));
+      assertEquals(id, launched.getValue("deviceId"));
+      assertEquals("PENDING", deviceStatus(id));
+      RunProcessInput confirmed = new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+         .withProcessUUID(launched.getProcessUUID()).withStartAfterStep("input");
+      confirmed.getValues().putAll(launched.getValues());
+      new RunProcessAction().execute(confirmed);
+      assertEquals("APPROVED", deviceStatus(id));
+   }
+
+   /***************************************************************************
+    ** Bulk selection updates all reviewed devices and reports a visible result.
+    ***************************************************************************/
+   @Test
+   void bulkApprovalAndRevocationApplyOnlyAfterConfirmation() throws Exception
+   {
+      String first = (String) enroll().get("deviceId");
+      String second = (String) enroll().get("deviceId");
+      String selection = first + "," + second;
+      QContext.init(instance, admin);
+      for(String process : java.util.List.of(MobileScannersQBitProducer.APPROVE, MobileScannersQBitProducer.REVOKE))
+      {
+         var launch = new RunProcessAction().execute(new RunProcessInput().withProcessName(process)
+            .withValue("recordsParam", "recordIds").withValue("recordIds", selection).withValue("tableName", MobileScannersQBitProducer.DEVICE));
+         assertEquals(selection, launch.getValue("deviceId"));
+         assertTrue(launch.getValueString("selectionSummary").startsWith("2 device(s) selected:"));
+         String before = process.equals(MobileScannersQBitProducer.APPROVE) ? "PENDING" : "APPROVED";
+         assertEquals(before, deviceStatus(first));
+         assertEquals(before, deviceStatus(second));
+         var applied = confirmAdmin(process, launch);
+         String after = process.equals(MobileScannersQBitProducer.APPROVE) ? "APPROVED" : "REVOKED";
+         assertEquals(after, deviceStatus(first));
+         assertEquals(after, deviceStatus(second));
+         assertEquals(2, applied.getValue("processedDeviceCount"));
+         assertEquals(process.equals(MobileScannersQBitProducer.APPROVE) ? "2 devices approved." : "2 devices revoked.", applied.getValue("result"));
+      }
+   }
+
+   /***************************************************************************
+    ** Scanner users cannot launch or resume an administrative selection.
+    ***************************************************************************/
+   @Test
+   void selectedDeviceProcessesRequireAdminAtLaunchAndApply() throws Exception
+   {
+      String id = (String) enroll().get("deviceId");
+      for(String process : java.util.List.of(MobileScannersQBitProducer.APPROVE, MobileScannersQBitProducer.REVOKE))
+      {
+         assertThrows(QException.class, () -> new RunProcessAction().execute(new RunProcessInput().withProcessName(process)
+            .withValue("recordsParam", "recordIds").withValue("recordIds", id)));
+         QContext.init(instance, admin);
+         var launch = new RunProcessAction().execute(new RunProcessInput().withProcessName(process)
+            .withValue("recordsParam", "recordIds").withValue("recordIds", id));
+         QContext.init(instance, scanner);
+         assertThrows(QException.class, () -> confirmAdmin(process, launch));
+         assertEquals("PENDING", deviceStatus(id));
+      }
+   }
+
+   /***************************************************************************
+    ** Invalid bulk targets fail before changing any otherwise valid device.
+    ***************************************************************************/
+   @Test
+   void invalidSelectionAndManualTargetsDoNotPartiallyApply() throws Exception
+   {
+      String id = (String) enroll().get("deviceId");
+      QContext.init(instance, admin);
+      String missing = UUID.randomUUID().toString();
+      assertThrows(QException.class, () -> new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+         .withValue("recordsParam", "recordIds").withValue("recordIds", id + "," + missing)));
+      assertThrows(QException.class, () -> new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+         .withValue("recordsParam", "unknownSelection").withValue("filterJSON", "{}")));
+      assertThrows(QException.class, () -> new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+         .withValue("recordsParam", "recordIds").withValue("recordIds", id).withValue("tableName", MobileScannersQBitProducer.SCAN)));
+      var launch = new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE));
+      launch.addValue("deviceId", id + "," + missing);
+      assertThrows(QException.class, () -> confirmAdmin(MobileScannersQBitProducer.APPROVE, launch));
+      assertEquals("PENDING", deviceStatus(id));
+   }
+
+   /***************************************************************************
+    ** Standalone administration retains manual device ID entry.
+    ***************************************************************************/
+   @Test
+   void standaloneAdminProcessAcceptsManualDeviceId() throws Exception
+   {
+      String id = (String) enroll().get("deviceId");
+      QContext.init(instance, admin);
+      var launch = new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE));
+      launch.addValue("deviceId", id);
+      var applied = confirmAdmin(MobileScannersQBitProducer.APPROVE, launch);
+      assertEquals("APPROVED", deviceStatus(id));
+      assertEquals("1 device approved.", applied.getValue("result"));
+   }
+
+   /***************************************************************************
+    ** Resume the real process state at the normal confirmation boundary.
+    ***************************************************************************/
+   private RunProcessOutput confirmAdmin(String process, RunProcessOutput launch) throws QException
+   {
+      RunProcessInput input = new RunProcessInput().withProcessName(process).withProcessUUID(launch.getProcessUUID()).withStartAfterStep("input");
+      input.getValues().putAll(launch.getValues());
+      return new RunProcessAction().execute(input);
+   }
+
+   /***************************************************************************
+    ** Select-all snapshots are stable when records or submitted values change.
+    ***************************************************************************/
+   @Test
+   void filterSelectionUsesReviewedSnapshotAndIgnoresSubmittedReplacement() throws Exception
+   {
+      String first = (String) enroll().get("deviceId");
+      String second = (String) enroll().get("deviceId");
+      QContext.init(instance, admin);
+      var launch = new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+         .withValue("recordsParam", "filterJSON").withValue("filterJSON", "{}"));
+      String later = (String) enroll().get("deviceId");
+      launch.addValue("deviceId", later);
+      launch.addValue("recordIds", later);
+      var applied = confirmAdmin(MobileScannersQBitProducer.APPROVE, launch);
+      assertEquals(2, applied.getValue("processedDeviceCount"));
+      assertEquals("APPROVED", deviceStatus(first));
+      assertEquals("APPROVED", deviceStatus(second));
+      assertEquals("PENDING", deviceStatus(later));
+   }
+
+   /***************************************************************************
+    ** First-N limits are preserved and an empty selection never becomes manual.
+    ***************************************************************************/
+   @Test
+   void filteredFirstSelectionHonorsLimitAndRejectsEmptyOrMalformedFilters() throws Exception
+   {
+      enroll();
+      enroll();
+      QContext.init(instance, admin);
+      var launch = new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+         .withValue("recordsParam", "filterJSON").withValue("filterJSON", "{\"limit\":1}"));
+      assertEquals(1, launch.getRecords().size());
+      assertEquals(1, confirmAdmin(MobileScannersQBitProducer.APPROVE, launch).getValue("processedDeviceCount"));
+      for(String filter : java.util.List.of("{", "null", "{\"limit\":0}", "{\"criteria\":[{\"fieldName\":\"status\",\"operator\":\"EQUALS\",\"values\":[\"MISSING\"]}]}"))
+      {
+         assertThrows(QException.class, () -> new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+            .withValue("recordsParam", "filterJSON").withValue("filterJSON", filter)));
+      }
+   }
+
+   /***************************************************************************
+    ** Oversized select-all requests fail explicitly rather than truncate work.
+    ***************************************************************************/
+   @Test
+   void filterSelectionOverLimitDoesNotApplyAnyDevice() throws Exception
+   {
+      String first = (String) enroll().get("deviceId");
+      for(int i = 0; i < 100; i++)
+      {
+         enroll();
+      }
+      QContext.init(instance, admin);
+      assertThrows(QException.class, () -> new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.APPROVE)
+         .withValue("recordsParam", "filterJSON").withValue("filterJSON", "{}")));
+      assertEquals("PENDING", deviceStatus(first));
+   }
+
+   /***************************************************************************
+    ** Read persisted status independently of process output.
+    ***************************************************************************/
+   private String deviceStatus(String id) throws Exception
+   {
+      try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", ""))
+      {
+         var statement = connection.prepareStatement("SELECT status FROM mobileDevice WHERE id = ?");
+         statement.setString(1, id);
+         var rows = statement.executeQuery();
+         assertTrue(rows.next());
+         return rows.getString("status");
+      }
    }
 
    /***************************************************************************

@@ -30,11 +30,13 @@ If the host server uses `-Port 18080`, use `adb reverse tcp:8080 tcp:18080` inst
 
 1. Open **QQQ Mobile** on the emulator and use server `http://127.0.0.1:8080`.
 2. Sign in as `scanner` and enroll the device. It starts pending approval.
-3. In the browser as `admin`, open **Mobile Scanner Administration**, locate the device, copy its ID, and run **Approve Device** with that ID.
+3. In the browser as `admin`, open **Mobile Scanner Administration → Mobile Devices**, open the device record, and choose **Actions → Approve Device**. Review the selected device, continue, and check the success result. For several devices, select their rows in the device list and run the same action from the bulk menu. The standalone sidebar process also accepts device IDs.
 4. Refresh approval on Android, open **Scan Capture**, type a barcode such as `000123456789`, and submit it.
 5. Inspect **Barcode Scans** in the browser and verify the exact text, user, device and timestamps.
-6. Revoke the device and confirm subsequent capture is refused.
+6. Choose **Revoke Device** from the device record or bulk selection, confirm the selection, and verify subsequent capture is refused.
 
 The emulator exercises native screens, login, approval, manual capture and persistence. Verify the physical trigger, DataWedge delivery and barcode decoding on the Zebra TC22 using [the hardware checklist](TC22-ACCEPTANCE.md).
+
+Approval and revocation support checked rows, select-all matching rows, and first-N selections, up to 100 devices per run. The confirmation fixes the selected device IDs for that run, so a newly enrolled matching device is not unexpectedly included. Larger selections fail explicitly; choose a smaller batch. No approval changes occur until you continue past confirmation.
 
 See [branding configuration](BRANDING.md) to test customer names, colors and logos with the same APK. Tap the Android connection footer to view or copy diagnostic events.

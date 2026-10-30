@@ -45,12 +45,12 @@ In Intent Output's Component Information, restrict delivery to `io.qrun.mobile.s
 
 1. Record TC22 Android version, DataWedge version and installed APK version.
 2. Sign in as `scanner`. Enroll with a recognizable device name. Confirm the pending device cannot run Scan Capture.
-3. In the browser, sign in as `admin`, open Mobile Scanner Administration and locate that device. Copy its device ID, run Approve Device, and enter the ID in the form. Refresh status on the handheld.
+3. In the browser, sign in as `admin`, open Mobile Scanner Administration and locate that device. From the device record choose Actions → Approve Device, review the selected device and confirm. Check the success result, then refresh status on the handheld. Also test approval of selected rows from the device list when multiple handhelds are available.
 4. Select Scan Capture. Scan a Code128 barcode and a QR code. Confirm one success receipt per scan.
 5. Inspect Barcode Scans in the admin UI. Verify exact barcode text, symbology, source, user, device, capture/receipt timestamps and app/process identity. Include a barcode with leading zeroes.
 6. Scan the same barcode twice deliberately. Confirm two events. Retry one retained event after a transport interruption and confirm one stored event for its UUID.
 7. Stop the server. Attempt a scan and confirm no false success. Restart and explicitly retry the retained event. Verify the acknowledged row exists exactly once.
-8. Run Revoke Device with the same device ID while its scan screen remains open. Confirm the next capture is refused and no row is added.
+8. Run Revoke Device from that record while its scan screen remains open. Confirm the next capture is refused and no row is added. Verify bulk revocation affects the selected handhelds and leaves an unselected handheld unchanged.
 9. Sign out. Confirm the scanner cannot save under the previous user and the previous user session is ended.
 10. Restart the server and application. Confirm saved scans and device approval persist. Reinstallation/data reset must not silently inherit approval.
 

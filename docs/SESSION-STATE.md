@@ -1,6 +1,16 @@
 # QQQ Mobile Scanners session state
 
-Updated: 2026-10-29
+Updated: 2026-10-30
+
+## Verified: record and bulk device administration
+
+- User reported Approve Device did not work from a device record and required proper E2E coverage for every process, including single-record and bulk entry points.
+- Root and real HTTP regressions reproduced the missing selected device ID. Approval/revocation now prepare a stable selection, show confirmation, apply only after confirmation, and display a result/count. Explicit selected IDs and native select-all/first-N filters are supported up to 100 devices; oversized selections fail explicitly.
+- The process stores selected IDs in native process records, ignores replacement IDs submitted at confirmation, rechecks administrator permission, and validates all targets before changing any. Standalone manual ID entry remains supported.
+- Root verification/install passed 21 tests and Checkstyle. Demo verification passed the real HTTP scenario covering single-record approval, both bulk selection modes for approve/revoke, unselected-device isolation, visible results, scanner permission denial, scan persistence/retry, and revoked-device denial.
+- Restarted the persistent local demo on port 57832; public status returned `ok`. Accounts, database and emulator forwarding were preserved. Dedicated scanner-host native E2E passed (one complete real-server scenario, 50.932 seconds); Android verification also passed 28 JVM tests, lint/build and workflow syntax. Test APKs were removed and the normal scanner restored.
+- Browser E2E passed all six scenarios in 2.7 minutes: record approve/revoke with results and return navigation, checked-row bulk with untouched-device assertions, standalone manual entry, cancellation, full-query selection, and first-N selection with independent persisted-state checks. Tests use the packaged frontend and a temporary real backend. The fixture authenticates through the real API and supplies the nonsecret `qqq.sessionHint` marker so the UI resumes and validates its HttpOnly cookie. Browser checks now run inside the existing required demo CI job; native E2E runs in the Android push/PR emulator lane. New-head hosted results remain separate from these local passes.
+- UI/UX API clarification: the Android app uses `/qqq/v1` metadata/process operations, but full semantic-client conformance is unfinished. Version/feature negotiation, broader native component handling and migration of separate `/mobile/v1` routes into a registered UI API extension are tracked in TODO; do not describe the current client as fully conformant.
 
 2026-10-30 correction: native authentication metadata is served at `/qqq/v1/metaData/authentication`. The device-header guard now exempts that exact public path; the previous legacy-only exemption caused HTTP403 on app restart after enrollment when device headers were present before a user session was restored. A real HTTP regression failed before the fix and passed afterward with stale, pending, invalid-token and revoked device headers. Protected metadata/process/scan authorization still fails appropriately. Root13 tests, Checkstyle and demo HTTP acceptance passed; the local demo was restarted on57832 with its persistent database and accounts preserved.
 

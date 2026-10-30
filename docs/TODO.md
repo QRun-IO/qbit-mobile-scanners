@@ -14,6 +14,12 @@
 - [x] Server-configured customer branding for one shared APK.
 - [x] Public status endpoint for the Android connection footer and diagnostics.
 - [x] Android emulator installed; native UI tests passed.
+- [x] Single-record and bulk approval/revocation with confirmation, stable selection and visible results.
+- [x] HTTP acceptance for checked rows, filtered bulk selection, persisted results and unselected-device isolation.
+- [x] Browser E2E acceptance for all administration processes from record and bulk menus (six scenarios passed).
+- [x] Scanner-host native E2E acceptance against an isolated real demo server.
+- [ ] Register enrollment, branding and status as a documented, semantically versioned UI API extension; current additional routes use `/mobile/v1`.
+- [ ] Coordinate Android `/qqq/v1/version` compatibility/feature checks and renderer conformance with the semantic UI/UX API contract.
 - [ ] TC22 physical scanner acceptance.
 - [x] TC22 install and DataWedge acceptance guide written; physical execution remains pending.
 

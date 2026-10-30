@@ -39,6 +39,20 @@ jobs:
         run: ./mvnw --batch-mode --no-transfer-progress verify install
       - name: Verify native login, enrollment and scan flow
         run: ./mvnw --batch-mode --no-transfer-progress -f demo/pom.xml verify
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Prepare isolated browser acceptance
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress -f demo/pom.xml dependency:build-classpath -Dmdep.outputFile=target/e2e-classpath.txt
+          npm ci --prefix e2e
+          cd e2e
+          npx playwright install --with-deps chromium
+      - name: Verify record and bulk process screens
+        working-directory: e2e
+        run: npm test
       - name: Retain test reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -49,5 +63,7 @@ jobs:
             demo/target/surefire-reports/
             target/checkstyle-result.xml
             demo/target/checkstyle-result.xml
+            e2e/playwright-report/
+            e2e/test-results/
           retention-days: 14
           if-no-files-found: warn

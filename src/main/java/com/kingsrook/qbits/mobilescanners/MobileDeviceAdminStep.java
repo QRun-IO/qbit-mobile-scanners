@@ -28,10 +28,19 @@ public class MobileDeviceAdminStep implements BackendStep
       {
          throw new QException("Unknown mobile administration process.");
       }
-      String id = MobileService.required(input.getValues(), "deviceId", 36);
+      MobilePermissions.require(MobilePermissions.ADMIN);
+      String id = input.getRecords() != null && !input.getRecords().isEmpty()
+         ? String.join(",", input.getRecords().stream().map(record -> record.getValueString("id")).toList())
+         : MobileService.required(input.getValues(), "deviceId", 3700);
+      var ids = MobileDeviceAdminPrepareStep.resolve(id);
       boolean approved = MobileScannersQBitProducer.APPROVE.equals(process);
-      MobileService.setApproval(id, approved);
-      output.addValue("deviceId", id);
+      for(String deviceId : ids)
+      {
+         MobileService.setApproval(deviceId, approved);
+      }
+      output.addValue("deviceId", String.join(",", ids));
       output.addValue("status", approved ? "APPROVED" : "REVOKED");
+      output.addValue("processedDeviceCount", ids.size());
+      output.addValue("result", ids.size() + (ids.size() == 1 ? " device " : " devices ") + (approved ? "approved." : "revoked."));
    }
 }

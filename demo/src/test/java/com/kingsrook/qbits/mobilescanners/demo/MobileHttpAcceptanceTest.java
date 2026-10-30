@@ -19,6 +19,8 @@ import java.sql.DriverManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import com.kingsrook.qqq.middleware.javalin.QApplicationJavalinServer;
 import org.json.JSONObject;
@@ -89,7 +91,7 @@ class MobileHttpAcceptanceTest
          assertPublicAuthenticationMetadata();
          assertDenied(processInit("mobileScanCapture", scanner, true));
          assertDenied(processInit("mobileDeviceApprove", scanner, false));
-         runAdmin("mobileDeviceApprove", admin);
+         runAdminFromRecord("mobileDeviceApprove", admin);
          var current = request("GET", "/mobile/v1/devices/current", scanner, null, true);
          assertEquals(200, current.statusCode());
          assertEquals("APPROVED", new JSONObject(current.body()).getString("status"));
@@ -139,6 +141,7 @@ class MobileHttpAcceptanceTest
          deviceToken = validToken;
          assertDenied(processInit("mobileScanCapture", scanner, false));
          runAdmin("mobileDeviceRevoke", admin);
+         assertBulkLifecycle(database, scanner, admin);
          assertPublicAuthenticationMetadata();
          values.put("eventId", UUID.randomUUID().toString());
          assertDenied(processStep("mobileScanCapture", processId, "scan", scanner, values, true));
@@ -190,7 +193,104 @@ class MobileHttpAcceptanceTest
    private void runAdmin(String name, String session) throws Exception
    {
       JSONObject launched = complete(processInit(name, session, false), name, session, false);
-      complete(processStep(name, launched.getString("processUUID"), "input", session, new JSONObject().put("deviceId", deviceId), false), name, session, false);
+      JSONObject applied = complete(processStep(name, launched.getString("processUUID"), "input", session, new JSONObject().put("deviceId", deviceId), false), name, session, false);
+      finishAdmin(name, session, applied, 1);
+   }
+
+
+
+   /*******************************************************************************
+    ** Record actions carry a selection, not a manually entered device ID.
+    *******************************************************************************/
+   private void runAdminFromRecord(String name, String session) throws Exception
+   {
+      JSONObject selection = new JSONObject().put("recordsParam", "recordIds").put("recordIds", deviceId).put("tableName", "mobileDevice");
+      JSONObject launched = complete(form("/qqq/v1/processes/" + name + "/init", session, selection, false), name, session, false);
+      assertEquals("input", launched.getString("nextStep"));
+      assertEquals(deviceId, launched.getJSONObject("values").optString("deviceId"), "Record launch must prefill the selected device for confirmation");
+      var beforeConfirmation = request("GET", "/mobile/v1/devices/current", session, null, true);
+      assertEquals("PENDING", new JSONObject(beforeConfirmation.body()).getString("status"), "Opening the process must not approve the device");
+      JSONObject applied = complete(processStep(name, launched.getString("processUUID"), "input", session, new JSONObject(), false), name, session, false);
+      finishAdmin(name, session, applied, 1);
+   }
+
+
+
+   /*******************************************************************************
+    ** Bulk actions affect exactly the selection and retain administrator checks.
+    *******************************************************************************/
+   private void assertBulkLifecycle(String database, String scanner, String admin) throws Exception
+   {
+      String second = enrollAdditionalDevice(scanner, "Bulk selected device");
+      String unselected = enrollAdditionalDevice(scanner, "Unselected device");
+      String ids = deviceId + "," + second;
+      JSONObject explicit = new JSONObject().put("recordsParam", "recordIds").put("recordIds", ids).put("tableName", "mobileDevice");
+      JSONObject filter = new JSONObject().put("criteria", List.of(new JSONObject().put("fieldName", "id").put("operator", "IN").put("values", List.of(deviceId, second))));
+      JSONObject filtered = new JSONObject().put("recordsParam", "filterJSON").put("filterJSON", filter.toString()).put("tableName", "mobileDevice");
+      for(JSONObject selection : List.of(explicit, filtered))
+      {
+         for(String process : new String[] { "mobileDeviceApprove", "mobileDeviceRevoke" })
+         {
+            assertDenied(form("/qqq/v1/processes/" + process + "/init", scanner, selection, false));
+            JSONObject launched = complete(form("/qqq/v1/processes/" + process + "/init", admin, selection, false), process, admin, false);
+            assertEquals("input", launched.getString("nextStep"));
+            assertEquals(Set.of(deviceId, second), Set.of(launched.getJSONObject("values").getString("deviceId").split(",")));
+            assertDeviceStatus(database, unselected, "PENDING");
+            JSONObject applied = complete(processStep(process, launched.getString("processUUID"), "input", admin,
+               new JSONObject(), false), process, admin, false);
+            String expected = process.equals("mobileDeviceApprove") ? "APPROVED" : "REVOKED";
+            assertDeviceStatus(database, deviceId, expected);
+            assertDeviceStatus(database, second, expected);
+            assertDeviceStatus(database, unselected, "PENDING");
+            finishAdmin(process, admin, applied, 2);
+         }
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Administrators see an explicit result and can finish the process normally.
+    *******************************************************************************/
+   private void finishAdmin(String name, String session, JSONObject applied, int count) throws Exception
+   {
+      assertEquals("result", applied.getString("nextStep"));
+      assertEquals(count, applied.getJSONObject("values").getInt("processedDeviceCount"));
+      assertFalse(applied.getJSONObject("values").getString("result").isBlank());
+      JSONObject finished = complete(processStep(name, applied.getString("processUUID"), "result", session, new JSONObject(), false), name, session, false);
+      assertTrue(finished.optString("nextStep").isEmpty());
+   }
+
+
+
+   /*******************************************************************************
+    ** Enroll a fixture through the actual API without exposing its credential.
+    *******************************************************************************/
+   private String enrollAdditionalDevice(String session, String label) throws Exception
+   {
+      JSONObject enrollment = new JSONObject().put("installationId", UUID.randomUUID().toString()).put("displayName", label)
+         .put("manufacturer", "Zebra").put("model", "TC22").put("osVersion", "acceptance-fixture").put("appVersion", "0.1.0");
+      var response = request("POST", "/mobile/v1/devices/enroll", session, enrollment.toString(), false);
+      assertTrue(response.statusCode() == 200 || response.statusCode() == 201);
+      return new JSONObject(response.body()).getString("deviceId");
+   }
+
+
+
+   /*******************************************************************************
+    ** Independently verify persisted lifecycle changes and untouched devices.
+    *******************************************************************************/
+   private void assertDeviceStatus(String database, String id, String expected) throws Exception
+   {
+      try(var connection = DriverManager.getConnection(database, "sa", ""); var query = connection.prepareStatement("SELECT status FROM mobileDevice WHERE id = ?"))
+      {
+         query.setString(1, id);
+         try(var rows = query.executeQuery())
+         {
+            assertTrue(rows.next());
+            assertEquals(expected, rows.getString("status"));
+         }
+      }
    }
 
 
@@ -223,7 +323,15 @@ class MobileHttpAcceptanceTest
       String boundary = "qqq-mobile-" + UUID.randomUUID();
       HttpRequest.Builder builder = headers(path, session, device).header("Content-Type", "multipart/form-data; boundary=" + boundary);
       String body = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"values\"\r\n\r\n" + values
-         + "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"stepTimeoutMillis\"\r\n\r\n1\r\n--" + boundary + "--\r\n";
+         + "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"stepTimeoutMillis\"\r\n\r\n1\r\n";
+      for(String key : new String[] { "recordsParam", "recordIds", "filterJSON" })
+      {
+         if(values.has(key))
+         {
+            body += "--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + key + "\"\r\n\r\n" + values.getString(key) + "\r\n";
+         }
+      }
+      body += "--" + boundary + "--\r\n";
       return client.send(builder.POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
    }
 

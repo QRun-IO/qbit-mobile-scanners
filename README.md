@@ -4,11 +4,14 @@ Server support for approved Android handhelds running native QQQ apps. The first
 
 Version one is online only. Devices require an authenticated user and administrator approval. Android renders existing QQQ app, process, frontend-step and widget metadata; this qbit adds the scanner widget and enrollment lifecycle.
 
+App discovery and process execution use the versioned UI/UX API at `/qqq/v1`. The current native renderer supports a subset of components and does not yet perform semantic-version/feature negotiation. Enrollment, branding and status currently use separate `/mobile/v1` endpoints; registering these as a UI API extension remains outstanding. Metadata changes using supported components can be delivered by the server; new native component types require a shared Android client update.
+
 ## Project layout
 
 - `src/main`: reusable qbit, device enrollment routes, device approval/revocation, scan process and table metadata.
 - `src/test`: server behavior and permission checks.
 - `demo`: local QQQ server with persistent H2 storage, native administration UI and password login.
+- `e2e`: browser acceptance tests against the packaged frontend and isolated real demo server.
 - `docs/TC22-ACCEPTANCE.md`: build, install and hardware verification.
 
 ## Build
@@ -24,6 +27,8 @@ The wrapper pins Maven 3.9.9. On Unix, use `./mvnw` in place of `mvnw.cmd`. This
 
 For the Windows demo, follow [local startup and credentials](docs/LOCAL-DEMO.md). For the scanner, follow [TC22 installation and acceptance](docs/TC22-ACCEPTANCE.md).
 
+See [process acceptance tests](docs/TESTING.md) for server, browser, and native Android E2E commands. Approval and revocation support record actions and bulk selections with a confirmation and visible result.
+
 ## Customer branding and connection diagnostics
 
 Configure the customer name, primary color and optional HTTPS logo on the server; the same Android APK applies them before login and throughout the mobile screens. See [branding configuration](docs/BRANDING.md). The shared launcher remains QQQ Mobile.
@@ -32,7 +37,7 @@ The app footer checks server reachability while foregrounded. Tap it to inspect 
 
 ## Contributing and CI
 
-Development pull requests target `develop`. CircleCI uses the shared QRun-IO QBit pipeline; GitHub Actions runs the demo HTTP contract and CodeQL. All Maven publication switches start disabled. See [contributing](CONTRIBUTING.md), [CI and release operation](docs/CI-CD.md), [security reporting](SECURITY.md) and the [code of conduct](CODE_OF_CONDUCT.md). This project is licensed under [Apache 2.0](LICENSE).
+Development pull requests target `develop`. CircleCI uses the shared QRun-IO QBit pipeline; GitHub Actions runs the demo HTTP contract, browser E2E and CodeQL. All Maven publication switches start disabled. See [contributing](CONTRIBUTING.md), [CI and release operation](docs/CI-CD.md), [security reporting](SECURITY.md) and the [code of conduct](CODE_OF_CONDUCT.md). This project is licensed under [Apache 2.0](LICENSE).
 
 ## Embed in a QQQ application
 

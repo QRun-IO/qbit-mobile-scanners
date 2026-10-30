@@ -91,11 +91,17 @@ public class MobileScannersQBitProducer implements QBitProducer
       for(String process : List.of(APPROVE, REVOKE))
       {
          instance.addProcess(new QProcessMetaData().withName(process).withLabel(process.equals(APPROVE) ? "Approve Device" : "Revoke Device")
-            .withTableName(DEVICE).withPermissionRules(rules())
+            .withTableName(DEVICE).withMaxInputRecords(100).withPermissionRules(rules())
+            .withStep(new QBackendStepMetaData().withName("prepare").withCode(new QCodeReference(MobileDeviceAdminPrepareStep.class)))
             .withStep(new QFrontendStepMetaData().withName("input").withLabel("Device")
-               .withFormField(text("deviceId", 36).withLabel("Device ID").withIsRequired(true))
+               .withViewField(text("selectionSummary", 30000).withLabel("Devices to process"))
+               .withFormField(text("deviceId", 3700).withLabel("Device IDs").withIsRequired(true))
+               .withComponent(new QFrontendComponentMetaData().withType(QComponentType.VIEW_FORM))
                .withComponent(new QFrontendComponentMetaData().withType(QComponentType.EDIT_FORM)))
-            .withStep(new QBackendStepMetaData().withName("apply").withCode(new QCodeReference(MobileDeviceAdminStep.class))));
+            .withStep(new QBackendStepMetaData().withName("apply").withCode(new QCodeReference(MobileDeviceAdminStep.class)))
+            .withStep(new QFrontendStepMetaData().withName("result").withLabel("Result")
+               .withViewField(text("result", 200).withLabel("Result"))
+               .withComponent(new QFrontendComponentMetaData().withType(QComponentType.VIEW_FORM))));
       }
       instance.addApp(new QAppMetaData().withName(APP).withLabel("Scan Capture").withIcon(new QIcon("qr_code_scanner"))
          .withPermissionRules(rules()).withSection(new QAppSection().withName("scan").withLabel("Scanning").withProcesses(List.of(CAPTURE))));
