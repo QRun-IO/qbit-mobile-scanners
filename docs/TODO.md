@@ -25,11 +25,14 @@
 - [x] Rerun all six browser E2E scenarios against the migrated server (passed in 2.9 minutes).
 - [x] Verify the migrated client/server pair's incompatible-version, missing-extension, missing-channel, baseline scan and additive-metadata native scenarios with the OpenAPI request audit.
 - [x] Verify Android's 53 JVM tests, six shared native UI tests, lint and debug/E2E APK builds.
-- [ ] Complete the native approval/revocation/cancellation form scenario after the completion-state fix.
-- [ ] Publish and verify hosted checks for the semantic API migration; previous successful hosted heads do not verify this change.
+- [x] Complete native approval/revocation/cancellation forms after the completion-state fix (255.917 seconds; all 31 requests matched to 13 published operations).
+- [x] Publish server semantic API migration commit `7dd02b8` and verify its hosted CircleCI, CodeQL, Windows helper and demo HTTP/browser checks all pass.
 - [ ] TC22 physical scanner acceptance.
 - [x] Identify the physical TC22, install the debug app, sign in and enroll through USB forwarding.
 - [x] Approve the TC22 through its browser record Actions menu and open its native app catalog and Scan Capture process; preserve login across APK update.
-- [x] TC22 install and DataWedge acceptance guide written; physical execution remains pending.
+- [x] Configure the TC22 DataWedge profile with explicit package/signature delivery; verify two deliberate Code128 hardware captures persist with matching metadata.
+- [x] Verify physical QR delivery and exact preservation of leading zeroes in `001234567890`, with matching persisted scan metadata.
+- [ ] Finish physical connection-loss/retry and revocation-denial acceptance alongside the requested device/session controls.
+- [x] TC22 install and DataWedge acceptance guide written and updated with observed results.
 
 Future scope (not version one): offline queue, camera fallback, kiosk/MDM provisioning, broader native screen coverage, fleet rollout.

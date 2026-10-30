@@ -28,18 +28,31 @@ Install Android SDK platform 35 and its build tools, then from `qqq-android`:
 
 ```powershell
 .\gradlew.bat :scanner-host:testDebugUnitTest :scanner-host:assembleDebug
-adb devices
-adb install -r scanner-host/build/outputs/apk/debug/scanner-host-debug.apk
-adb reverse tcp:8080 tcp:8080
+adb devices -l
+$tc22Serial = '<TC22 serial from adb devices>'
+adb -s $tc22Serial install -r scanner-host/build/outputs/apk/debug/scanner-host-debug.apk
+adb -s $tc22Serial reverse tcp:8080 tcp:8080
 ```
 
 Enable USB debugging on the TC22 and approve the workstation on the handheld when prompted. In QQQ Mobile, use `http://127.0.0.1:8080` as the local server. HTTP is permitted only for local testing by the debug build; deployed builds require HTTPS.
+
+Always select the TC22 serial explicitly when an emulator or another Android device is attached. The current workstation demo runs on port 57832; use `adb -s $tc22Serial reverse tcp:8080 tcp:57832` for that server while keeping the app URL unchanged. `install -r` updates the APK without clearing its existing login or enrollment.
 
 ## Configure Zebra DataWedge
 
 Create a dedicated profile associated with package `io.qrun.mobile.scanner` and activity `*`. Enable barcode input and Intent Output, disable Keystroke Output to avoid double delivery, and choose Broadcast Intent delivery. Set Intent action to `io.qrun.mobile.scanner.SCAN` and category to `android.intent.category.DEFAULT`.
 
-In Intent Output's Component Information, restrict delivery to `io.qrun.mobile.scanner` and enable its application signature check. Use single-decode mode. Zebra documents barcode text, symbology and source in its [Intent Output guide](https://techdocs.zebra.com/datawedge/14-0/guide/output/intent/).
+In Intent Output's Component Information, restrict delivery to `io.qrun.mobile.scanner` and enable its application signature check. Use single-decode mode. Zebra documents barcode text, symbology and source in its [DataWedge 13 Intent Output guide](https://techdocs.zebra.com/datawedge/13-0/guide/output/intent/).
+
+## Observed hardware results, 2026-10-30
+
+The attached TC22 runs Android 14, DataWedge 13.0.325 and QQQ Mobile 0.1.0. Installation, sign-in, pending enrollment, approval from the browser record Actions menu, native app discovery and opening Scan Capture passed. Updating the APK preserved login. The profile uses the package/activity, input/output and explicit package/signature settings above.
+
+The user confirmed two deliberate physical trigger presses; two scan records were visible in the backend. One stored row matched the handheld receipt for `QQQ-TEST-123456`, CODE128, source `scanner`, user `scanner`, TC22/Android 14/app 0.1.0, app `mobileScanApp`, process `mobileScanCapture`, and capture/receipt timestamps. This establishes basic physical Code128 decoding, delivery and persistence. It does not establish duplicate delivery suppression or retained-event retry behavior.
+
+The user then confirmed a saved physical QR scan; the backend record preserved `001234567890` exactly, with `LABEL-TYPE-QRCODE`, source `scanner`, and matching TC22/user/app/process and capture/receipt metadata. Three physical records are now verified: two deliberate Code128 captures and one QR capture. Physical QR delivery and leading-zero preservation passed.
+
+Physical connection-loss/retry and revocation-denial cases remain pending. Complete the remaining sequence below before claiming full hardware acceptance.
 
 ## Acceptance sequence
 
