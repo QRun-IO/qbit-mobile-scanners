@@ -253,6 +253,93 @@ class MobileHttpAcceptanceTest
 
 
    /*******************************************************************************
+    ** Approval is rechecked before a heartbeat creates or advances any activity.
+    *******************************************************************************/
+   @Test
+   void heartbeatRejectsPendingAndRevokedDevicesWithoutUpdatingActivity() throws Exception
+   {
+      String database = MobileScannersDemo.fileDatabaseUrl(temporaryDirectory.resolve("approval"));
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      MobileScannersDemo application = new MobileScannersDemo(database);
+      application.initializeDatabase(scannerPassword, adminPassword);
+      int port;
+      try(ServerSocket socket = new ServerSocket(0))
+      {
+         port = socket.getLocalPort();
+      }
+      origin = "http://127.0.0.1:" + port;
+      QApplicationJavalinServer server = application.start(port);
+      try
+      {
+         String scanner = login("scanner", scannerPassword);
+         String admin = login("admin", adminPassword);
+         JSONObject enrollment = new JSONObject(request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner,
+            new JSONObject().put("installationId", UUID.randomUUID().toString()).toString(), false).body());
+         deviceId = enrollment.getString("deviceId");
+         deviceToken = enrollment.getString("deviceToken");
+         String heartbeatPath = "/qqq/v1/qbit/mobile-scanners/sessions/heartbeat";
+         String activity = "{\"foreground\":true,\"screenAvailable\":true,\"appName\":\"approved-screen\"}";
+         assertEquals(403, request("POST", heartbeatPath, scanner, activity, true).statusCode());
+         assertEquals(403, request("POST", heartbeatPath + "/", scanner, activity, true).statusCode());
+         try(var connection = DriverManager.getConnection(database, "sa", ""); var statement = connection.createStatement();
+            var rows = statement.executeQuery("SELECT COUNT(*) FROM mobileSession"))
+         {
+            assertTrue(rows.next());
+            assertEquals(0, rows.getInt(1), "Rejected pending heartbeat must not create a session");
+         }
+         assertEquals("PENDING", new JSONObject(request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, true).body()).getString("status"));
+         runAdmin("mobileDeviceApprove", admin);
+         var approved = request("POST", heartbeatPath, scanner, activity, true);
+         assertEquals(200, approved.statusCode());
+         String sessionId = new JSONObject(approved.body()).getString("sessionId");
+         assertEquals(200, request("POST", heartbeatPath + "/", scanner, activity, true).statusCode());
+         runAdmin("mobileDeviceRevoke", admin);
+
+         // Age both records beyond the route observer's coalescing window. A denied
+         // heartbeat must not make an offline revoked device look online again.
+         var priorSeen = java.sql.Timestamp.from(Instant.now().minusSeconds(60).truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
+         try(var connection = DriverManager.getConnection(database, "sa", "");
+            var session = connection.prepareStatement("UPDATE mobileSession SET lastSeenAt=? WHERE id=?");
+            var device = connection.prepareStatement("UPDATE mobileDevice SET lastSeenAt=? WHERE id=?"))
+         {
+            session.setTimestamp(1, priorSeen);
+            session.setString(2, sessionId);
+            assertEquals(1, session.executeUpdate());
+            device.setTimestamp(1, priorSeen);
+            device.setString(2, deviceId);
+            assertEquals(1, device.executeUpdate());
+         }
+         assertEquals(403, request("POST", heartbeatPath, scanner, activity.replace("approved-screen", "rejected-screen"), true).statusCode());
+         assertEquals(403, request("POST", heartbeatPath + "/", scanner, activity.replace("approved-screen", "rejected-screen"), true).statusCode());
+         try(var connection = DriverManager.getConnection(database, "sa", "");
+            var statement = connection.prepareStatement("SELECT s.lastSeenAt, s.appName, d.lastSeenAt FROM mobileSession s JOIN mobileDevice d ON s.deviceId=d.id WHERE s.id=?"))
+         {
+            statement.setString(1, sessionId);
+            try(var rows = statement.executeQuery())
+            {
+               assertTrue(rows.next());
+               assertEquals(priorSeen, rows.getTimestamp(1), "Denied heartbeat must not advance session activity");
+               assertEquals("approved-screen", rows.getString(2));
+               assertEquals(priorSeen, rows.getTimestamp(3), "Denied heartbeat must not advance device activity");
+            }
+         }
+         var current = request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, true);
+         assertEquals(200, current.statusCode(), "Revoked devices can still inspect their approval state");
+         assertEquals("REVOKED", new JSONObject(current.body()).getString("status"));
+      }
+      finally
+      {
+         server.stop();
+         try(var connection = DriverManager.getConnection(database, "sa", ""); var statement = connection.createStatement())
+         {
+            statement.execute("SHUTDOWN");
+         }
+      }
+   }
+
+
+   /*******************************************************************************
     ** Foreground heartbeats must not starve complete Android metadata responses.
     *******************************************************************************/
    @Test

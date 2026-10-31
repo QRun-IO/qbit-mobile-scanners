@@ -135,6 +135,7 @@ final class MobileSessionService
       String deviceId = currentDevice();
       synchronized(current())
       {
+         MobileService.requireApproved(deviceId);
          QRecord session = observe(deviceId);
          boolean foreground = bool(input, "foreground");
          boolean available = bool(input, "screenAvailable") && foreground;

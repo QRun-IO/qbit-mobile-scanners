@@ -2,15 +2,18 @@
 
 Status: not release-ready. The user requested a full client/server audit and production-ready 1.0. This is an evidence ledger; a numerical quality score does not replace the gates below.
 
+Latest correction: hosted Android testing found revoked heartbeats remained successful. Approval now precedes all heartbeat activity observation, including accepted trailing-slash aliases. Independent red reproductions and final 37-root/four-demo green tests are retained; new hosted native verification remains pending. Scanner authentication must follow configured Authentik through explicit native semantic authentication metadata; that implementation and real-provider acceptance are now required release gates.
+
 ## Scope and checkpoints
 
-Latest verified checkpoint: server `cf835fa` includes the passing browser-to-native
+Latest verified checkpoint: server `0926550` includes the standalone file-backed presence regression and the passing browser-to-native
 viewing regression after guarded-upload commit `84ffd7c`. Base 37, demo HTTP two,
 browser 15 and optional guarded integration 18 cases pass. Android's local reports
 show 91 JVM tests; TC22 navigation (12 cases), orientation, offline licenses,
 synthetic camera/gallery/rotation/logout, and the complete real-screen/session-end
 scenario pass. Native photo/session requests match published semantic operations.
-These are checkpoint results; final frozen-source audits, fresh Android hosted CI,
+The full server deep static security review of `0926550` is sealed with no reportable findings. It does not inspect external dependencies or production configuration and does not replace runtime acceptance. Android's full scan and the later single-hamburger UX correction remain pending.
+These are checkpoint results; final Android audits, fresh Android hosted CI,
 production provider/immutable dependency qualification and actual lens acceptance
 remain open. Signing/distribution is owner-deferred until the final step.
 
@@ -59,4 +62,4 @@ The initial full-source architecture/maintainability review covered Android `657
 | A10: media ownership/disposal could leak resources | Shared client: sound/image lifecycle ownership. |
 | A11: navigation title/state and native back stack could drift | Android host: derive navigation state from the active NavController. |
 
-Actual PixelCopy instrumentation passed after an emulator cold restart: captured colored application pixels, decoded JPEG and checked dimension/byte bounds. It is component evidence, not yet proof of end-to-end administrative mirroring on the TC22. Final security scans have not started; no security clearance is claimed. Also resolve the Android license inconsistency, production signing/update path, supported database migration and final hosted checks before 1.0.
+The completed TC22 session scenario delivered and decoded real application JPEG pixels, cleared background frames, renewed viewing on resume, honored operator Stop viewing, ended the session remotely and accepted a fresh login. Android packaging now verifies 130 notice entries, nine license texts and eight native binary hashes in each host variant. The full server static scan is complete; Android review, external core logging remediation/adoption, production signing/update path, supported database migration and final hosted checks remain required before 1.0.

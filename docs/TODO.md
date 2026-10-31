@@ -1,11 +1,12 @@
 # QQQ Mobile Scanners TODO
 
-- [ ] Unique short names, editable names/descriptions, preserving migration and protected profile editing.
-- [ ] Separate approval/presence states, online-only fleet query, foreground location with accuracy/age and permission-denied behavior.
+- [x] Implement unique short names, editable names/descriptions, additive H2 migration and protected profile editing; qualify the preserving upgrade of the operator database before deployment.
+- [x] Implement separate approval/presence states, online-only fleet query and foreground location with accuracy/age and permission-denied behavior; actual GPS-fix acceptance remains in the release gates.
 - [ ] Coordinate Record Files semantic contract and implement native camera/gallery upload, record association and real-server/hardware acceptance.
 
-- [ ] Device/session history, live activity and demand-based actual app-screen viewing through native QQQ administration and semantic extension 1.1.
-- [ ] Single-record and bulk End Session process with server-enforced invalidation, audit and browser/native E2E coverage.
+- [x] Device/session history, live activity and demand-based actual app-screen viewing through native QQQ administration and semantic extension 1.1.
+- [x] Single-record and bulk End Session process with server-enforced invalidation, audit and browser/native E2E coverage.
+- [x] Complete and seal the full server deep static security review of `0926550`; no reportable findings, with external implementation/deployment limitations retained.
 - [ ] Independent full client/server security, architecture and code-quality audits; remediate and verify findings.
 - [ ] Complete production 1.0 gates in [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md), including physical acceptance and deployment/release requirements.
 

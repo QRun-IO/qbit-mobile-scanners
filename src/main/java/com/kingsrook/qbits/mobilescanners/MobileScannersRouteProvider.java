@@ -107,7 +107,11 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
          }
          QRecord device = MobileService.authenticateDevice(id, token);
          MobilePermissions.REQUEST_DEVICE.set(device.getValueString("id"));
-         MobileSessionService.observe(device.getValueString("id"));
+         if(!("/qqq/v1" + MobileScannersUiApi.PREFIX + "/sessions/heartbeat").equals(context.path().replaceFirst("/+$", "")))
+         {
+            // Heartbeats authorize approval before creating or advancing activity.
+            MobileSessionService.observe(device.getValueString("id"));
+         }
       }
       catch(QAuthenticationException e)
       {
