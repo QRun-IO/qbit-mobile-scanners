@@ -340,8 +340,12 @@ class MobileHttpAcceptanceTest
       String viewBody = new JSONObject().put("id", id).toString();
       assertDenied(request("POST", "/qqq/v1/widget/mobileSessionScreen", scanner, viewBody, true));
       assertDenied(request("POST", "/qqq/v1/table/mobileSessionBinding/query", admin, "{}", false));
-      var waiting = request("POST", "/qqq/v1/widget/mobileSessionScreen", admin, viewBody, false);
+      // A browser administrator and native scanner must share the same viewing demand.
+      var waiting = client.send(HttpRequest.newBuilder(URI.create(origin + "/qqq/v1/widget/mobileSessionScreen"))
+         .timeout(Duration.ofSeconds(20)).header("Cookie", "sessionUUID=" + admin).header("Content-Type", "application/json")
+         .POST(HttpRequest.BodyPublishers.ofString(viewBody)).build(), HttpResponse.BodyHandlers.ofString());
       assertEquals(200, waiting.statusCode());
+      assertTrue(new JSONObject(waiting.body()).has("blocks"), "Viewing widget response fields: " + new JSONObject(waiting.body()).keySet());
       heartbeat = new JSONObject(request("POST", endpoint + "/heartbeat", scanner, activity.toString(), true).body());
       JSONObject lease = heartbeat.getJSONObject("screenMirror");
       assertSchema("MobileScannersScreenLeaseV1", lease);
