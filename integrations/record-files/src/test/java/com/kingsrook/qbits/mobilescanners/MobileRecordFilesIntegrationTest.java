@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,10 +30,15 @@ import com.kingsrook.qbits.mobilescanners.recordfiles.RecordFilesCaptureWidgetDa
 import com.kingsrook.qbits.recordfiles.RecordFilesFixture;
 import com.kingsrook.qbits.recordfiles.api.CaptureIdentity;
 import com.kingsrook.qbits.recordfiles.api.RecordFilesUploadApi;
+import com.kingsrook.qbits.recordfiles.audit.RecordFilesEventType;
+import com.kingsrook.qbits.recordfiles.collections.CollectionService;
+import com.kingsrook.qbits.recordfiles.files.RetainedFileService;
 import com.kingsrook.qbits.recordfiles.ingestion.UploadChunkStorage;
 import com.kingsrook.qbits.recordfiles.ingestion.UploadConfiguration;
+import com.kingsrook.qbits.recordfiles.ingestion.UploadFinalizer;
 import com.kingsrook.qbits.recordfiles.ingestion.UploadManifest;
 import com.kingsrook.qbits.recordfiles.ingestion.UploadQuota;
+import com.kingsrook.qbits.recordfiles.ingestion.UploadSessionService;
 import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
 import com.kingsrook.qqq.backend.core.actions.permissions.CustomPermissionChecker;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
@@ -69,6 +75,8 @@ import com.kingsrook.qqq.middleware.javalin.QApplicationJavalinServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -454,6 +462,9 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       QContext.init(instance, scanner);
       MobileCaptureIdentityProvider provider = new MobileCaptureIdentityProvider();
       assertTrue(provider.capture().isEmpty());
+      assertEquals("desktop", provider.executeAuthorized(Optional.empty(), () -> "desktop"));
+      assertThrows(QException.class, () -> provider.executeAuthorized(null, () -> "forbidden"));
+      assertThrows(QException.class, () -> MobileDeviceAuthorization.executeAuthorized((MobileDeviceAuthorization.Identity) null, () -> "forbidden"));
       scanner.setClientChannel("android/fixture");
       assertThrows(QException.class, provider::capture);
       var enrolled = MobileService.enroll(Map.of("installationId", UUID.randomUUID().toString(), "displayName", "fixture"));
@@ -466,6 +477,17 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       CaptureIdentity captured = provider.capture().orElseThrow();
       MobilePermissions.REQUEST_DEVICE.remove();
       provider.revalidate(captured);
+      for(Optional<CaptureIdentity> expected : List.of(Optional.<CaptureIdentity>empty(),
+         Optional.of(new CaptureIdentity("other-provider", captured.actorId(), id, captured.publicSessionId())),
+         Optional.of(new CaptureIdentity(captured.providerKey(), "other", id, captured.publicSessionId())),
+         Optional.of(new CaptureIdentity(captured.providerKey(), captured.actorId(), "other-device", captured.publicSessionId())),
+         Optional.of(new CaptureIdentity(captured.providerKey(), captured.actorId(), id, "other-session"))))
+      {
+         assertThrows(QException.class, () -> provider.executeAuthorized(expected, () ->
+         {
+            throw new AssertionError("Invalid or missing identity must not execute guarded work.");
+         }));
+      }
       assertThrows(QException.class, () -> provider.revalidate(null));
       assertThrows(QException.class, () -> provider.revalidate(new CaptureIdentity("other-provider", captured.actorId(), id, captured.publicSessionId())));
       assertThrows(QException.class, () -> provider.revalidate(new CaptureIdentity(captured.providerKey(), "other", id, captured.publicSessionId())));
@@ -502,7 +524,115 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
    }
 
    /***************************************************************************
+    ** Real revoke/end cannot cross owner intake, association or receipt commits.
+    ** Each failure case also proves rollback releases the same authorization lock.
+    ***************************************************************************/
+   @ParameterizedTest
+   @CsvSource({
+      "INTAKE_COMPLETED,false,false", "INTAKE_COMPLETED,true,false",
+      "COLLECTION_ITEM_ADDED,false,false", "COLLECTION_ITEM_ADDED,true,false",
+      "UPLOAD_COMPLETED,false,false", "UPLOAD_COMPLETED,true,false",
+      "INTAKE_COMPLETED,false,true", "INTAKE_COMPLETED,true,true",
+      "COLLECTION_ITEM_ADDED,false,true", "COLLECTION_ITEM_ADDED,true,true",
+      "UPLOAD_COMPLETED,false,true", "UPLOAD_COMPLETED,true,true"
+   })
+   void scannerAuthorityRemainsHeldThroughCommit(RecordFilesEventType event, boolean endSession, boolean failBeforeCommit) throws Exception
+   {
+      String scanner = signIn("scanner");
+      String adminCookie = signIn("admin");
+      enrollHttp(scanner);
+      approveHttp(adminCookie, "mobileDeviceApprove");
+      String request = UUID.randomUUID().toString();
+      String id = ok(send("POST", FILES + "/uploads", scanner, manifest(request), true, Map.of())).path("uploadId").asText();
+      ok(send("PUT", FILES + "/uploads/" + id + "/items/20000000-0000-0000-0000-000000000001/chunks/0", scanner, CONTENT, true,
+         Map.of("Content-Type", "application/octet-stream", "X-Chunk-SHA256", UploadManifest.hash(CONTENT))));
+      QSession admin = authenticated(adminCookie);
+      QContext.init(instance, authenticated(scanner));
+      MobilePermissions.REQUEST_DEVICE.set(deviceId);
+      CaptureIdentity identity;
+      try
+      {
+         identity = new MobileCaptureIdentityProvider().capture().orElseThrow();
+      }
+      finally
+      {
+         MobilePermissions.REQUEST_DEVICE.remove();
+      }
+      var probe = new MobileAuthorizationCommitProbe(instance, jdbc, admin, identity, event, endSession, failBeforeCommit);
+      var audit = probe.audit();
+      ObservedAttachmentLifecycle.audit.set(audit);
+      collaboration.withAttachmentLifecycle(new QCodeReference(ObservedAttachmentLifecycle.class));
+      var configuration = config.getUploadConfiguration();
+      var clock = java.time.Clock.systemUTC();
+      var sessions = new UploadSessionService(config, configuration.limits(), configuration.createStorage(), probe, audit, clock);
+      var retained = new RetainedFileService(config, audit,
+         new com.kingsrook.qbits.collaboration.attachments.AttachmentsService(collaboration, new DiskAttachmentStorage()));
+      var finalizer = new UploadFinalizer(sessions, retained, new CollectionService(config, audit), clock);
+      try
+      {
+         assertThrows(QException.class, () -> finalizer.finalizeUpload(id, request));
+      }
+      finally
+      {
+         ObservedAttachmentLifecycle.audit.remove();
+      }
+      probe.assertExercised();
+      assertEquals(failBeforeCommit ? 0 : 1, probe.committedEvents());
+      int expectedStatus = endSession ? 401 : 403;
+      assertEquals(expectedStatus, send("POST", FILES + "/uploads/" + id + "/finalize", scanner, null, true, Map.of("Idempotency-Key", request)).statusCode());
+      String stateColumn = instance.getTable("record_files_upload").getField("state").getBackendName();
+      String uploadColumn = instance.getTable("record_files_upload").getField("uploadId").getBackendName();
+      try(var connection = DriverManager.getConnection(jdbc, "sa", "");
+         var query = connection.prepareStatement("SELECT " + stateColumn + " FROM record_files_upload WHERE " + uploadColumn + "=?"))
+      {
+         query.setString(1, id);
+         try(var rows = query.executeQuery())
+         {
+            assertTrue(rows.next());
+            assertEquals(event == RecordFilesEventType.UPLOAD_COMPLETED && !failBeforeCommit ? "COMPLETE" : "FINALIZING", rows.getString(1));
+         }
+      }
+      QContext.init(instance, admin);
+      int retainedCount = files.listForRecord("document", "1").size();
+      int expectedRetained = event == RecordFilesEventType.INTAKE_COMPLETED && failBeforeCommit ? 0 : 1;
+      assertEquals(expectedRetained, retainedCount, "Rolled-back registration stays absent; committed originals remain retained.");
+   }
+
+   /***************************************************************************
     ** Actual password hashing and QQQ table session validation with fixture roles.
+    ***************************************************************************/
+   public static class ObservedAttachmentLifecycle extends com.kingsrook.qbits.recordfiles.lifecycle.RecordFilesAttachmentLifecycle
+   {
+      private static final ThreadLocal<com.kingsrook.qbits.recordfiles.audit.AuditTrail> audit = new ThreadLocal<>();
+
+      /***********************************************************************
+       ** Observe the actual owner registration transaction, preserving policy.
+       ***********************************************************************/
+      @Override
+      public void afterStored(com.kingsrook.qqq.backend.core.model.data.QRecord attachment) throws QException
+      {
+         var current = audit.get();
+         if(current == null)
+         {
+            super.afterStored(attachment);
+         }
+         else if(com.kingsrook.qbits.recordfiles.RecordFilesContext.config().isManaged(attachment.getValueString("tableName")))
+         {
+            new RetainedFileService(configForLifecycle(), current, null).registerStoredAttachment(attachment);
+         }
+      }
+
+      /***********************************************************************
+       ** Resolve the same installed configuration as the production lifecycle.
+       ***********************************************************************/
+      private com.kingsrook.qbits.recordfiles.RecordFilesQBitConfig configForLifecycle() throws QException
+      {
+         return com.kingsrook.qbits.recordfiles.RecordFilesContext.config();
+      }
+   }
+
+   /***************************************************************************
+    ** Real fixture authentication; no test identity bypass.
     ***************************************************************************/
    public static class Authentication extends TableBasedAuthenticationModule
    {

@@ -1,5 +1,13 @@
 # Record Files bridge — 2026-10-31 04:04 CDT
 
+## Guarded-artifact verification follow-up
+
+Latest result: all 18 optional integration/contract tests PASS (16 HTTP/identity/concurrency cases plus 2 typed-contract tests), Checkstyle and runtime-integrity verification PASS against frozen0352. The prior fresh base build passed 37. Evidence is retained in `evidence/20261031-094704Z/`, including exact source hashes, test summaries, runtime validation and success-marker hashes. The module rerun reused the freshly verified guarded scanner binary; it did not rebuild the base again. This establishes single-instance exclusion through the tested commits/rollbacks, not cross-node protection or production-provider qualification. Orientation APK rebuild is complete; root is running the separate TC22 orientation acceptance.
+
+The intake-event probe was attached to the wrong audit instance: production registration happens inside the attachment lifecycle. A test lifecycle subclass now preserves inherited policy and injects the probe into that actual registration transaction. The next run reached every guard/commit seam and had only two failures: the injected intake rollback correctly left zero registered files, contrary to the test's unconditional one-file expectation. That assertion now distinguishes rolled-back registration from committed originals. Verification rerun is live as exec session57911, with private log `qqq-guarded-lifecycle-verify.log`; poll that handle before launching another build. No pass is claimed yet.
+
+The 0352 source changes were tested with the isolated verifier. Fresh base verification passed 37 tests. The first optional run exposed a misspelled approval process in the new test; corrected to `mobileDeviceApprove`. The module-only rerun executed 18 tests, with four failures in the INTAKE_COMPLETED concurrency cases (parameter indexes 1, 2, 7 and 8): finalization returned without the expected exception. The other concurrency cases and two contract tests passed. Do not treat the guarded integration as accepted; investigate whether the intake event hook is exercised and verify commit/rollback assertions before changing expectations. Both verifier processes are terminal. Private log: task cache `qqq-guarded-integration-verify-fixed.log`.
+
 Implemented the optional module, public scanner authorization facade, identity
 provider, semantic widget DTO, isolated verification and local consumer launcher.
 No shared Maven artifact, live demo, TC22 or upstream source was changed. No

@@ -103,10 +103,23 @@ public final class MobileDeviceAuthorization
     ***************************************************************************/
    public static <T> T executeAuthorized(Identity identity, Operation<T> operation) throws QException
    {
+      if(identity == null)
+      {
+         throw new QPermissionDeniedException("Device attribution no longer matches this sign-in.");
+      }
+      return executeAuthorized(Optional.of(identity), operation);
+   }
+
+   /***************************************************************************
+    ** Empty attribution is allowed only while the authenticated session is unbound.
+    ** Retain the same exclusion through the callback's synchronous commits.
+    ***************************************************************************/
+   public static <T> T executeAuthorized(Optional<Identity> identity, Operation<T> operation) throws QException
+   {
       return MobileSessionService.withActiveSession(() ->
       {
          Optional<Identity> current = captureCurrent();
-         if(identity == null || current.isEmpty() || !identity.equals(current.get()))
+         if(identity == null || !identity.equals(current))
          {
             throw new QPermissionDeniedException("Device attribution no longer matches this sign-in.");
          }

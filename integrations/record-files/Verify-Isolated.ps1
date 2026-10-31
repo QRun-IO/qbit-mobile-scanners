@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-   [string]$Bundle = 'R:\Git.Local\QRunIO\qbit-documents\artifacts\retained-contract-20261031-0238',
+   [string]$Bundle = 'R:\Git.Local\QRunIO\qbit-documents\artifacts\retained-contract-20261031-0352',
    [switch]$SkipSeed,
    [switch]$SkipBaseBuild
 )
@@ -25,6 +25,16 @@ foreach($entry in $expected)
    }
 }
 Copy-Item -LiteralPath (Join-Path $bundleRoot 'sha256.json') -Destination (Join-Path $target 'consumed-bundle-sha256.json')
+$expectedSource = Get-Content -LiteralPath (Join-Path $bundleRoot 'source-sha256.json') -Raw | ConvertFrom-Json
+foreach($entry in $expectedSource)
+{
+   $path = (Resolve-Path -LiteralPath (Join-Path $bundleRoot ('source/' + $entry.path))).Path
+   if(!$path.StartsWith($bundleRoot + '\source\') -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $entry.sha256)
+   {
+      throw "Retained source checksum mismatch: $($entry.path)"
+   }
+}
+Copy-Item -LiteralPath (Join-Path $bundleRoot 'source-sha256.json') -Destination (Join-Path $target 'consumed-source-sha256.json')
 if(!$SkipSeed)
 {
    # Read-only seed: never install frozen candidates into the shared Maven cache.
@@ -49,8 +59,7 @@ if(!$SkipBaseBuild)
    finally { Pop-Location }
 }
 $collaborationPom = Join-Path $target 'qbit-collaboration-resolved.pom.xml'
-$pomText = Get-Content -LiteralPath (Join-Path $bundleRoot 'qbit-collaboration.pom.xml') -Raw
-$pomText.Replace('<version>${revision}</version>', '<version>0.1.0-record-files-SNAPSHOT</version>').Replace('<revision>0.1.0-RC.5</revision>', '<revision>0.1.0-record-files-SNAPSHOT</revision>') | Set-Content -LiteralPath $collaborationPom -Encoding utf8
+Copy-Item -LiteralPath (Join-Path $bundleRoot 'qbit-collaboration.resolved.pom.xml') -Destination $collaborationPom
 $artifacts = @(
    @('qbit-record-files-0.1.0-SNAPSHOT.jar','qbit-record-files.pom.xml'),
    @('qbit-collaboration-0.1.0-record-files-SNAPSHOT.jar','qbit-collaboration.pom.xml'),

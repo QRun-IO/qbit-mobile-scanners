@@ -43,4 +43,19 @@ public final class MobileCaptureIdentityProvider implements CaptureIdentityProvi
       }
       MobileDeviceAuthorization.revalidate(new MobileDeviceAuthorization.Identity(identity.actorId(), identity.deviceId(), identity.publicSessionId()));
    }
+
+   /***************************************************************************
+    ** Hold verified local authority through Record Files and attachment commits.
+    ***************************************************************************/
+   @Override
+   public <T> T executeAuthorized(Optional<CaptureIdentity> expected, Operation<T> operation) throws QException
+   {
+      if(expected == null || expected.filter(value -> !PROVIDER_KEY.equals(value.providerKey())).isPresent())
+      {
+         throw new QPermissionDeniedException("Unsupported mobile capture identity.");
+      }
+      Optional<MobileDeviceAuthorization.Identity> identity = expected.map(value ->
+         new MobileDeviceAuthorization.Identity(value.actorId(), value.deviceId(), value.publicSessionId()));
+      return MobileDeviceAuthorization.executeAuthorized(identity, operation::run);
+   }
 }
