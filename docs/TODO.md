@@ -1,5 +1,6 @@
 # QQQ Mobile Scanners TODO
 
+- [x] Preserve legacy timestamp instants in the canonical supplied H2 schema with an explicit UTC migration connection; verify non-UTC file-backed upgrade, unchanged passwords/approval/scans and repeated initialization. The operator upgrade is preserved with UTC; a no-install reactor passes 37 base tests and five demo tests using the freshly built schema.
 - [x] Implement unique short names, editable names/descriptions, additive H2 migration and protected profile editing; qualify the preserving upgrade of the operator database before deployment.
 - [x] Implement separate approval/presence states, online-only fleet query and foreground location with accuracy/age and permission-denied behavior; actual GPS-fix acceptance remains in the release gates.
 - [ ] Coordinate Record Files semantic contract and implement native camera/gallery upload, record association and real-server/hardware acceptance.

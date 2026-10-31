@@ -1,3 +1,5 @@
+SET TIME ZONE 'UTC';
+
 CREATE TABLE IF NOT EXISTS mobileDevice (
    id VARCHAR(36) PRIMARY KEY,
    installationId VARCHAR(200) NOT NULL, displayName VARCHAR(200), manufacturer VARCHAR(200),
