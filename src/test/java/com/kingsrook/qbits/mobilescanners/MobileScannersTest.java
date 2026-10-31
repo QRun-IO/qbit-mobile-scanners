@@ -18,6 +18,8 @@ import com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper;
 import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.instances.QInstanceValidator;
@@ -25,6 +27,10 @@ import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.QAuthenticationType;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
@@ -504,6 +510,274 @@ class MobileScannersTest
    {
       MobilePermissions.REQUEST_DEVICE.set(id);
       PermissionsHelper.checkProcessPermissionThrowing(new RunProcessInput().withProcessName(MobileScannersQBitProducer.CAPTURE), MobileScannersQBitProducer.CAPTURE);
+   }
+
+   /***************************************************************************
+    ** Server binding ignores forged identity and ending survives async handoff.
+    ***************************************************************************/
+   @Test
+   void endedSessionBlocksCapturedWorkerEvenWithNoOpAuthenticationLogout() throws Exception
+   {
+      String device = approvedDevice();
+      bind(device);
+      var heartbeat = MobileSessionService.heartbeat(new HashMap<>(Map.of("foreground", true, "screenAvailable", true, "userId", "forged")));
+      String sessionId = (String) heartbeat.get("sessionId");
+      assertNotEquals(scanner.getUuid(), sessionId);
+      assertEquals("scanner", MobileService.get(MobileScannersQBitProducer.SESSION, sessionId).getValueString("userId"));
+      var worker = QContext.capture();
+      QContext.init(instance, admin);
+      MobileSessionService.end(sessionId, "Acceptance", true);
+      assertEquals("ENDED", MobileService.get(MobileScannersQBitProducer.SESSION, sessionId).getValueString("status"));
+      assertEquals("APPROVED", deviceStatus(device));
+      QContext.init(worker);
+      MobilePermissions.REQUEST_DEVICE.remove();
+      assertThrows(QException.class, MobileSessionService::requireNotEnded);
+      assertThrows(QException.class, () -> MobileService.capture(scan()));
+      MobilePermissions.REQUEST_DEVICE.set(device);
+      assertThrows(QException.class, () -> MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", true)));
+   }
+
+   /***************************************************************************
+    ** A cookie cannot move to another device and private bindings stay unreadable.
+    ***************************************************************************/
+   @Test
+   void sessionIdentityAndPrivateBindingAreProtected() throws Exception
+   {
+      String firstDevice = approvedDevice();
+      bind(firstDevice);
+      String sessionId = (String) MobileSessionService.heartbeat(Map.of("foreground", false, "screenAvailable", false)).get("sessionId");
+      String otherDevice = (String) enroll().get("deviceId");
+      assertThrows(QException.class, () -> MobileSessionService.observe(otherDevice));
+      assertThrows(QException.class, () -> MobileSessionService.view(sessionId));
+      QContext.init(instance, admin);
+      GetInput read = new GetInput();
+      read.setTableName(MobileScannersQBitProducer.SESSION_BINDING);
+      read.setPrimaryKey(MobileService.hash(scanner.getUuid()));
+      read.setShouldOmitHiddenFields(false);
+      assertThrows(QException.class, () -> new GetAction().execute(read));
+      assertEquals("Screen unavailable: Capture is unavailable", MobileSessionService.view(sessionId).status());
+   }
+
+   /***************************************************************************
+    ** Ending a reviewed record does not affect a later or replacement selection.
+    ***************************************************************************/
+   @Test
+   void endSessionProcessUsesStableSelection() throws Exception
+   {
+      String device = approvedDevice();
+      bind(device);
+      String first = MobileSessionService.observe(device).getValueString("id");
+      QContext.init(instance, admin);
+      var launch = new RunProcessAction().execute(new RunProcessInput().withProcessName(MobileScannersQBitProducer.SESSION_END)
+         .withValue("recordsParam", "recordIds").withValue("recordIds", first).withValue("tableName", MobileScannersQBitProducer.SESSION));
+      assertEquals("ACTIVE", MobileService.get(MobileScannersQBitProducer.SESSION, first).getValueString("status"));
+      QSession secondLogin = scanner.clone();
+      secondLogin.setUuid(UUID.randomUUID().toString());
+      QContext.init(instance, secondLogin);
+      String second = MobileSessionService.observe(device).getValueString("id");
+      QContext.init(instance, admin);
+      launch.addValue("sessionId", second);
+      launch.addValue("reason", "Selected by administrator");
+      var result = confirmAdmin(MobileScannersQBitProducer.SESSION_END, launch);
+      assertEquals("1 session ended.", result.getValue("result"));
+      assertEquals("ENDED", MobileService.get(MobileScannersQBitProducer.SESSION, first).getValueString("status"));
+      assertEquals("ACTIVE", MobileService.get(MobileScannersQBitProducer.SESSION, second).getValueString("status"));
+   }
+
+   /***************************************************************************
+    ** Failed second writes roll back credentials and earlier bulk approvals.
+    ***************************************************************************/
+   @Test
+   void enrollmentAndBulkApprovalAreAtomic() throws Exception
+   {
+      String first = (String) enroll().get("deviceId");
+      String duplicate = MobileService.get(MobileScannersQBitProducer.DEVICE, first).getValueString("shortName");
+      String attempted = UUID.randomUUID().toString();
+      assertThrows(QException.class, () -> MobileService.enroll(Map.of("installationId", attempted, "shortName", duplicate)));
+      assertEquals(null, MobileService.get(MobileScannersQBitProducer.CREDENTIAL, attempted));
+      assertEquals(null, MobileService.get(MobileScannersQBitProducer.DEVICE, attempted));
+      QContext.init(instance, admin);
+      assertThrows(QException.class, () -> MobileService.setApproval(java.util.List.of(first, UUID.randomUUID().toString()), true));
+      assertEquals("PENDING", deviceStatus(first));
+   }
+
+   /***************************************************************************
+    ** Native edits cannot smuggle approval, identity or telemetry changes.
+    ***************************************************************************/
+   @Test
+   void profileEditHasStrictAllowlistAndCanonicalUniqueNames() throws Exception
+   {
+      String first = (String) enroll().get("deviceId");
+      String second = (String) enroll().get("deviceId");
+      QContext.init(instance, admin);
+      var update = new UpdateAction();
+      var valid = new QRecord().withValue("id", first).withValue("shortName", " Dock-01 ").withValue("description", "Receiving")
+         .withValue("status", "PENDING");
+      var saved = update.execute(new UpdateInput()
+         .withTableName(MobileScannersQBitProducer.DEVICE).withRecord(valid));
+      assertTrue(saved.getRecords().getFirst().getErrors() == null || saved.getRecords().getFirst().getErrors().isEmpty());
+      assertEquals("dock-01", MobileService.get(MobileScannersQBitProducer.DEVICE, first).getValueString("shortName"));
+      assertFalse(valid.getValues().containsKey("status"));
+      assertThrows(QException.class, () -> update.execute(new UpdateInput()
+         .withTableName(MobileScannersQBitProducer.DEVICE).withRecord(new QRecord().withValue("id", first).withValue("status", "APPROVED"))));
+      var duplicate = update.execute(new UpdateInput()
+         .withTableName(MobileScannersQBitProducer.DEVICE).withRecord(new QRecord().withValue("id", second).withValue("shortName", "DOCK-01")));
+      assertFalse(duplicate.getRecords().getFirst().getErrors().isEmpty());
+      assertEquals("PENDING", deviceStatus(first));
+   }
+
+   /***************************************************************************
+    ** Location is optional and online filtering expires before backend queries.
+    ***************************************************************************/
+   @Test
+   void locationValidationAndQueryableOnlineFreshness() throws Exception
+   {
+      String device = approvedDevice();
+      bind(device);
+      var location = Map.of("latitude", 38.6, "longitude", -90.2, "accuracyMeters", 12.5, "capturedAt", "2026-10-30T12:00:00Z");
+      MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", false, "locationStatus", "AVAILABLE", "location", location));
+      assertEquals("AVAILABLE", MobileService.get(MobileScannersQBitProducer.DEVICE, device).getValueString("locationStatus"));
+      assertNotNull(MobileService.get(MobileScannersQBitProducer.DEVICE, device).getValueInstant("locationReceivedAt"));
+      assertThrows(QException.class, () -> MobileSessionService.heartbeat(Map.of("foreground", false, "screenAvailable", false, "locationStatus", "AVAILABLE", "location", location)));
+      MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", false, "locationStatus", "PERMISSION_DENIED"));
+      assertNotNull(MobileService.get(MobileScannersQBitProducer.DEVICE, device).getValue("latitude"));
+      QContext.init(instance, admin);
+      var selected = new QueryInput().withTableName(MobileScannersQBitProducer.DEVICE)
+         .withFieldNamesToInclude(java.util.Set.of("id", "online"));
+      assertEquals(true, new QueryAction().execute(selected).getRecords().getFirst().getValueBoolean("online"));
+      try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", ""))
+      {
+         connection.createStatement().executeUpdate("UPDATE mobileDevice SET lastSeenAt = TIMESTAMP WITH TIME ZONE '2000-01-01 00:00:00+00:00'");
+      }
+      QContext.init(instance, admin);
+      var query = new QueryInput().withTableName(MobileScannersQBitProducer.DEVICE)
+         .withFilter(new QQueryFilter()
+            .withCriteria("online", QCriteriaOperator.EQUALS, true));
+      assertEquals(0, new QueryAction().execute(query).getRecords().size());
+   }
+
+   /***************************************************************************
+    ** Device possession does not grant scanning/session permissions to a user.
+    ***************************************************************************/
+   @Test
+   void sessionTelemetryRequiresScanPermission() throws Exception
+   {
+      String device = approvedDevice();
+      bind(device);
+      QSession unauthorized = new QSession().withUser(new QUser().withIdReference("scanner"));
+      unauthorized.setUuid(scanner.getUuid());
+      QContext.init(instance, unauthorized);
+      assertThrows(QException.class, () -> MobileSessionService.observe(device));
+      assertThrows(QException.class, () -> MobileSessionService.upload(Map.of()));
+      assertThrows(QException.class, () -> MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", false)));
+   }
+
+   /***************************************************************************
+    ** Captured administrator identity cannot mutate approvals after termination.
+    ***************************************************************************/
+   @Test
+   void endedAdministratorCannotApproveFromCapturedWorker() throws Exception
+   {
+      String device = approvedDevice();
+      QContext.init(instance, admin);
+      String adminSession = MobileSessionService.observe(device).getValueString("id");
+      var worker = QContext.capture();
+      MobileSessionService.end(adminSession, "ADMINISTRATOR", true);
+      QContext.init(worker);
+      assertThrows(QException.class, () -> MobileService.setApproval(device, false));
+      assertThrows(QException.class, () -> MobileSessionService.endAll(java.util.List.of(adminSession), "Again"));
+      assertEquals("APPROVED", deviceStatus(device));
+   }
+
+   /***************************************************************************
+    ** Reapplying the migration repairs old failed enrollments without token reset.
+    ***************************************************************************/
+   @Test
+   void migrationRemovesOnlyOrphanedCredentials() throws Exception
+   {
+      Map<String, Object> valid = enroll();
+      String orphan = UUID.randomUUID().toString();
+      MobileService.insert(MobileScannersQBitProducer.CREDENTIAL, new QRecord().withValue("id", orphan).withValue("tokenHash", MobileService.hash("never-returned")));
+      try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", ""))
+      {
+         String schema = new String(getClass().getResourceAsStream("/db/mobile-scanners-h2.sql").readAllBytes(), StandardCharsets.UTF_8);
+         for(String statement : schema.split(";"))
+         {
+            if(!statement.isBlank())
+            {
+               connection.createStatement().execute(statement);
+            }
+         }
+      }
+      assertEquals(null, MobileService.get(MobileScannersQBitProducer.CREDENTIAL, orphan));
+      assertNotNull(MobileService.authenticateDevice((String) valid.get("deviceId"), (String) valid.get("deviceToken")));
+      assertNotNull(MobileService.enroll(Map.of("installationId", orphan)).get("deviceToken"));
+   }
+
+   /***************************************************************************
+    ** Shared UUID prefixes and partially applied migrations preserve identities.
+    ***************************************************************************/
+   @Test
+   void generatedNamesAndMigrationSurvivePrefixCollisions() throws Exception
+   {
+      String firstId = "12345678-1234-4234-8234-123400000001";
+      String secondId = "12345678-1234-4234-8234-123400000002";
+      Map<String, Object> first = MobileService.enroll(Map.of("installationId", firstId));
+      Map<String, Object> second = MobileService.enroll(Map.of("installationId", secondId));
+      assertNotEquals(first.get("shortName"), second.get("shortName"));
+      Map<String, Object> custom = MobileService.enroll(Map.of("installationId", UUID.randomUUID().toString(), "shortName", "scanner-1"));
+      try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", ""); var sql = connection.createStatement())
+      {
+         sql.execute("DROP INDEX mobileDevice_shortName");
+         sql.execute("UPDATE mobileDevice SET shortName = 'scanner-123456781234423482341234' WHERE id IN ('" + firstId + "', '" + secondId + "')");
+         String schema = new String(getClass().getResourceAsStream("/db/mobile-scanners-h2.sql").readAllBytes(), StandardCharsets.UTF_8);
+         for(int pass = 0; pass < 2; pass++)
+         {
+            for(String statement : schema.split(";"))
+            {
+               if(!statement.isBlank())
+               {
+                  sql.execute(statement);
+               }
+            }
+         }
+      }
+      assertEquals("scanner-1", MobileService.get(MobileScannersQBitProducer.DEVICE, (String) custom.get("deviceId")).getValueString("shortName"));
+      assertNotEquals(MobileService.get(MobileScannersQBitProducer.DEVICE, firstId).getValueString("shortName"),
+         MobileService.get(MobileScannersQBitProducer.DEVICE, secondId).getValueString("shortName"));
+      assertNotNull(MobileService.authenticateDevice(firstId, (String) first.get("deviceToken")));
+      assertNotNull(MobileService.authenticateDevice(secondId, (String) second.get("deviceToken")));
+   }
+
+   /***************************************************************************
+    ** QQQ binds UTC wall-clock timestamps, independent of the host timezone.
+    ***************************************************************************/
+   @Test
+   void timestampRoundTripsOutsideUtcAndPresenceExpires() throws Exception
+   {
+      java.util.TimeZone previous = java.util.TimeZone.getDefault();
+      try
+      {
+         java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/Chicago"));
+         setup();
+         String device = approvedDevice();
+         bind(device);
+         java.time.Instant captured = java.time.Instant.parse("2026-10-30T12:34:56.123Z");
+         MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", false, "locationStatus", "AVAILABLE",
+            "location", Map.of("latitude", 10.125, "longitude", 20.25, "accuracyMeters", 7, "capturedAt", captured.toString())));
+         QRecord record = MobileService.get(MobileScannersQBitProducer.DEVICE, device);
+         assertEquals(captured, record.getValueInstant("locationCapturedAt"));
+         assertTrue(java.time.Duration.between(record.getValueInstant("lastSeenAt"), java.time.Instant.now()).abs().getSeconds() < 2);
+         try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", ""))
+         {
+            connection.createStatement().executeUpdate("UPDATE mobileDevice SET lastSeenAt = TIMESTAMP '2000-01-01 00:00:00'");
+         }
+         assertEquals(false, MobileService.get(MobileScannersQBitProducer.DEVICE, device).getValueBoolean("online"));
+      }
+      finally
+      {
+         java.util.TimeZone.setDefault(previous);
+      }
    }
 
    /***************************************************************************

@@ -46,16 +46,24 @@ class MobileScannersApiContractTest
       }
       assertEquals(java.util.List.of(), UiApiContract.check(generated, Files.readString(contract), Files.readString(baseline), 1,
          "mvnw.cmd -Dtest=MobileScannersApiContractTest -Dmobile.openapi.update=true test"));
+      Path sessionBaseline = Path.of("src/test/resources/openapi/mobile-scanners-1.1.0.yaml");
+      if(Boolean.getBoolean("mobile.openapi.initializeSessionBaseline") && !Files.exists(sessionBaseline))
+      {
+         Files.writeString(sessionBaseline, generated);
+      }
+      assertEquals(java.util.List.of(), UiApiContract.check(generated, Files.readString(contract), Files.readString(sessionBaseline), 1, "Regenerate the current extension contract."));
       var model = version.generateExtensionOpenAPIModel("qqq", extension);
       assertEquals(Set.of("/qqq/v1/qbit/mobile-scanners/branding", "/qqq/v1/qbit/mobile-scanners/status",
-         "/qqq/v1/qbit/mobile-scanners/devices/enroll", "/qqq/v1/qbit/mobile-scanners/devices/current"), model.getPaths().keySet());
+         "/qqq/v1/qbit/mobile-scanners/devices/enroll", "/qqq/v1/qbit/mobile-scanners/devices/current",
+         "/qqq/v1/qbit/mobile-scanners/sessions/heartbeat", "/qqq/v1/qbit/mobile-scanners/sessions/current/end",
+         "/qqq/v1/qbit/mobile-scanners/sessions/current/screen"), model.getPaths().keySet());
       assertTrue(model.getComponents().getSchemas().keySet().stream().allMatch(name -> name.startsWith("MobileScanners") || name.equals("BasicErrorResponseV1")));
       for(String schema : MobileScannersSchemas.components().keySet())
       {
          assertTrue(model.getComponents().getSchemas().containsKey(schema), schema);
       }
-      assertEquals(4, extension.getSpecs().size());
-      assertEquals("1.0.0", extension.getSemanticVersion());
+      assertEquals(7, extension.getSpecs().size());
+      assertEquals("1.1.0", extension.getSemanticVersion());
       assertTrue(generated.contains("mobileScannersEnrollDevice"));
       assertTrue(generated.contains("X-QQQ-Device-Token"));
       assertTrue(generated.contains("acknowledgedEventId"));

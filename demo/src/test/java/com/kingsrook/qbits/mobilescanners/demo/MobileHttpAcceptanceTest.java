@@ -6,6 +6,9 @@
 package com.kingsrook.qbits.mobilescanners.demo;
 
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.net.HttpCookie;
 import java.net.ServerSocket;
 import java.net.URI;
@@ -25,7 +28,9 @@ import java.util.UUID;
 import com.kingsrook.qqq.middleware.javalin.QApplicationJavalinServer;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -42,6 +47,17 @@ class MobileHttpAcceptanceTest
    private String deviceId;
    private String deviceToken;
    private JSONObject schemas;
+   @TempDir
+   private Path temporaryDirectory;
+
+   /*******************************************************************************
+    ** Each isolated server must resolve its own backend rather than a prior cache.
+    *******************************************************************************/
+   @BeforeEach
+   void resetBackendProviders()
+   {
+      com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager.resetConnectionProviders();
+   }
 
 
 
@@ -91,7 +107,7 @@ class MobileHttpAcceptanceTest
          assertError(request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, false), 403, "PERMISSION_DENIED");
          JSONObject enrollment = new JSONObject().put("installationId", UUID.randomUUID().toString())
             .put("displayName", "TC22 HTTP acceptance").put("manufacturer", "Zebra").put("model", "TC22")
-            .put("osVersion", "acceptance-fixture").put("appVersion", "0.1.0");
+            .put("osVersion", "acceptance-fixture").put("appVersion", "0.1.0").put("description", "倉".repeat(1500));
          var enrolled = request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner, enrollment.toString(), false);
          assertTrue(enrolled.statusCode() == 200 || enrolled.statusCode() == 201, "Enrollment must succeed");
          JSONObject device = new JSONObject(enrolled.body());
@@ -113,8 +129,10 @@ class MobileHttpAcceptanceTest
          assertEquals("APPROVED", new JSONObject(current.body()).getString("status"));
          assertFalse(current.body().contains(deviceToken), "Status must never echo the token");
 
+         scanner = assertSessionLifecycle(scanner, admin, scannerPassword, database);
+
          JSONObject launch = complete(processInit("mobileScanCapture", scanner, true), "mobileScanCapture", scanner, true);
-         var metadataResponse = request("GET", "/qqq/v1/metaData?frontendName=qqq-android&frontendVersion=0.1.0&applicationName=qqq-mobile-scanners&applicationVersion=0.1.0", scanner, null, true);
+         var metadataResponse = request("GET", "/qqq/v1/metaData?frontendName=qqq-android&frontendVersion=1.0&applicationName=qqq-mobile-scanners&applicationVersion=0.1.0", scanner, null, true);
          assertEquals(200, metadataResponse.statusCode());
          JSONObject metadata = new JSONObject(metadataResponse.body());
          assertEquals("composite", metadata.getJSONObject("widgets").getJSONObject("mobileScanner").getString("type"));
@@ -168,6 +186,7 @@ class MobileHttpAcceptanceTest
          assertEquals(1, scanCount(database));
          assertEquals(200, request("POST", "/qqq/v1/logout", scanner, "{}", false).statusCode());
          assertEquals(401, request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, true).statusCode());
+         assertBulkSelfTermination(database, scannerPassword, adminPassword, admin);
       }
       finally
       {
@@ -175,6 +194,207 @@ class MobileHttpAcceptanceTest
       }
    }
 
+
+
+   /*******************************************************************************
+    ** A selected caller is logged out last, regardless of confirmed row order.
+    *******************************************************************************/
+   private void assertBulkSelfTermination(String database, String scannerPassword, String adminPassword, String administrator) throws Exception
+   {
+      runAdmin("mobileDeviceApprove", administrator);
+      for(boolean selfFirst : List.of(true, false))
+      {
+         String caller = login("admin", adminPassword);
+         String other = login("scanner", scannerPassword);
+         String heartbeat = "/qqq/v1/qbit/mobile-scanners/sessions/heartbeat";
+         String activity = "{\"foreground\":true,\"screenAvailable\":false}";
+         String selfId = new JSONObject(request("POST", heartbeat, caller, activity, true).body()).getString("sessionId");
+         String otherId = new JSONObject(request("POST", heartbeat, other, activity, true).body()).getString("sessionId");
+         String selected = selfFirst ? selfId + "," + otherId : otherId + "," + selfId;
+         JSONObject selection = new JSONObject().put("recordsParam", "recordIds").put("recordIds", selected).put("tableName", "mobileSession");
+         JSONObject started = complete(form("/qqq/v1/processes/mobileSessionEnd/init", caller, selection, false), "mobileSessionEnd", caller, false);
+         processStep("mobileSessionEnd", started.getString("processUUID"), "input", caller, new JSONObject(), false);
+         long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
+         int remaining;
+         do
+         {
+            try(var connection = DriverManager.getConnection(database, "sa", ""); var query = connection.prepareStatement("SELECT COUNT(*) FROM demoSession WHERE id IN (?, ?)"))
+            {
+               query.setString(1, caller);
+               query.setString(2, other);
+               try(var rows = query.executeQuery())
+               {
+                  rows.next();
+                  remaining = rows.getInt(1);
+               }
+            }
+            if(remaining > 0)
+            {
+               Thread.sleep(50);
+            }
+         }
+         while(remaining > 0 && System.nanoTime() < deadline);
+         assertEquals(0, remaining, "Both selected authentication sessions must be removed, including when the caller is first");
+         try(var connection = DriverManager.getConnection(database, "sa", ""); var query = connection.prepareStatement("SELECT COUNT(*) FROM mobileSession WHERE id IN (?, ?) AND status = 'ENDED' AND authCleanupStatus = 'REQUESTED'"))
+         {
+            query.setString(1, selfId);
+            query.setString(2, otherId);
+            try(var rows = query.executeQuery())
+            {
+               rows.next();
+               assertEquals(2, rows.getInt(1));
+            }
+         }
+         assertEquals(401, request("GET", "/qqq/v1/metaData", caller, null, false).statusCode());
+         assertEquals(401, request("GET", "/qqq/v1/metaData", other, null, false).statusCode());
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Foreground heartbeats must not starve complete Android metadata responses.
+    *******************************************************************************/
+   @Test
+   void metadataRemainsResponsiveDuringHeartbeats() throws Exception
+   {
+      String database = MobileScannersDemo.fileDatabaseUrl(temporaryDirectory.resolve("mobile"));
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      MobileScannersDemo application = new MobileScannersDemo(database);
+      application.initializeDatabase(scannerPassword, adminPassword);
+      int port;
+      try(ServerSocket socket = new ServerSocket(0))
+      {
+         port = socket.getLocalPort();
+      }
+      origin = "http://127.0.0.1:" + port;
+      QApplicationJavalinServer server = application.start(port);
+      try
+      {
+         String scanner = login("scanner", scannerPassword);
+         String admin = login("admin", adminPassword);
+         JSONObject enrollment = new JSONObject(request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner,
+            new JSONObject().put("installationId", UUID.randomUUID().toString()).toString(), false).body());
+         deviceId = enrollment.getString("deviceId");
+         deviceToken = enrollment.getString("deviceToken");
+         runAdmin("mobileDeviceApprove", admin);
+         String heartbeatPath = "/qqq/v1/qbit/mobile-scanners/sessions/heartbeat";
+         String activity = "{\"foreground\":true,\"screenAvailable\":true}";
+         assertEquals(200, request("POST", heartbeatPath, scanner, activity, true).statusCode());
+         var heartbeats = java.util.concurrent.CompletableFuture.runAsync(() ->
+         {
+            try
+            {
+               for(int index = 0; index < 30; index++)
+               {
+                  assertEquals(200, request("POST", heartbeatPath, scanner, activity, true).statusCode());
+                  Thread.sleep(100);
+               }
+            }
+            catch(Exception failure)
+            {
+               throw new java.util.concurrent.CompletionException(failure);
+            }
+         });
+         for(int index = 0; index < 4; index++)
+         {
+            var metadata = client.send(headers("/qqq/v1/metaData?frontendName=qqq-android&frontendVersion=1.0&applicationName=qqq-mobile-scanners&applicationVersion=0.1.0", scanner, true)
+               .timeout(Duration.ofSeconds(8)).GET().build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, metadata.statusCode());
+            assertTrue(new JSONObject(metadata.body()).getJSONObject("apps").has("mobileScanApp"));
+         }
+         heartbeats.get(10, java.util.concurrent.TimeUnit.SECONDS);
+      }
+      finally
+      {
+         server.stop();
+         try(var connection = DriverManager.getConnection(database, "sa", ""); var statement = connection.createStatement())
+         {
+            statement.execute("SHUTDOWN");
+         }
+      }
+   }
+
+
+   /*******************************************************************************
+    ** Real HTTP binding, leased images, end enforcement and fresh sign-in recovery.
+    *******************************************************************************/
+   private String assertSessionLifecycle(String scanner, String admin, String password, String database) throws Exception
+   {
+      String endpoint = "/qqq/v1/qbit/mobile-scanners/sessions";
+      JSONObject activity = new JSONObject().put("foreground", true).put("screenAvailable", true)
+         .put("appName", "mobileScanApp").put("screenLabel", "Scan Capture");
+      var response = request("POST", endpoint + "/heartbeat", scanner, activity.toString(), true);
+      assertEquals(200, response.statusCode());
+      JSONObject heartbeat = new JSONObject(response.body());
+      assertSchema("MobileScannersHeartbeatV1", heartbeat);
+      String id = heartbeat.getString("sessionId");
+      String profilePath = "/qqq/v1/table/mobileDevice/" + deviceId;
+      JSONObject profile = new JSONObject().put("shortName", "HTTP-DOCK-01").put("displayName", "HTTP receiving").put("description", "Profile acceptance");
+      assertDenied(request("PATCH", profilePath, scanner, profile.toString(), true));
+      assertEquals(200, request("PATCH", profilePath, admin, profile.toString(), false).statusCode());
+      assertEquals("http-dock-01", new JSONObject(request("GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, true).body()).getString("shortName"));
+      assertDenied(request("PATCH", profilePath, admin, "{\"status\":\"REVOKED\"}", false));
+      assertDeviceStatus(database, deviceId, "APPROVED");
+      String viewBody = new JSONObject().put("id", id).toString();
+      assertDenied(request("POST", "/qqq/v1/widget/mobileSessionScreen", scanner, viewBody, true));
+      assertDenied(request("POST", "/qqq/v1/table/mobileSessionBinding/query", admin, "{}", false));
+      var waiting = request("POST", "/qqq/v1/widget/mobileSessionScreen", admin, viewBody, false);
+      assertEquals(200, waiting.statusCode());
+      heartbeat = new JSONObject(request("POST", endpoint + "/heartbeat", scanner, activity.toString(), true).body());
+      JSONObject lease = heartbeat.getJSONObject("screenMirror");
+      assertSchema("MobileScannersScreenLeaseV1", lease);
+      ByteArrayOutputStream image = new ByteArrayOutputStream();
+      ImageIO.write(new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "jpeg", image);
+      JSONObject frame = new JSONObject().put("leaseId", lease.getString("leaseId")).put("sequence", lease.getLong("nextSequence"))
+         .put("width", 2).put("height", 2).put("mimeType", "image/jpeg").put("capturedAt", Instant.now().toString())
+         .put("imageBase64", Base64.getEncoder().encodeToString(image.toByteArray()));
+      assertEquals(204, request("POST", endpoint + "/current/screen", scanner, frame.toString(), true).statusCode());
+      var visible = request("POST", "/qqq/v1/widget/mobileSessionScreen", admin, viewBody, false);
+      assertTrue(visible.body().contains("data:image/jpeg;base64,"));
+      assertEquals(409, request("POST", endpoint + "/current/screen", scanner, frame.toString(), true).statusCode());
+      activity.put("screenAvailable", false).put("captureBlockedReason", "PASSWORD_FIELD");
+      assertEquals(200, request("POST", endpoint + "/heartbeat", scanner, activity.toString(), true).statusCode());
+      assertFalse(request("POST", "/qqq/v1/widget/mobileSessionScreen", admin, viewBody, false).body().contains("data:image/jpeg"));
+      assertEquals(403, request("POST", endpoint + "/current/screen", scanner, frame.toString(), true).statusCode());
+      JSONObject selection = new JSONObject().put("recordsParam", "recordIds").put("recordIds", id).put("tableName", "mobileSession");
+      JSONObject started = complete(form("/qqq/v1/processes/mobileSessionEnd/init", admin, selection, false), "mobileSessionEnd", admin, false);
+      assertEquals("input", started.getString("nextStep"));
+      JSONObject ended = complete(processStep("mobileSessionEnd", started.getString("processUUID"), "input", admin,
+         new JSONObject().put("reason", "HTTP acceptance"), false), "mobileSessionEnd", admin, false);
+      assertEquals("1 session ended.", ended.getJSONObject("values").getString("result"));
+      assertEquals(401, request("POST", endpoint + "/heartbeat", scanner, activity.toString(), true).statusCode());
+      assertEquals(401, request("GET", "/qqq/v1/metaData", scanner, null, false).statusCode());
+      assertEquals(200, request("GET", "/qqq/v1/qbit/mobile-scanners/status", null, null, false).statusCode());
+      try(var connection = DriverManager.getConnection(database, "sa", ""); var statement = connection.prepareStatement("SELECT status, authCleanupStatus FROM mobileSession WHERE id = ?"))
+      {
+         statement.setString(1, id);
+         try(var rows = statement.executeQuery())
+         {
+            assertTrue(rows.next());
+            assertEquals("ENDED", rows.getString("status"));
+            assertEquals("REQUESTED", rows.getString("authCleanupStatus"));
+         }
+      }
+      assertDeviceStatus(database, deviceId, "APPROVED");
+      scanner = login("scanner", password);
+      JSONObject fresh = new JSONObject(request("POST", endpoint + "/heartbeat", scanner, activity.toString(), true).body());
+      assertFalse(id.equals(fresh.getString("sessionId")));
+      var selfEnded = request("POST", endpoint + "/current/end", scanner, "{\"reason\":\"SERVER_CHANGE\"}", true);
+      try(var connection = DriverManager.getConnection(database, "sa", ""); var statement = connection.prepareStatement("SELECT status FROM mobileSession WHERE id = ?"))
+      {
+         statement.setString(1, fresh.getString("sessionId"));
+         try(var rows = statement.executeQuery())
+         {
+            assertTrue(rows.next());
+            assertEquals("ENDED", rows.getString("status"), "Own-end must persist a tombstone before returning");
+         }
+      }
+      assertEquals(200, selfEnded.statusCode(), selfEnded.body());
+      assertEquals(401, request("GET", "/qqq/v1/metaData", scanner, null, false).statusCode());
+      return login("scanner", password);
+   }
 
 
    /*******************************************************************************
@@ -198,7 +418,7 @@ class MobileHttpAcceptanceTest
          }
       }
       assertNotNull(mobile);
-      assertEquals("1.0.0", mobile.getString("version"));
+      assertEquals("1.1.0", mobile.getString("version"));
       assertEquals("/qbit/mobile-scanners", mobile.getString("pathPrefix"));
       var openApiResponse = request("GET", "/qqq/v1/openapi.json", null, null, device);
       assertEquals(200, openApiResponse.statusCode());
@@ -320,9 +540,15 @@ class MobileHttpAcceptanceTest
          case "boolean" -> assertTrue(value instanceof Boolean);
          case "integer" ->
          {
-            assertTrue(value instanceof Integer);
-            assertTrue(((Integer) value) >= schema.optInt("minimum", Integer.MIN_VALUE));
-            assertTrue(((Integer) value) <= schema.optInt("maximum", Integer.MAX_VALUE));
+            assertTrue(value instanceof Integer || value instanceof Long);
+            assertTrue(((Number) value).longValue() >= schema.optLong("minimum", Long.MIN_VALUE));
+            assertTrue(((Number) value).longValue() <= schema.optLong("maximum", Long.MAX_VALUE));
+         }
+         case "number" ->
+         {
+            assertTrue(value instanceof Number);
+            assertTrue(((Number) value).doubleValue() >= schema.optDouble("minimum", -Double.MAX_VALUE));
+            assertTrue(((Number) value).doubleValue() <= schema.optDouble("maximum", Double.MAX_VALUE));
          }
          default -> throw new AssertionError("Unexpected mobile schema type");
       }
@@ -462,7 +688,7 @@ class MobileHttpAcceptanceTest
    private String enrollAdditionalDevice(String session, String label) throws Exception
    {
       JSONObject enrollment = new JSONObject().put("installationId", UUID.randomUUID().toString()).put("displayName", label)
-         .put("manufacturer", "Zebra").put("model", "TC22").put("osVersion", "acceptance-fixture").put("appVersion", "0.1.0");
+         .put("manufacturer", "Zebra").put("model", "TC22").put("osVersion", "acceptance-fixture").put("appVersion", "0.1.0").put("description", "倉".repeat(1500));
       var response = request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", session, enrollment.toString(), false);
       assertTrue(response.statusCode() == 200 || response.statusCode() == 201);
       return new JSONObject(response.body()).getString("deviceId");

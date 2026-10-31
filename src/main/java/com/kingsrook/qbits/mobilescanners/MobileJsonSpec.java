@@ -33,9 +33,9 @@ abstract class MobileJsonSpec extends AbstractJsonEndpointSpec
       context.header("Cache-Control", "no-store");
       if(defineRequestBodySchema() != null)
       {
-         if(context.body().length() > 4096)
+         if(context.bodyAsBytes().length > maximumBodyBytes())
          {
-            throw new QBadRequestException("Enrollment request must be at most 4096 characters.");
+            throw new QBadRequestException("The request exceeds the supported size.");
          }
          if(context.contentType() == null || !context.contentType().toLowerCase(Locale.ROOT).startsWith("application/json"))
          {
@@ -43,6 +43,14 @@ abstract class MobileJsonSpec extends AbstractJsonEndpointSpec
          }
       }
       return super.buildInput(context);
+   }
+
+   /***************************************************************************
+    ** Frame upload alone overrides the normal small JSON payload limit.
+    ***************************************************************************/
+   protected int maximumBodyBytes()
+   {
+      return 4096;
    }
 
    /***************************************************************************
@@ -60,7 +68,7 @@ abstract class MobileJsonSpec extends AbstractJsonEndpointSpec
       {
          QJavalinUtils.respondWithError(context, org.eclipse.jetty.http.HttpStatus.Code.FORBIDDEN, "User or device is not authorized.");
       }
-      else if(exception instanceof MobileService.EnrollmentConflictException)
+      else if(exception instanceof MobileService.EnrollmentConflictException || exception instanceof MobileScreenService.FrameConflictException)
       {
          QJavalinUtils.respondWithError(context, org.eclipse.jetty.http.HttpStatus.Code.CONFLICT, exception.getMessage());
       }

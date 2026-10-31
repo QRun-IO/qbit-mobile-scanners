@@ -1,7 +1,14 @@
 // Copyright (c) 2026 Kingsrook, LLC
 // SPDX-License-Identifier: Apache-2.0
 import { randomUUID } from 'node:crypto';
-import { test, expect } from '@playwright/test';
+import { test, expect, request as requestFactory } from '@playwright/test';
+
+const handheldRequests = new Set();
+
+test.afterEach(async () => {
+   await Promise.all([...handheldRequests].map((request) => request.dispose()));
+   handheldRequests.clear();
+});
 
 async function loginApi(request, account) {
    const password = process.env[account === 'admin' ? 'MOBILE_DEMO_ADMIN_PASSWORD' : 'MOBILE_DEMO_SCANNER_PASSWORD'];
@@ -12,12 +19,16 @@ async function loginApi(request, account) {
    expect(response.status()).toBe(200);
 }
 
-async function enroll(request, name) {
-   const response = await request.post('/qqq/v1/qbit/mobile-scanners/devices/enroll', {
+async function enroll(name) {
+   // A real handheld has its own core login, even when multiple devices share a user.
+   const handheld = await requestFactory.newContext({ baseURL: `http://127.0.0.1:${process.env.MOBILE_E2E_PORT}` });
+   handheldRequests.add(handheld);
+   await loginApi(handheld, 'scanner');
+   const response = await handheld.post('/qqq/v1/qbit/mobile-scanners/devices/enroll', {
       data: { installationId: randomUUID(), displayName: name, manufacturer: 'Test', model: 'Browser fixture', osVersion: 'test', appVersion: 'test' },
    });
    expect(response.ok()).toBeTruthy();
-   return response.json();
+   return { ...await response.json(), request: handheld };
 }
 
 async function loginBrowser(page) {
@@ -30,8 +41,8 @@ async function loginBrowser(page) {
    await expect(page.getByRole('button', { name: 'Account: Device Administrator' })).toBeVisible();
 }
 
-async function status(request, device) {
-   const response = await request.get('/qqq/v1/qbit/mobile-scanners/devices/current', {
+async function status(device) {
+   const response = await device.request.get('/qqq/v1/qbit/mobile-scanners/devices/current', {
       headers: { 'X-QQQ-Device-Id': device.deviceId, 'X-QQQ-Device-Token': device.deviceToken },
    });
    expect(response.status()).toBe(200);
@@ -52,7 +63,7 @@ async function confirmSelected(page, devices, result) {
 
 test('approve and revoke from a single record show results and persist the selected device', async ({ page, request }) => {
    await loginApi(request, 'scanner');
-   const device = await enroll(request, `Single ${randomUUID()}`);
+   const device = await enroll(`Single ${randomUUID()}`);
    await loginBrowser(page);
    for (const [action, before, after, result] of [
       ['Approve Device', 'PENDING', 'APPROVED', '1 device approved.'],
@@ -60,9 +71,9 @@ test('approve and revoke from a single record show results and persist the selec
    ]) {
       await page.goto(`/app/mobileDevice/${device.deviceId}/`);
       await chooseAction(page, action, true);
-      await expect.poll(() => status(request, device)).toBe(before);
+      await expect.poll(() => status(device)).toBe(before);
       await confirmSelected(page, [device], result);
-      await expect.poll(() => status(request, device)).toBe(after);
+      await expect.poll(() => status(device)).toBe(after);
       await page.getByRole('button', { name: 'Return', exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`/app/mobileDevice/${device.deviceId}/?$`));
       await expect(page.getByRole('tabpanel', { name: 'Overview' })).toContainText(after);
@@ -71,8 +82,8 @@ test('approve and revoke from a single record show results and persist the selec
 
 test('bulk checked rows approve and revoke only selected devices', async ({ page, request }) => {
    await loginApi(request, 'scanner');
-   const devices = [await enroll(request, `Bulk A ${randomUUID()}`), await enroll(request, `Bulk B ${randomUUID()}`)];
-   const untouched = await enroll(request, `Untouched ${randomUUID()}`);
+   const devices = [await enroll(`Bulk A ${randomUUID()}`), await enroll(`Bulk B ${randomUUID()}`)];
+   const untouched = await enroll(`Untouched ${randomUUID()}`);
    await loginBrowser(page);
    for (const [action, before, after, result] of [
       ['Approve Device', 'PENDING', 'APPROVED', '2 devices approved.'],
@@ -82,16 +93,16 @@ test('bulk checked rows approve and revoke only selected devices', async ({ page
       for (const device of devices) await page.getByRole('checkbox', { name: `Select ${device.deviceId}`, exact: true }).check();
       await expect(page.getByRole('region', { name: 'Bulk actions' })).toContainText('2 records');
       await chooseAction(page, action);
-      for (const device of devices) await expect.poll(() => status(request, device)).toBe(before);
+      for (const device of devices) await expect.poll(() => status(device)).toBe(before);
       await confirmSelected(page, devices, result);
-      for (const device of devices) await expect.poll(() => status(request, device)).toBe(after);
-      await expect.poll(() => status(request, untouched)).toBe('PENDING');
+      for (const device of devices) await expect.poll(() => status(device)).toBe(after);
+      await expect.poll(() => status(untouched)).toBe('PENDING');
    }
 });
 
 test('standalone admin processes accept an explicit device ID', async ({ page, request }) => {
    await loginApi(request, 'scanner');
-   const device = await enroll(request, `Manual ${randomUUID()}`);
+   const device = await enroll(`Manual ${randomUUID()}`);
    await loginBrowser(page);
    for (const [process, after, result] of [
       ['mobileDeviceApprove', 'APPROVED', '1 device approved.'],
@@ -101,25 +112,25 @@ test('standalone admin processes accept an explicit device ID', async ({ page, r
       await page.getByRole('textbox', { name: 'Device IDs', exact: true }).fill(device.deviceId);
       await page.locator('[data-qqq-id="button-next"]').click();
       await expect(page.locator('[data-qqq-id="process-step-result"]')).toContainText(result);
-      await expect.poll(() => status(request, device)).toBe(after);
+      await expect.poll(() => status(device)).toBe(after);
    }
 });
 
 test('cancel from record confirmation leaves device pending', async ({ page, request }) => {
    await loginApi(request, 'scanner');
-   const device = await enroll(request, `Cancel ${randomUUID()}`);
+   const device = await enroll(`Cancel ${randomUUID()}`);
    await loginBrowser(page);
    await page.goto(`/app/mobileDevice/${device.deviceId}/`);
    await chooseAction(page, 'Approve Device', true);
    await expect(page.locator('[data-qqq-id="process-step-input"]')).toContainText(device.deviceId);
    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
    await page.getByRole('dialog', { name: 'Cancel Process?' }).getByRole('button', { name: 'Cancel Process', exact: true }).click();
-   await expect.poll(() => status(request, device)).toBe('PENDING');
+   await expect.poll(() => status(device)).toBe('PENDING');
 });
 
 test('full query selection approves and revokes through the filter-based bulk path', async ({ page, request }) => {
    await loginApi(request, 'scanner');
-   const devices = [await enroll(request, `All A ${randomUUID()}`), await enroll(request, `All B ${randomUUID()}`)];
+   const devices = [await enroll(`All A ${randomUUID()}`), await enroll(`All B ${randomUUID()}`)];
    await loginBrowser(page);
    for (const [action, after, verb] of [
       ['Approve Device', 'APPROVED', 'approved'],
@@ -133,15 +144,15 @@ test('full query selection approves and revokes through the filter-based bulk pa
       for (const device of devices) await expect(confirmation).toContainText(device.deviceId);
       await confirmation.locator('[data-qqq-id="button-next"]').click();
       await expect(page.locator('[data-qqq-id="process-step-result"]')).toContainText(new RegExp(`\\d+ devices ${verb}\\.`));
-      for (const device of devices) await expect.poll(() => status(request, device)).toBe(after);
+      for (const device of devices) await expect.poll(() => status(device)).toBe(after);
    }
 });
 
 test('first-N bulk selection changes exactly the requested subset', async ({ page, request }) => {
    await loginApi(request, 'scanner');
-   await enroll(request, `Subset A ${randomUUID()}`);
-   await enroll(request, `Subset B ${randomUUID()}`);
-   await enroll(request, `Subset C ${randomUUID()}`);
+   await enroll(`Subset A ${randomUUID()}`);
+   await enroll(`Subset B ${randomUUID()}`);
+   await enroll(`Subset C ${randomUUID()}`);
    await loginBrowser(page);
    for (const [action, after, result] of [
       ['Approve Device', 'APPROVED', '2 devices approved.'],

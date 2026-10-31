@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>com.kingsrook.qbits</groupId>
+   <artifactId>qbit-mobile-scanners-record-files</artifactId>
+   <version>0.1.0-SNAPSHOT</version>
+   <name>QQQ Mobile Scanners Record Files integration</name>
+   <description>Optional verified mobile capture attribution and semantic camera widget.</description>
+   <properties>
+      <maven.compiler.release>21</maven.compiler.release>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <qqq.frozen.version>4.1.0-isolated-record-files-SNAPSHOT</qqq.frozen.version>
+   </properties>
+   <dependencyManagement><dependencies>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-backend-core</artifactId><version>${qqq.frozen.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-backend-module-rdbms</artifactId><version>${qqq.frozen.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-middleware-javalin</artifactId><version>4.1.0-RC.20</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-collaboration</artifactId><version>0.1.0-record-files-SNAPSHOT</version></dependency>
+   </dependencies></dependencyManagement>
+   <dependencies>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-mobile-scanners</artifactId><version>0.1.0-SNAPSHOT</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-record-files</artifactId><version>0.1.0-SNAPSHOT</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-record-files</artifactId><version>0.1.0-SNAPSHOT</version><classifier>tests</classifier><type>test-jar</type><scope>test</scope></dependency>
+      <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><version>2.2.224</version><scope>test</scope></dependency>
+      <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.11.4</version><scope>test</scope></dependency>
+      <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId><version>3.27.7</version><scope>test</scope></dependency>
+   </dependencies>
+   <build><directory>${project.basedir}/target/module</directory><plugins>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.2</version><configuration><systemPropertyVariables><qqq.logger.logSessionId.disabled>true</qqq.logger.logSessionId.disabled></systemPropertyVariables></configuration></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-checkstyle-plugin</artifactId><version>3.6.0</version>
+         <dependencies><dependency><groupId>com.puppycrawl.tools</groupId><artifactId>checkstyle</artifactId><version>14.3.0</version></dependency></dependencies>
+         <configuration><configLocation>../../checkstyle/checkstyle.xml</configLocation><includeTestSourceDirectory>true</includeTestSourceDirectory><failOnViolation>true</failOnViolation><violationSeverity>warning</violationSeverity></configuration>
+         <executions><execution><id>style</id><phase>validate</phase><goals><goal>check</goal></goals></execution></executions>
+      </plugin>
+   </plugins></build>
+</project>

@@ -1,0 +1,1092 @@
+components:
+  schemas:
+    BasicErrorResponseV1:
+      description: "The error body of every UI API operation (core and extensions)."
+      properties:
+        error:
+          description: "The error message (the same as message; kept for clients of\
+            \ UI API 1.0 to 1.5)."
+          type: "string"
+        code:
+          description: "A stable, machine-readable code. Well-known values: BAD_REQUEST\
+            \ (400), UNAUTHENTICATED (401),\nPERMISSION_DENIED (403), NOT_FOUND (404),\
+            \ CONFLICT (409), RATE_LIMITED (429), INTERNAL_ERROR (500),\nERROR (other).\
+            \ Extensions may add codes; treat an unknown code by the HTTP status.\
+            \ Since 1.6.0."
+          type: "string"
+        message:
+          description: "A message to show the user. Since 1.6.0."
+          type: "string"
+        fieldErrors:
+          description: "Errors about particular request fields, when known. Since\
+            \ 1.6.0."
+          items:
+            properties:
+              field:
+                description: "The field (or parameter) name."
+                type: "string"
+              message:
+                description: "The error about that field."
+                type: "string"
+              code:
+                description: "An optional machine-readable code, e.g. REQUIRED, TOO_LONG,\
+                  \ PATTERN."
+                type: "string"
+            type: "object"
+          type: "array"
+        traceId:
+          description: "Identifies this request in the server logs (also the X-QQQ-Trace-Id\
+            \ response header); quote it when reporting a problem. Since 1.6.0."
+          type: "string"
+      type: "object"
+    MobileScannersBrandingV1:
+      description: "Customer appearance; displayName and primaryColor are always present;\
+        \ logoUrl is optional."
+      properties:
+        displayName:
+          maxLength: 80
+          type: "string"
+        logoUrl:
+          description: "Optional HTTPS image URL, no credentials or fragment."
+          format: "uri"
+          maxLength: 2048
+          type: "string"
+        primaryColor:
+          description: "Six-digit CSS hex color, including #."
+          maxLength: 7
+          type: "string"
+      required:
+      - "displayName"
+      - "primaryColor"
+      type: "object"
+    MobileScannersDeviceV1:
+      description: "All properties present. No credential material is returned."
+      properties:
+        description:
+          maxLength: 2000
+          type: "string"
+        deviceId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        displayName:
+          maxLength: 200
+          type: "string"
+        shortName:
+          maxLength: 32
+          type: "string"
+        status:
+          enum:
+          - "PENDING"
+          - "APPROVED"
+          - "REVOKED"
+          maxLength: 200
+          type: "string"
+      required:
+      - "deviceId"
+      - "displayName"
+      - "status"
+      type: "object"
+    MobileScannersEndSessionRequestV1:
+      description: "Operator intent for their own authenticated session; no target\
+        \ ID is accepted."
+      properties:
+        reason:
+          enum:
+          - "SIGN_OUT"
+          - "SERVER_CHANGE"
+          maxLength: 30
+          type: "string"
+      required:
+      - "reason"
+      type: "object"
+    MobileScannersEnrollRequestV1:
+      description: "installationId is required. Other strings are optional. JSON body\
+        \ maximum is 4096 characters."
+      properties:
+        appVersion:
+          maxLength: 200
+          type: "string"
+        description:
+          maxLength: 2000
+          type: "string"
+        displayName:
+          maxLength: 200
+          type: "string"
+        installationId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        manufacturer:
+          maxLength: 200
+          type: "string"
+        model:
+          maxLength: 200
+          type: "string"
+        osVersion:
+          maxLength: 200
+          type: "string"
+        shortName:
+          maxLength: 32
+          type: "string"
+      required:
+      - "installationId"
+      type: "object"
+    MobileScannersEnrollmentV1:
+      description: "All properties present. deviceToken is a secret returned only\
+        \ once; never log or include it in metadata/process values."
+      properties:
+        description:
+          maxLength: 2000
+          type: "string"
+        deviceId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        deviceToken:
+          maxLength: 128
+          type: "string"
+        displayName:
+          maxLength: 200
+          type: "string"
+        shortName:
+          maxLength: 32
+          type: "string"
+        status:
+          enum:
+          - "PENDING"
+          - "APPROVED"
+          - "REVOKED"
+          maxLength: 200
+          type: "string"
+      required:
+      - "deviceId"
+      - "deviceToken"
+      - "status"
+      type: "object"
+    MobileScannersHeartbeatRequestV1:
+      description: "Display activity only. Optional null or absent values clear previous\
+        \ metadata. Never include form values, barcodes, passwords or raw error messages.\
+        \ JSON maximum 4096 bytes. screenAvailable is true only for eligible foreground\
+        \ app content; false clears the retained frame."
+      properties:
+        appName:
+          maxLength: 200
+          nullable: true
+          type: "string"
+        captureBlockedReason:
+          maxLength: 80
+          nullable: true
+          type: "string"
+        errorCode:
+          maxLength: 80
+          nullable: true
+          type: "string"
+        foreground:
+          type: "boolean"
+        lastAction:
+          maxLength: 80
+          nullable: true
+          type: "string"
+        location:
+          $ref: "#/components/schemas/MobileScannersLocationV1"
+          nullable: true
+        locationStatus:
+          enum:
+          - "AVAILABLE"
+          - "PERMISSION_DENIED"
+          - "DISABLED"
+          - "UNAVAILABLE"
+          maxLength: 30
+          type: "string"
+        processInstanceId:
+          maxLength: 200
+          nullable: true
+          type: "string"
+        processName:
+          maxLength: 200
+          nullable: true
+          type: "string"
+        screenAvailable:
+          type: "boolean"
+        screenLabel:
+          maxLength: 200
+          nullable: true
+          type: "string"
+        stepName:
+          maxLength: 200
+          nullable: true
+          type: "string"
+        traceId:
+          maxLength: 100
+          nullable: true
+          type: "string"
+      required:
+      - "foreground"
+      - "screenAvailable"
+      type: "object"
+    MobileScannersHeartbeatV1:
+      description: "Current authenticated binding. screenMirror is omitted unless\
+        \ capture is eligible and an administrator is actively viewing. An ended or\
+        \ expired sign-in returns 401; the client must clear authentication."
+      properties:
+        heartbeatIntervalMillis:
+          maximum: 5000
+          minimum: 5000
+          type: "integer"
+        screenMirror:
+          $ref: "#/components/schemas/MobileScannersScreenLeaseV1"
+        serverTime:
+          format: "date-time"
+          maxLength: 40
+          type: "string"
+        sessionId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        status:
+          enum:
+          - "ACTIVE"
+          maxLength: 20
+          type: "string"
+      required:
+      - "sessionId"
+      - "status"
+      - "serverTime"
+      - "heartbeatIntervalMillis"
+      type: "object"
+    MobileScannersLocationV1:
+      description: "Optional foreground observation with runtime permission. Coordinates\
+        \ are last known, not a guarantee of current position; the server separately\
+        \ records receipt time."
+      properties:
+        accuracyMeters:
+          maximum: 10000000
+          minimum: 0
+          type: "number"
+        capturedAt:
+          format: "date-time"
+          maxLength: 40
+          type: "string"
+        latitude:
+          maximum: 90
+          minimum: -90
+          type: "number"
+        longitude:
+          maximum: 180
+          minimum: -180
+          type: "number"
+      required:
+      - "latitude"
+      - "longitude"
+      - "accuracyMeters"
+      - "capturedAt"
+      type: "object"
+    MobileScannersScanAcknowledgmentV1:
+      description: "Properties in core process response values after persistence.\
+        \ All are required to acknowledge success: scanSaved=true, acknowledgedEventId\
+        \ matches submitted eventId and scanId is nonempty. Async polling must complete\
+        \ first. A repeated event returns its original scanId."
+      properties:
+        acknowledgedEventId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        scanId:
+          maxLength: 64
+          type: "string"
+        scanSaved:
+          type: "boolean"
+      required:
+      - "acknowledgedEventId"
+      - "scanId"
+      - "scanSaved"
+      type: "object"
+    MobileScannersScanEventV1:
+      description: "Values submitted to the current core process frontend step. barcode,\
+        \ eventId and capturedAt required. eventId remains unchanged on retry; identity\
+        \ comes only from verified user/device context, never these values. Barcode\
+        \ is a nonempty string, preserving leading zeroes."
+      properties:
+        barcode:
+          maxLength: 4096
+          type: "string"
+        capturedAt:
+          format: "date-time"
+          maxLength: 40
+          type: "string"
+        eventId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        scanSource:
+          maxLength: 200
+          type: "string"
+        symbology:
+          maxLength: 200
+          type: "string"
+      required:
+      - "barcode"
+      - "eventId"
+      - "capturedAt"
+      type: "object"
+    MobileScannersScannerBlockV1:
+      description: "SCANNER child block of a core COMPOSITE widget, returned by core\
+        \ process/widget operations. Requires mobile-scanners extension major 1. All\
+        \ properties present; do not infer this contract from process or widget names."
+      properties:
+        blockId:
+          maxLength: 200
+          type: "string"
+        blockType:
+          enum:
+          - "SCANNER"
+          maxLength: 7
+          type: "string"
+        values:
+          $ref: "#/components/schemas/MobileScannersScannerValuesV1"
+      required:
+      - "blockId"
+      - "blockType"
+      - "values"
+      type: "object"
+    MobileScannersScannerValuesV1:
+      description: "SCANNER presentation values. Optional manualLabel defaults to\
+        \ Manual barcode; submitLabel defaults to Submit barcode; maxLength defaults\
+        \ to 4096. Unknown additive properties may be ignored."
+      properties:
+        instructions:
+          maxLength: 2000
+          type: "string"
+        manualLabel:
+          maxLength: 200
+          type: "string"
+        maxLength:
+          description: "Inclusive supported range 1..4096; reject invalid server values."
+          maximum: 4096
+          minimum: 1
+          type: "integer"
+        submitLabel:
+          maxLength: 200
+          type: "string"
+        title:
+          maxLength: 200
+          type: "string"
+      required:
+      - "title"
+      - "instructions"
+      type: "object"
+    MobileScannersScreenLeaseV1:
+      description: "Server-authorized capture demand. Compute remaining duration from\
+        \ expiresAt minus heartbeat serverTime. Sequence is scoped to this lease and\
+        \ resumes at nextSequence after client restart."
+      properties:
+        expiresAt:
+          format: "date-time"
+          maxLength: 40
+          type: "string"
+        frameIntervalMillis:
+          maximum: 1000
+          minimum: 1000
+          type: "integer"
+        leaseId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        maxBytes:
+          maximum: 262144
+          minimum: 262144
+          type: "integer"
+        maxHeight:
+          maximum: 1280
+          minimum: 1280
+          type: "integer"
+        maxWidth:
+          maximum: 640
+          minimum: 640
+          type: "integer"
+        nextSequence:
+          maximum: 9007199254740990
+          minimum: 0
+          type: "integer"
+      required:
+      - "leaseId"
+      - "expiresAt"
+      - "frameIntervalMillis"
+      - "maxWidth"
+      - "maxHeight"
+      - "maxBytes"
+      - "nextSequence"
+      type: "object"
+    MobileScannersScreenRequestV1:
+      description: "App-only eligible pixels, never login/password/other-app/OS content.\
+        \ Total JSON maximum 368640 bytes. Base64 is bounded before decoding; decoded\
+        \ JPEG maximum 262144 bytes, width <=640, height <=1280. Image dimensions\
+        \ are checked before pixel allocation. Old sequence or excessive upload rate\
+        \ returns 409. Frames are ephemeral, latest-only and cleared on blocked capture,\
+        \ expired demand or session end."
+      properties:
+        capturedAt:
+          format: "date-time"
+          maxLength: 40
+          type: "string"
+        height:
+          maximum: 1280
+          minimum: 1
+          type: "integer"
+        imageBase64:
+          format: "byte"
+          maxLength: 349528
+          type: "string"
+        leaseId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        mimeType:
+          enum:
+          - "image/jpeg"
+          maxLength: 10
+          type: "string"
+        sequence:
+          maximum: 9007199254740990
+          minimum: 0
+          type: "integer"
+        width:
+          maximum: 640
+          minimum: 1
+          type: "integer"
+      required:
+      - "leaseId"
+      - "sequence"
+      - "capturedAt"
+      - "width"
+      - "height"
+      - "mimeType"
+      - "imageBase64"
+      type: "object"
+    MobileScannersSessionEndedV1:
+      description: "Public tracking identity only. Device approval is unchanged."
+      properties:
+        endedAt:
+          format: "date-time"
+          maxLength: 40
+          type: "string"
+        sessionId:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+        status:
+          enum:
+          - "ENDED"
+          maxLength: 20
+          type: "string"
+      required:
+      - "sessionId"
+      - "status"
+      - "endedAt"
+      type: "object"
+    MobileScannersStatusV1:
+      description: "Connectivity only; status is always present."
+      properties:
+        status:
+          enum:
+          - "ok"
+          maxLength: 2
+          type: "string"
+      required:
+      - "status"
+      type: "object"
+  securitySchemes:
+    sessionUuidCookie:
+      description: "The session cookie set by POST /qqq/v1/manageSession (web clients)."
+      in: "cookie"
+      name: "sessionUUID"
+      type: "apiKey"
+    bearerAuth:
+      bearerFormat: "JWT or session UUID"
+      description: "`Authorization: Bearer <token>`, where the token is either\n-\
+        \ an OAuth2 access token (a signed JWT) issued by the app's identity provider\
+        \ to the app's client,\n  or to its native client (`values.nativeClientId`\
+        \ in GET /qqq/v1/metaData/authentication), for\n  example from the device-authorization\
+        \ grant or auth-code + PKCE. It is verified against the\n  provider's keys\
+        \ (issuer, audience, expiry, signature) and gives the same user and permissions\n\
+        \  as signing in on the web. When it expires (401), refresh it at the provider\
+        \ and retry; or\n- a session UUID returned by POST /qqq/v1/manageSession,\
+        \ which the server keeps refreshed."
+      scheme: "bearer"
+      type: "http"
+    oauth2:
+      description: "The app's OAuth2 / OpenID Connect provider. The real endpoints\
+        \ come from the provider's discovery\ndocument: `{values.baseUrl}.well-known/openid-configuration`,\
+        \ with values from\nGET /qqq/v1/metaData/authentication. Native clients use\
+        \ `values.nativeClientId` (a public client)\nwith auth-code + PKCE (loopback\
+        \ or custom-scheme redirect URI registered at the provider) or the\ndevice-authorization\
+        \ grant (`device_authorization_endpoint`, RFC 8628), then send the access\
+        \ token\nas `Authorization: Bearer`."
+      flows:
+        authorizationCode:
+          authorizationUrl: "/authorize"
+          scopes:
+            email: "Email address"
+            offline_access: "A refresh token, to renew the access token without signing\
+              \ in again"
+            openid: "OpenID Connect sign-in"
+            profile: "Name, username and groups (permissions come from the groups)"
+          tokenUrl: "/token"
+      type: "oauth2"
+info:
+  contact:
+    email: "contact@kingsrook.com"
+  description: "Native scanner devices, customer branding and SCANNER process widget\
+    \ contract."
+  title: "QQQ Middleware API extension: mobile-scanners"
+  version: "1.1.0"
+openapi: "3.0.3"
+paths:
+  /qqq/v1/qbit/mobile-scanners/branding:
+    get:
+      description: "Public appearance data; ignores stale user and device credentials.\
+        \ Never includes private configuration."
+      operationId: "mobileScannersBranding"
+      responses:
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Invalid input"
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "User sign-in required"
+        403:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Permission or device credential denied"
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Request failed"
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileScannersBrandingV1"
+          description: "Successful Response"
+        409:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Installation already enrolled"
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Not found, or not visible to this user (code NOT_FOUND)."
+        429:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Too many requests (code RATE_LIMITED); retry later."
+      summary: "Read customer branding"
+      tags:
+      - "mobile-scanners"
+  /qqq/v1/qbit/mobile-scanners/status:
+    get:
+      description: "Public connectivity only. Client must separately show authentication\
+        \ and device approval status."
+      operationId: "mobileScannersStatus"
+      responses:
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Invalid input"
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "User sign-in required"
+        403:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Permission or device credential denied"
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Request failed"
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileScannersStatusV1"
+          description: "Successful Response"
+        409:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Installation already enrolled"
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Not found, or not visible to this user (code NOT_FOUND)."
+        429:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Too many requests (code RATE_LIMITED); retry later."
+      summary: "Check mobile server connectivity"
+      tags:
+      - "mobile-scanners"
+  /qqq/v1/qbit/mobile-scanners/devices/enroll:
+    post:
+      description: "Requires a QQQ user session with mobile.scan permission. Returns\
+        \ a secret once; store privately and never log. Device remains PENDING until\
+        \ an administrator approves it. Existing installation IDs return 409 without\
+        \ rotating credentials."
+      operationId: "mobileScannersEnrollDevice"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileScannersEnrollRequestV1"
+        required: true
+      responses:
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Invalid input"
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "User sign-in required"
+        403:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Permission or device credential denied"
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Request failed"
+        409:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Installation already enrolled"
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileScannersEnrollmentV1"
+          description: "Pending device and one-time credential"
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Not found, or not visible to this user (code NOT_FOUND)."
+        429:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Too many requests (code RATE_LIMITED); retry later."
+      security:
+      - sessionUuidCookie:
+        - "N/A"
+      - bearerAuth:
+        - "N/A"
+      - oauth2:
+        - "openid"
+        - "profile"
+        - "email"
+      summary: "Enroll a handheld"
+      tags:
+      - "mobile-scanners"
+  /qqq/v1/qbit/mobile-scanners/devices/current:
+    get:
+      description: "Requires QQQ user session with mobile.scan and both device headers.\
+        \ PENDING and REVOKED devices may read their state but cannot run scanner\
+        \ processes. Headers also bind device identity on core metadata/widget/process\
+        \ requests; never send them to another origin or in process values."
+      operationId: "mobileScannersCurrentDevice"
+      parameters:
+      - description: "Enrolled installation UUID"
+        in: "header"
+        name: "X-QQQ-Device-Id"
+        required: true
+        schema:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+      - description: "Private one-time issued device credential; never log"
+        in: "header"
+        name: "X-QQQ-Device-Token"
+        required: true
+        schema:
+          maxLength: 128
+          type: "string"
+      responses:
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Invalid input"
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "User sign-in required"
+        403:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Permission or device credential denied"
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Request failed"
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileScannersDeviceV1"
+          description: "Successful Response"
+        409:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Installation already enrolled"
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Not found, or not visible to this user (code NOT_FOUND)."
+        429:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Too many requests (code RATE_LIMITED); retry later."
+      security:
+      - sessionUuidCookie:
+        - "N/A"
+      - bearerAuth:
+        - "N/A"
+      - oauth2:
+        - "openid"
+        - "profile"
+        - "email"
+      summary: "Read the authenticated device state"
+      tags:
+      - "mobile-scanners"
+  /qqq/v1/qbit/mobile-scanners/sessions/heartbeat:
+    post:
+      description: "Binds the current QQQ sign-in to the verified device. Nullable\
+        \ display metadata never grants permissions. Ended sign-ins return 401 and\
+        \ cannot start another mobile session. screenAvailable=false immediately removes\
+        \ the retained frame. Lease duration is expiresAt minus serverTime, not the\
+        \ device clock."
+      operationId: "mobileScannersSessionHeartbeat"
+      parameters:
+      - description: "Enrolled installation UUID"
+        in: "header"
+        name: "X-QQQ-Device-Id"
+        required: true
+        schema:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+      - description: "Private one-time issued device credential; never log"
+        in: "header"
+        name: "X-QQQ-Device-Token"
+        required: true
+        schema:
+          maxLength: 128
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileScannersHeartbeatRequestV1"
+        required: true
+      responses:
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Invalid input"
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "User sign-in required"
+        403:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Permission or device credential denied"
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Request failed"
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileScannersHeartbeatV1"
+          description: "Successful Response"
+        409:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Installation already enrolled"
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Not found, or not visible to this user (code NOT_FOUND)."
+        429:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Too many requests (code RATE_LIMITED); retry later."
+      security:
+      - sessionUuidCookie:
+        - "N/A"
+      - bearerAuth:
+        - "N/A"
+      - oauth2:
+        - "openid"
+        - "profile"
+        - "email"
+      summary: "Report current handheld session activity"
+      tags:
+      - "mobile-scanners"
+  /qqq/v1/qbit/mobile-scanners/sessions/current/end:
+    post:
+      description: "Ends the authenticated device session and invalidates its QQQ\
+        \ login. No target session ID is accepted. An already ended/expired login\
+        \ may return 401; the client must still clear local authentication. Device\
+        \ approval is unchanged."
+      operationId: "mobileScannersEndCurrentSession"
+      parameters:
+      - description: "Enrolled installation UUID"
+        in: "header"
+        name: "X-QQQ-Device-Id"
+        required: true
+        schema:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+      - description: "Private one-time issued device credential; never log"
+        in: "header"
+        name: "X-QQQ-Device-Token"
+        required: true
+        schema:
+          maxLength: 128
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileScannersEndSessionRequestV1"
+        required: true
+      responses:
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Invalid input"
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "User sign-in required"
+        403:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Permission or device credential denied"
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Request failed"
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileScannersSessionEndedV1"
+          description: "Successful Response"
+        409:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Installation already enrolled"
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Not found, or not visible to this user (code NOT_FOUND)."
+        429:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Too many requests (code RATE_LIMITED); retry later."
+      security:
+      - sessionUuidCookie:
+        - "N/A"
+      - bearerAuth:
+        - "N/A"
+      - oauth2:
+        - "openid"
+        - "profile"
+        - "email"
+      summary: "End this handheld sign-in"
+      tags:
+      - "mobile-scanners"
+  /qqq/v1/qbit/mobile-scanners/sessions/current/screen:
+    post:
+      description: "Requires the current approved device session, screenAvailable=true\
+        \ and an active viewer lease. JPEG decoded size at most 262144 bytes, dimensions\
+        \ at most 640x1280, JSON at most 368640 bytes. Monotonic sequence is scoped\
+        \ to leaseId. Frames are ephemeral and cleared on unavailable capture, expiry\
+        \ or session end; never upload login, password, OS or other-app pixels. A\
+        \ 409 asks the client to refresh heartbeat sequence/rate state."
+      operationId: "mobileScannersUploadSessionScreen"
+      parameters:
+      - description: "Enrolled installation UUID"
+        in: "header"
+        name: "X-QQQ-Device-Id"
+        required: true
+        schema:
+          format: "uuid"
+          maxLength: 36
+          type: "string"
+      - description: "Private one-time issued device credential; never log"
+        in: "header"
+        name: "X-QQQ-Device-Token"
+        required: true
+        schema:
+          maxLength: 128
+          type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileScannersScreenRequestV1"
+        required: true
+      responses:
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Invalid input"
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "User sign-in required"
+        403:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Permission or device credential denied"
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Request failed"
+        409:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Installation already enrolled"
+        204:
+          description: "Current frame accepted"
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Not found, or not visible to this user (code NOT_FOUND)."
+        429:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicErrorResponseV1"
+          description: "Too many requests (code RATE_LIMITED); retry later."
+      security:
+      - sessionUuidCookie:
+        - "N/A"
+      - bearerAuth:
+        - "N/A"
+      - oauth2:
+        - "openid"
+        - "profile"
+        - "email"
+      summary: "Upload an app screen for a live viewer"
+      tags:
+      - "mobile-scanners"
+servers:
+- description: "The QQQ server that serves this document (paths include /qqq/v1)."
+  url: "/"
+tags:
+- description: "Operations of the mobile-scanners extension."
+  name: "mobile-scanners"

@@ -1,6 +1,24 @@
 # QQQ Mobile Scanners session state
 
-Updated: 2026-10-30
+Updated: 2026-10-31
+
+Cross-chat coordination uses `R:\agent-comms\README.md` and the mobile master's owned `R:\agent-comms\qqq-mobile-scanner.md`, explicitly requested by the user. Record Files and Printing acknowledged the directory. Read the current summary at the top of each owner's mailbox before changing shared contracts.
+
+## October 31 current checkpoint
+
+Server working source passes37 root tests,2 HTTP acceptance tests and15 browser E2E cases; native navigation/session/photo acceptance is in progress. The optional `integrations/record-files` module verifies the frozen0238 bundle and has passing real authenticated upload/persisted-byte/identity denial tests. A subsequent independent review found stale scratch source in repeat builds and missing parent-permission negatives; fixes/tests are underway. The newer upstream operation guard exists in source but requires a qualified immutable handoff before adoption. See the module's session state for exact runtime hashes and compatibility limits.
+
+The local emulator is closed after the user confirmed it caused workstation-wide stutters. TC22 is connected; do not restart the emulator automatically. Builds are serialized with bounded workers. Existing operator demo and handheld state remain preserved. Android85 JVM tests and zero-error/zero-warning lint pass at the last compiled checkpoint; newer changes must be verified again.
+
+The active goal authorizes completing and publishing the project, superseding historical artifact-publication deferrals below. However, on October31 the owner explicitly deferred signing and distribution until the final step because the channel is undecided. Complete implementation, final audits, tests, documentation and ordinary hosted CI first. No signing key, production release, merge or deployment is claimed.
+
+## Active: device sessions, live screen viewing and 1.0 audit
+
+Additional user scope: unique short device names assigned at setup/approval, editable names/descriptions, independent approval/presence, online fleet view and foreground GPS with age/accuracy. Camera/gallery photos use the separately developed Record Files qbit. The Build QQQ Documentation agent owns it and `qbit-record-files/docs/INGESTION-CONTRACT.md` documents the implemented record-files1.0 semantic capabilities/create/status/chunk/finalize/cancel operations and durable receipts. The October31 checkpoint above supersedes earlier proposed-only contract status. Native photo acceptance and the final authorization guard remain pending; unavailable capabilities stay hidden.
+
+The user requires all device/session history, live activity and actual application-screen viewing in QQQ administration, plus session termination. Implementation follows [DEVICE-SESSIONS.md](DEVICE-SESSIONS.md): ordinary QQQ tables/widgets/processes, server-owned authenticated bindings, an additive 1.1 semantic extension and demand-based bounded screen frames. Native and browser actions require full E2E coverage, including record and bulk entry points.
+
+The user also requires independent in-depth security, architecture, coding-standards and coupling/cohesion reviews of both complete repositories before a production-ready 1.0. [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md) tracks the gates and exact baseline evidence. Plan: complete the session feature and tests; freeze final revisions for independent audits; remediate and verify findings; complete physical and release/operations acceptance. Deployment/distribution details have been requested. No 1.0 readiness or release is claimed.
 
 ## Current: semantic API migration
 

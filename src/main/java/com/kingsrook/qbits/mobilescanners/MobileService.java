@@ -13,11 +13,14 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import com.kingsrook.qqq.backend.core.actions.QBackendTransaction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QBadRequestException;
@@ -25,6 +28,10 @@ import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 
@@ -34,6 +41,8 @@ import com.kingsrook.qqq.backend.core.model.data.QRecord;
  *******************************************************************************/
 public final class MobileService
 {
+   static final ThreadLocal<QBackendTransaction> TRANSACTION = new ThreadLocal<>();
+
    /***************************************************************************
     ** No service instances or global mutable storage.
     ***************************************************************************/
@@ -47,6 +56,7 @@ public final class MobileService
    public static Map<String, Object> enroll(Map<String, Object> input) throws QException
    {
       MobilePermissions.require(MobilePermissions.SCAN);
+      MobileSessionService.requireNotEnded();
       String id = uuid(required(input, "installationId", 36));
       if(get(MobileScannersQBitProducer.DEVICE, id) != null || get(MobileScannersQBitProducer.CREDENTIAL, id) != null)
       {
@@ -62,10 +72,44 @@ public final class MobileService
       {
          device.setValue(name, optional(input, name, 200));
       }
-      // Credential first: a failed second insert leaves no usable approved device.
-      insert(MobileScannersQBitProducer.CREDENTIAL, credential);
-      insert(MobileScannersQBitProducer.DEVICE, device);
-      return Map.of("deviceId", id, "deviceToken", token, "status", "PENDING");
+      String shortName = optional(input, "shortName", 32);
+      device.setValue("shortName", shortName == null ? "scanner-" + id.replace("-", "").substring(0, 12) : MobileDeviceProfileCustomizer.canonical(shortName));
+      device.setValue("description", optional(input, "description", 2000));
+      for(int attempt = 0; ; attempt++)
+      {
+         try
+         {
+            transaction(() ->
+            {
+               insert(MobileScannersQBitProducer.CREDENTIAL, credential);
+               insert(MobileScannersQBitProducer.DEVICE, device);
+               return null;
+            });
+            break;
+         }
+         catch(QException failure)
+         {
+            if(shortName != null || attempt >= 3 || !shortNameExists(device.getValueString("shortName")))
+            {
+               throw failure;
+            }
+            credential.getErrors().clear();
+            device.getErrors().clear();
+            device.setValue("shortName", "scanner-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+         }
+      }
+      return Map.of("deviceId", id, "deviceToken", token, "status", "PENDING", "shortName", device.getValueString("shortName"),
+         "displayName", Objects.toString(device.getValueString("displayName"), ""), "description", Objects.toString(device.getValueString("description"), ""));
+   }
+
+   /***************************************************************************
+    ** Retry only generated-name collisions after the failed transaction rolls back.
+    ***************************************************************************/
+   private static boolean shortNameExists(String name) throws QException
+   {
+      return internally(() -> !new QueryAction().execute(new QueryInput().withTableName(MobileScannersQBitProducer.DEVICE)
+         .withFilter(new QQueryFilter(new QFilterCriteria("shortName", QCriteriaOperator.EQUALS, name)).withLimit(1)))
+         .getRecords().isEmpty());
    }
 
    /***************************************************************************
@@ -109,6 +153,18 @@ public final class MobileService
     ***************************************************************************/
    public static void setApproval(String deviceId, boolean approved) throws QException
    {
+      MobileSessionService.withActiveSession(() ->
+      {
+         applyApproval(deviceId, approved);
+         return null;
+      });
+   }
+
+   /***************************************************************************
+    ** Approval writes execute inside the active-session authorization boundary.
+    ***************************************************************************/
+   private static void applyApproval(String deviceId, boolean approved) throws QException
+   {
       MobilePermissions.require(MobilePermissions.ADMIN);
       if(get(MobileScannersQBitProducer.DEVICE, deviceId) == null)
       {
@@ -118,16 +174,73 @@ public final class MobileService
          .withValue("approvedBy", userId()).withValue("approvedAt", Instant.now());
       internally(() ->
       {
-         var output = new UpdateAction().execute(new UpdateInput().withTableName(MobileScannersQBitProducer.DEVICE).withRecord(record));
+         var output = new UpdateAction().execute(new UpdateInput().withTableName(MobileScannersQBitProducer.DEVICE).withTransaction(TRANSACTION.get()).withRecord(record));
          check(output.getRecords().getFirst());
          return null;
       });
    }
 
    /***************************************************************************
+    ** A failed bulk approval rolls back the entire confirmed selection.
+    ***************************************************************************/
+   static void setApproval(List<String> ids, boolean approved) throws QException
+   {
+      MobileSessionService.withActiveSession(() -> transaction(() ->
+      {
+         for(String id : ids)
+         {
+            applyApproval(id, approved);
+         }
+         return null;
+      }));
+   }
+
+   /***************************************************************************
+    ** Related writes require a real backend transaction, never the no-op base.
+    ***************************************************************************/
+   static <T> T transaction(Operation<T> operation) throws QException
+   {
+      if(TRANSACTION.get() != null)
+      {
+         return operation.run();
+      }
+      try(QBackendTransaction transaction = QBackendTransaction.openFor(new GetInput().withTableName(MobileScannersQBitProducer.DEVICE)))
+      {
+         if(transaction.getClass().equals(QBackendTransaction.class))
+         {
+            throw new QException("Mobile scanners requires a transactional storage backend.");
+         }
+         TRANSACTION.set(transaction);
+         try
+         {
+            T result = operation.run();
+            transaction.commit();
+            return result;
+         }
+         catch(Exception failure)
+         {
+            transaction.rollback();
+            throw failure;
+         }
+         finally
+         {
+            TRANSACTION.remove();
+         }
+      }
+   }
+
+   /***************************************************************************
     ** A deterministic primary key deduplicates request retries across servers.
     ***************************************************************************/
    static QRecord capture(Map<String, Serializable> input) throws QException
+   {
+      return MobileSessionService.withActiveSession(() -> captureApproved(input));
+   }
+
+   /***************************************************************************
+    ** Serialize the local authorization check and write with session ending.
+    ***************************************************************************/
+   private static QRecord captureApproved(Map<String, Serializable> input) throws QException
    {
       MobilePermissions.require(MobilePermissions.SCAN);
       String deviceId = QContext.getQSession() instanceof VerifiedDeviceSession verified ? verified.deviceId() : null;
@@ -200,6 +313,7 @@ public final class MobileService
          input.setTableName(table);
          input.setPrimaryKey(id);
          input.setShouldOmitHiddenFields(false);
+         input.setTransaction(TRANSACTION.get());
          return new GetAction().execute(input).getRecord();
       });
    }
@@ -207,11 +321,11 @@ public final class MobileService
    /***************************************************************************
     ** Row-level errors must be checked before acknowledging a scan.
     ***************************************************************************/
-   private static QRecord insert(String table, QRecord record) throws QException
+   static QRecord insert(String table, QRecord record) throws QException
    {
       return internally(() ->
       {
-         var output = new InsertAction().execute(new InsertInput().withTableName(table).withRecord(record));
+         var output = new InsertAction().execute(new InsertInput().withTableName(table).withTransaction(TRANSACTION.get()).withRecord(record));
          if(output.getRecords() == null || output.getRecords().size() != 1)
          {
             throw new QException("The record could not be saved.");
@@ -236,7 +350,7 @@ public final class MobileService
    /***************************************************************************
     ** Restore the permission scope even when a backend throws.
     ***************************************************************************/
-   private static <T> T internally(Operation<T> operation) throws QException
+   static <T> T internally(Operation<T> operation) throws QException
    {
       Boolean previous = MobilePermissions.INTERNAL.get();
       MobilePermissions.INTERNAL.set(true);
@@ -260,7 +374,7 @@ public final class MobileService
    /***************************************************************************
     ** QQQ operation with checked failure.
     ***************************************************************************/
-   private interface Operation<T>
+   interface Operation<T>
    {
       /***********************************************************************
        ** Execute one internal persistence operation.
@@ -271,7 +385,7 @@ public final class MobileService
    /***************************************************************************
     ** Server-authenticated identity only.
     ***************************************************************************/
-   private static String userId()
+   static String userId()
    {
       return QContext.getQSession().getUser().getIdReference();
    }
@@ -292,7 +406,7 @@ public final class MobileService
    /***************************************************************************
     ** Reject non-string and oversized metadata.
     ***************************************************************************/
-   private static String optional(Map<String, ?> input, String name, int maximum) throws QException
+   static String optional(Map<String, ?> input, String name, int maximum) throws QException
    {
       Object value = input.get(name);
       if(value == null)
@@ -329,7 +443,7 @@ public final class MobileService
    /***************************************************************************
     ** SHA-256 of high-entropy tokens, never plaintext storage.
     ***************************************************************************/
-   private static String hash(String value)
+   static String hash(String value)
    {
       try
       {

@@ -6,22 +6,17 @@
 package com.kingsrook.qbits.mobilescanners;
 
 
-import java.util.List;
 import java.util.Map;
 import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.middleware.javalin.specs.BasicOperation;
 import com.kingsrook.qqq.openapi.model.HttpMethod;
-import com.kingsrook.qqq.openapi.model.In;
-import com.kingsrook.qqq.openapi.model.Parameter;
-import com.kingsrook.qqq.openapi.model.Schema;
-import com.kingsrook.qqq.openapi.model.Type;
 
 
 /*******************************************************************************
  ** Current device state is visible with authenticated user and device headers.
  *******************************************************************************/
-public class MobileCurrentDeviceSpec extends MobileJsonSpec
+public class MobileCurrentDeviceSpec extends MobileDeviceJsonSpec
 {
    /***************************************************************************
     ** Stable device-status operation.
@@ -32,18 +27,6 @@ public class MobileCurrentDeviceSpec extends MobileJsonSpec
       return new BasicOperation().withHttpMethod(HttpMethod.GET).withPath(MobileScannersUiApi.PREFIX + "/devices/current")
          .withOperationId("mobileScannersCurrentDevice").withShortSummary("Read the authenticated device state")
          .withLongDescription("Requires QQQ user session with mobile.scan and both device headers. PENDING and REVOKED devices may read their state but cannot run scanner processes. Headers also bind device identity on core metadata/widget/process requests; never send them to another origin or in process values.");
-   }
-
-   /***************************************************************************
-    ** Document both credential headers without examples containing secrets.
-    ***************************************************************************/
-   @Override
-   public List<Parameter> defineRequestParameters()
-   {
-      return List.of(new Parameter().withName(MobileScannersRouteProvider.DEVICE_HEADER).withIn(In.HEADER).withRequired(true)
-            .withDescription("Enrolled installation UUID").withSchema(new Schema().withType(Type.STRING).withFormat("uuid").withMaxLength(36)),
-         new Parameter().withName(MobileScannersRouteProvider.TOKEN_HEADER).withIn(In.HEADER).withRequired(true)
-            .withDescription("Private one-time issued device credential; never log").withSchema(new Schema().withType(Type.STRING).withMaxLength(128)));
    }
 
    /***************************************************************************
@@ -68,7 +51,8 @@ public class MobileCurrentDeviceSpec extends MobileJsonSpec
       {
          throw new QPermissionDeniedException("Invalid device credential.");
       }
-      return Map.of("deviceId", id, "status", device.getValueString("status"),
+      return Map.of("deviceId", id, "status", device.getValueString("status"), "shortName", device.getValueString("shortName"),
+         "description", java.util.Objects.toString(device.getValueString("description"), ""),
          "displayName", device.getValueString("displayName") == null ? "" : device.getValueString("displayName"));
    }
 }

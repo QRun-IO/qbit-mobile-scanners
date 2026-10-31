@@ -6,6 +6,7 @@
 package com.kingsrook.qbits.mobilescanners;
 
 
+import com.kingsrook.qqq.backend.core.exceptions.QBadRequestException;
 import com.kingsrook.qqq.middleware.javalin.specs.BasicOperation;
 import com.kingsrook.qqq.middleware.javalin.specs.BasicResponse;
 import com.kingsrook.qqq.openapi.model.HttpMethod;
@@ -55,6 +56,29 @@ public class MobileEnrollSpec extends MobileJsonSpec
    public BasicResponse defineBasicSuccessResponse()
    {
       return new BasicResponse(HttpStatus.CREATED, "Pending device and one-time credential", getResponseSchemaName());
+   }
+
+   /***************************************************************************
+    ** Preserve the 1.0 character limit for international device descriptions.
+    ***************************************************************************/
+   @Override
+   protected int maximumBodyBytes()
+   {
+      return 16384;
+   }
+
+   /***************************************************************************
+    ** A bounded UTF-8 request must also meet the existing character contract.
+    ***************************************************************************/
+   @Override
+   public JsonInput buildInput(Context context) throws Exception
+   {
+      JsonInput input = super.buildInput(context);
+      if(context.body().length() > 4096)
+      {
+         throw new QBadRequestException("The enrollment request exceeds 4096 characters.");
+      }
+      return input;
    }
 
    /***************************************************************************

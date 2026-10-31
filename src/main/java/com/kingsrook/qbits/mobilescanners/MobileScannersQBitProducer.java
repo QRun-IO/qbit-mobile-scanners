@@ -7,6 +7,7 @@ package com.kingsrook.qbits.mobilescanners;
 
 
 import java.util.List;
+import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
@@ -26,6 +27,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitProducer;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
 
 
 /*******************************************************************************
@@ -42,6 +44,10 @@ public class MobileScannersQBitProducer implements QBitProducer
    public static final String WIDGET = "mobileScanner";
    public static final String APP = "mobileScanApp";
    public static final String ADMIN_APP = "mobileScannerAdmin";
+   public static final String SESSION = "mobileSession";
+   public static final String SESSION_BINDING = "mobileSessionBinding";
+   public static final String SESSION_END = "mobileSessionEnd";
+   public static final String SESSION_SCREEN = "mobileSessionScreen";
    private MobileScannersQBitConfig config;
 
    /***************************************************************************
@@ -73,8 +79,17 @@ public class MobileScannersQBitProducer implements QBitProducer
          device.withField(text(field, 200));
       }
       device.withField(time("enrolledAt")).withField(time("approvedAt"));
+      device.withField(text("shortName", 32).withIsRequired(true)).withField(text("description", 2000))
+         .withUniqueKey(new UniqueKey("shortName"))
+         .withCustomizer(TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(MobileDeviceProfileCustomizer.class));
+      MobileDeviceActivity.addFields(device);
+      for(var field : device.getFields().values())
+      {
+         field.setIsEditable(List.of("shortName", "displayName", "description").contains(field.getName()));
+      }
+      device.getField("status").setLabel("Approval Status");
       instance.addTable(device);
-      instance.addTable(table(CREDENTIAL, "Device Credentials", 36).withField(text("tokenHash", 64).withIsHidden(true)));
+      instance.addTable(table(CREDENTIAL, "Device Credentials", 36).withField(text("tokenHash", 64).withIsHidden(true).withIsSensitive(true)));
       QTableMetaData scan = table(SCAN, "Barcode Scans", 64);
       for(String field : List.of("deviceId", "eventId", "userId", "appId", "processName", "symbology", "scanSource", "manufacturer", "model", "osVersion", "appVersion"))
       {
@@ -82,6 +97,7 @@ public class MobileScannersQBitProducer implements QBitProducer
       }
       scan.withField(text("barcode", 4096)).withField(time("capturedAt")).withField(time("receivedAt"));
       instance.addTable(scan);
+      MobileSessionMetadata.register(instance, config.getBackendName());
       instance.addWidget(new QWidgetMetaData().withName(WIDGET).withLabel("Scan a barcode").withType("composite")
          .withCodeReference(new QCodeReference(MobileScannerWidget.class)).withPermissionRules(rules()));
       instance.addProcess(new QProcessMetaData().withName(CAPTURE).withLabel("Scan Capture").withPermissionRules(rules())
@@ -108,7 +124,7 @@ public class MobileScannersQBitProducer implements QBitProducer
          .withPermissionRules(rules()).withSection(new QAppSection().withName("scan").withLabel("Scanning").withProcesses(List.of(CAPTURE))));
       instance.addApp(new QAppMetaData().withName(ADMIN_APP).withLabel("Mobile Scanner Administration").withIcon(new QIcon("devices"))
          .withPermissionRules(rules()).withSection(new QAppSection().withName("devices").withLabel("Devices and Scans")
-            .withTables(List.of(DEVICE, SCAN)).withProcesses(List.of(APPROVE, REVOKE))));
+            .withTables(List.of(DEVICE, SESSION, SCAN)).withProcesses(List.of(APPROVE, REVOKE, SESSION_END))));
    }
 
    /***************************************************************************

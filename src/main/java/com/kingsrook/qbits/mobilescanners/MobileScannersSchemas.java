@@ -38,11 +38,11 @@ public final class MobileScannersSchemas
          "status", text(2).withEnumValues(List.of("ok"))), "status"));
       schemas.put("MobileScannersEnrollRequestV1", object("installationId is required. Other strings are optional. JSON body maximum is 4096 characters.", Map.of(
          "installationId", uuid(), "displayName", text(200), "manufacturer", text(200), "model", text(200),
-         "osVersion", text(200), "appVersion", text(200)), "installationId"));
+         "osVersion", text(200), "appVersion", text(200), "shortName", text(32), "description", text(2000)), "installationId"));
       schemas.put("MobileScannersEnrollmentV1", object("All properties present. deviceToken is a secret returned only once; never log or include it in metadata/process values.", Map.of(
-         "deviceId", uuid(), "deviceToken", text(128), "status", status()), "deviceId", "deviceToken", "status"));
+         "deviceId", uuid(), "deviceToken", text(128), "status", status(), "shortName", text(32), "displayName", text(200), "description", text(2000)), "deviceId", "deviceToken", "status"));
       schemas.put("MobileScannersDeviceV1", object("All properties present. No credential material is returned.", Map.of(
-         "deviceId", uuid(), "displayName", text(200), "status", status()), "deviceId", "displayName", "status"));
+         "deviceId", uuid(), "displayName", text(200), "status", status(), "shortName", text(32), "description", text(2000)), "deviceId", "displayName", "status"));
       schemas.put("MobileScannersScannerValuesV1", object("SCANNER presentation values. Optional manualLabel defaults to Manual barcode; submitLabel defaults to Submit barcode; maxLength defaults to 4096. Unknown additive properties may be ignored.", Map.of(
          "title", text(200), "instructions", text(2000), "manualLabel", text(200), "submitLabel", text(200),
          "maxLength", new ScannerMaximumSchema().withType(Type.INTEGER).withDescription("Inclusive supported range 1..4096; reject invalid server values.")), "title", "instructions"));
@@ -54,13 +54,14 @@ public final class MobileScannersSchemas
          "symbology", text(200), "scanSource", text(200)), "barcode", "eventId", "capturedAt"));
       schemas.put("MobileScannersScanAcknowledgmentV1", object("Properties in core process response values after persistence. All are required to acknowledge success: scanSaved=true, acknowledgedEventId matches submitted eventId and scanId is nonempty. Async polling must complete first. A repeated event returns its original scanId.", Map.of(
          "acknowledgedEventId", uuid(), "scanId", text(64), "scanSaved", new Schema().withType(Type.BOOLEAN)), "acknowledgedEventId", "scanId", "scanSaved"));
+      schemas.putAll(MobileSessionSchemas.components());
       return schemas;
    }
 
    /***************************************************************************
     ** Explicit object properties permit future additive fields.
     ***************************************************************************/
-   private static Schema object(String description, Map<String, Schema> properties, String... required)
+   static Schema object(String description, Map<String, Schema> properties, String... required)
    {
       return new RequiredObjectSchema(List.of(required)).withType(Type.OBJECT).withDescription(description).withProperties(new TreeMap<>(properties));
    }
@@ -68,7 +69,7 @@ public final class MobileScannersSchemas
    /***************************************************************************
     ** Bounded strings retain their native wire type.
     ***************************************************************************/
-   private static Schema text(int maximum)
+   static Schema text(int maximum)
    {
       return new Schema().withType(Type.STRING).withMaxLength(maximum);
    }
@@ -76,7 +77,7 @@ public final class MobileScannersSchemas
    /***************************************************************************
     ** Canonical installation and event identifiers.
     ***************************************************************************/
-   private static Schema uuid()
+   static Schema uuid()
    {
       return text(36).withFormat("uuid");
    }
@@ -92,7 +93,7 @@ public final class MobileScannersSchemas
    /***************************************************************************
     ** Link reusable versioned components.
     ***************************************************************************/
-   private static Schema ref(String name)
+   static Schema ref(String name)
    {
       return new Schema().withRefToSchema(name);
    }

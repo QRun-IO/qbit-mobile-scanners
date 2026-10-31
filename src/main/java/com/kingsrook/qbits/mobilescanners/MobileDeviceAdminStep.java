@@ -34,10 +34,7 @@ public class MobileDeviceAdminStep implements BackendStep
          : MobileService.required(input.getValues(), "deviceId", 3700);
       var ids = MobileDeviceAdminPrepareStep.resolve(id);
       boolean approved = MobileScannersQBitProducer.APPROVE.equals(process);
-      for(String deviceId : ids)
-      {
-         MobileService.setApproval(deviceId, approved);
-      }
+      MobileService.setApproval(ids, approved);
       output.addValue("deviceId", String.join(",", ids));
       output.addValue("status", approved ? "APPROVED" : "REVOKED");
       output.addValue("processedDeviceCount", ids.size());

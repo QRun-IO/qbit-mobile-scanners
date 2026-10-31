@@ -64,23 +64,50 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
    private void bindDevice(Context context) throws Exception
    {
       MobilePermissions.REQUEST_DEVICE.remove();
+      if(context.path().endsWith("/widget/mobileSessionScreen") || context.path().endsWith("/widget/mobileDeviceStatus"))
+      {
+         context.header("Cache-Control", "no-store");
+      }
       String id = context.header(DEVICE_HEADER);
       String token = context.header(TOKEN_HEADER);
+      if("/qqq/v1/logout".equals(context.path()))
+      {
+         try
+         {
+            ExecutorSessionUtils.setupSession(context, instance);
+            MobileSessionService.recordLogout();
+         }
+         catch(Exception ignored)
+         {
+            // Core logout must still clear an expired session if history cannot be updated.
+         }
+         finally
+         {
+            QContext.clear();
+         }
+         return;
+      }
       if(Set.of("/qqq/v1/version", "/qqq/v1/openapi.json", "/qqq/v1/openapi.yaml", "/qqq/v1/metaData/authentication",
          "/qqq/v1/manageSession", "/qqq/v1/logout", "/qqq/v1" + MobileScannersUiApi.PREFIX + "/branding",
          "/qqq/v1" + MobileScannersUiApi.PREFIX + "/status", "/qqq/v1" + MobileScannersUiApi.PREFIX + "/devices/enroll").contains(context.path()))
       {
          return;
       }
-      if(id == null && token == null)
+      if(id == null && token == null && context.cookie("sessionUUID") == null && context.cookie("sessionId") == null && context.header("Authorization") == null)
       {
          return;
       }
       try
       {
          ExecutorSessionUtils.setupSession(context, instance);
+         MobileSessionService.requireNotEnded();
+         if(id == null && token == null)
+         {
+            return;
+         }
          QRecord device = MobileService.authenticateDevice(id, token);
          MobilePermissions.REQUEST_DEVICE.set(device.getValueString("id"));
+         MobileSessionService.observe(device.getValueString("id"));
       }
       catch(QAuthenticationException e)
       {

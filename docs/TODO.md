@@ -1,5 +1,14 @@
 # QQQ Mobile Scanners TODO
 
+- [ ] Unique short names, editable names/descriptions, preserving migration and protected profile editing.
+- [ ] Separate approval/presence states, online-only fleet query, foreground location with accuracy/age and permission-denied behavior.
+- [ ] Coordinate Record Files semantic contract and implement native camera/gallery upload, record association and real-server/hardware acceptance.
+
+- [ ] Device/session history, live activity and demand-based actual app-screen viewing through native QQQ administration and semantic extension 1.1.
+- [ ] Single-record and bulk End Session process with server-enforced invalidation, audit and browser/native E2E coverage.
+- [ ] Independent full client/server security, architecture and code-quality audits; remediate and verify findings.
+- [ ] Complete production 1.0 gates in [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md), including physical acceptance and deployment/release requirements.
+
 - [x] Native qbit device/scan tables and permission boundaries.
 - [x] Authenticated enrollment, approval and revocation.
 - [x] Native Scan Capture process and idempotent scan storage.
