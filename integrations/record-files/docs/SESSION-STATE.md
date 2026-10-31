@@ -1,71 +1,66 @@
-# Record Files bridge — 2026-10-31 04:04 CDT
+# Record Files bridge — 2026-10-31 12:46 UTC
 
-## Guarded-artifact verification follow-up
+Frozen `retained-contract-20261031-0515` is explicitly accepted as this isolated
+consumer's default after root review. `Verify-Isolated.ps1` defaults to that bundle
+and the separate `target/isolated-m2-0515` cache. The prior0352 cache and all earlier
+evidence remain intact. No shared Maven dependency, operator runtime, TC22 state,
+or production database was changed by this qualification. No commit was made.
 
-Latest result: all 18 optional integration/contract tests PASS (16 HTTP/identity/concurrency cases plus 2 typed-contract tests), Checkstyle and runtime-integrity verification PASS against frozen0352. The prior fresh base build passed 37. Evidence is retained in `evidence/20261031-094704Z/`, including exact source hashes, test summaries, runtime validation and success-marker hashes. The module rerun reused the freshly verified guarded scanner binary; it did not rebuild the base again. This establishes single-instance exclusion through the tested commits/rollbacks, not cross-node protection or production-provider qualification. Orientation APK rebuild is complete; root is running the separate TC22 orientation acceptance.
+Fresh scanner clean verify/install passed 37 tests. Optional clean verify passed
+18 tests (16 HTTP/identity/concurrency and two typed-contract), zero failures,
+errors or skips, with Checkstyle. The bounded JVM used two visible processors and
+768 MiB. Exec68943 completed successfully; no bridge build or fixture is active.
 
-The intake-event probe was attached to the wrong audit instance: production registration happens inside the attachment lifecycle. A test lifecycle subclass now preserves inherited policy and injects the probe into that actual registration transaction. The next run reached every guard/commit seam and had only two failures: the injected intake rollback correctly left zero registered files, contrary to the test's unconditional one-file expectation. That assertion now distinguishes rolled-back registration from committed originals. Verification rerun is live as exec session57911, with private log `qqq-guarded-lifecycle-verify.log`; poll that handle before launching another build. No pass is claimed yet.
+All 33 bundle entries and seven guarded-source entries match their hashes. The
+complete actual runtime contains 214 jars and 3,180 QQQ/qbit classes, zero duplicate
+classes. Explicit H2 is 2.2.224. Evidence under `evidence/20261031-124632Z/` includes
+full runtime/compiled hashes, exact bundle/source manifests, base/module source
+hashes, test summaries, a safe receipt, actual semantic widget and success marker.
 
-The 0352 source changes were tested with the isolated verifier. Fresh base verification passed 37 tests. The first optional run exposed a misspelled approval process in the new test; corrected to `mobileDeviceApprove`. The module-only rerun executed 18 tests, with four failures in the INTAKE_COMPLETED concurrency cases (parameter indexes 1, 2, 7 and 8): finalization returned without the expected exception. The other concurrency cases and two contract tests passed. Do not treat the guarded integration as accepted; investigate whether the intake event hook is exercised and verify commit/rollback assertions before changing expectations. Both verifier processes are terminal. Private log: task cache `qqq-guarded-integration-verify-fixed.log`.
+The tested scanner jar SHA-256 is
+`e9504632ec308cbad080afcce7da0fb7037f7d9b153359d1653729cb8e33af17`.
+The fresh source copy includes normalized trailing-slash heartbeat authorization.
+Core is `c7e9da29afe886ada550d0590b10491b8f3b1a621a1b3b79ca3fb5f807dcf894`;
+RDBMS is `562ec0f2653dd156d06b7b7df7268c40ac87a2c8a79c4f2f7811666507338728`.
+Record Files and attachment-owner binaries are unchanged from0352. Core's exact
+bytecode confirms fixed revalidation log text without session-ID interpolation.
 
-Implemented the optional module, public scanner authorization facade, identity
-provider, semantic widget DTO, isolated verification and local consumer launcher.
-No shared Maven artifact, live demo, TC22 or upstream source was changed. No
-commits/publication were made by this worker.
+The optional bridge retains independent base qbits. It accepts identity only from
+verified request/asynchronous server context, revalidates private bindings and
+current approval/tombstones, and holds the real scanner monitor through owner
+registration, association and receipt commits. Twelve deterministic concurrent
+revoke/end cases cover all three commit points and injected rollbacks. Separate
+HTTP checks cover password login, enrollment, record-screen approval, uploads,
+persisted originals/associations, receipt replay, tenant and parent denial,
+permission/feature removal, missing/forged identity and new-session refusal.
+This proves single-instance exclusion; it does not qualify clustered deployment.
 
-All 19 frozen bundle hashes verified. Isolated scanner base: 37 tests passed.
-Optional module: Checkstyle and six tests passed (four HTTP/adapter and two
-typed contract tests). All 214 runtime
-jars are hashed; 3,158 QQQ/qbit classes have zero duplicates. Retained evidence is
-under `evidence/20261031-040422/`; the earlier three-test evidence is preserved.
-The final module-only clean verification consumes the prior fresh scanner build,
-SHA-256 `4eb8482bb6220cf0c1d609e0e43ff554ec023671eb51ee89b120be96bcafc85a`.
-It does not claim to rebuild the base a second time.
+The typed mobile-record-files1.0 descriptor and actual process WIDGET are verified
+through native HTTP. The existing registry requires an endpoint spec, so a small
+public static descriptor carries version/block/widget vocabulary without creating
+another upload protocol. Native clients verify it before record capabilities.
 
-The HTTP test performs real password login, enrollment, record-screen approval,
-create/chunk/finalize and replay. It verifies file-H2 association, persisted bytes'
-SHA-256, actor/device/public-session attribution and absence of secrets in receipt
-or identity. Refusal checks upload every byte before revocation, then require 403
-while revoked, 401 after session end, and 404 from a new login with no retained
-association. Direct adapter checks cover desktop optional identity, Android
-missing proof, stripped proof on a bound session, forged provider/actor/device/
-public session, conflicting trusted request context, unauthenticated context,
-retained asynchronous identity, revoked/ended authority and callback denial.
-An approved device also fails against tenant-invisible document/3 and unconfigured
-memo/1. Removing current write/attach permission or disabling the parent's
-attachment feature before finalization prevents retained associations and bytes.
+The private launcher and synthetic camera/gallery, orientation and session-ending
+flows were accepted on TC22 against0352. The new0515 qualification is the server
+consumer suite; no repeated physical-device claim is made. Launcher credentials
+remain synthetic and private, and test storage/audit are not production adapters.
 
-The optional `mobile-record-files` 1.0.0 extension publishes a public static
-descriptor and typed widget schemas through the existing extension registry.
-The registry requires a nonempty endpoint spec; it has no schema-only hook.
-HTTP tests verify discovery, descriptor, and the actual process-init WIDGET data
-against those schemas, including the explicit opaque parent. Native clients must
-verify the descriptor before authenticated record capability discovery.
+Jobs migration requirements and exact candidate provenance are in
+`docs/CORE-0515-ADOPTION.md`. This fixture does not register Jobs. Existing Jobs
+hosts must add the three nullable metadata columns and unique enlistment key
+before adopting the new core, even with strict admission disabled. No operator
+migration or strict Jobs activation was performed.
 
-Source synchronization now recreates only validated scanner scratch directories,
-rejects reparse points, and runs clean builds. The module's build directory is
-`target/module`, separate from its private Maven cache and scanner wrapper.
-The path regression passed for deleted Java/resources/classes, repeated sync,
-cache preservation, containment, and junction refusal. The launcher requires a
-successful verification marker and checks every runtime/compiled artifact hash.
+Remaining release gates: immutable published dependency coordinates, optional
+hosted CI, production storage/content scanning/release and durable audit, host
+migration/provider rollout, cross-node strategy if required, and final release
+review. Passing isolated qualification does not authorize deployment.
 
-H2 2.4.240 failed enrollment: `ConditionInConstantSet` retained a closed DDL session
-in the scanner's status check constraint. The combined fixture passes with
-explicit H2 2.2.224 and unchanged frozen core/RDBMS jars. Collaboration's unresolved
-`${revision}` needed a separately derived POM; both provenance and derived hash are
-retained. This is a candidate compatibility result, not blanket provider approval.
-
-Bounded serial verification is terminal; the build slot was released to Android.
-The launcher has not been smoke tested. It starts a bounded hidden JVM, protects
-only a new per-run private credential directory, and stops its own process on
-startup timeout. Its fixture registers `mobileRecordPhotos` and the native photo
-widget for document/1. Android owns the upcoming synthetic camera/gallery and
-physical-device acceptance; no surroundings or private photos are needed.
-
-The frozen SPI has a revalidate-to-write race. Root sent an operation-scope request
-to the Record Files master. This worker did not waive the gap: release awaits the
-upstream guard plus concurrent revocation/termination evidence.
-Upstream working source now contains the guard, but a new immutable handoff has
-not been adopted. `AUTHORIZATION-GUARD-REQUEST.md` records the exact adapter/facade
-change and required commit-scope semantics. This source is ready for review and
-a checkpoint commit, not production release.
+Publication follow-up inspected live Central/GitHub metadata and owner worktrees.
+The candidate tuple remains unpublished: Record Files metadata is404, public
+Collaboration is RC.6 and public core/RDBMS/parent are RC.20. The exact owner source
+branches have no matching PRs and contain uncommitted changes. Details and the
+minimal required handoff are in `docs/HOSTED-CI-DEPENDENCIES.md`. A plain DATA request
+was prepared at `C:/Users/james/.cache/qqq-mobile-rf-publication-request-20261031.txt`
+for root to append to its mailbox. No comms were sent, workflow enabled, artifact
+uploaded, build run or commit made during this follow-up.

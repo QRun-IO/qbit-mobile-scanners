@@ -83,11 +83,15 @@ output lives in `target/module`, separate from the sibling private repository an
 wrapper. `Test-IsolatedBuildPaths.ps1` verifies deleted Java/resource/class removal,
 repeat synchronization, sibling preservation and refusal of unsafe/reparse paths.
 Module-only runs explicitly hash the prior scanner jar and do not overlay new source.
+The accepted 0515 candidate defaults to `-RepositoryName isolated-m2-0515`
+to preserve the earlier cache. See [the 0515 adoption record](docs/CORE-0515-ADOPTION.md)
+for exact hashes, Jobs migration requirements and the consumer verification status.
 
-The current verified bundle is `retained-contract-20261031-0352` from the documents
-owner. All 20 root entries and seven source entries are verified. The script
+The current verified bundle is `retained-contract-20261031-0515` from the documents
+owner. All 33 root entries and seven source entries are verified. The script
 uses the owner's exact resolved collaboration POM, preserving its original bytes.
-Earlier 0238 evidence and its locally derived POM remain historical. This candidate
+It also installs the exact flattened parent POM and matched core/RDBMS pair.
+Earlier 0238/0352 evidence and caches remain historical. This candidate
 uses the frozen isolated core/RDBMS, RC.20 middleware, and H2 2.2.224. The fixture
 found that H2 2.4.240 fails the shipped scanner `CHECK (status IN (...))` constraint
 after the DDL connection closes (`ConditionInConstantSet` references its closed
@@ -118,7 +122,8 @@ The adopted SPI executes operations through the scanner's `executeAuthorized`
 guard, including expected absence for genuine desktop callers. Eighteen passing
 integration/contract tests cover current identity, parent grants, actual retained
 registration/association/receipt commits, concurrent revoke/end and rollback.
-Evidence is retained under `evidence/20261031-094704Z`. The guard is scoped to one
+Current 0515 evidence is retained under `evidence/20261031-124632Z`; earlier 0352
+guard evidence remains under `evidence/20261031-094704Z`. The guard is scoped to one
 JVM; clustered operation requires a separately qualified transactional strategy.
 Immutable published dependency adoption, optional-module hosted CI and production
 storage/content-processing qualification remain open release gates. Test adapters

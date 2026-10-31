@@ -4,6 +4,8 @@ Status: not release-ready. The user requested a full client/server audit and pro
 
 Latest correction: hosted Android testing found revoked heartbeats remained successful. Approval now precedes all heartbeat activity observation, including accepted trailing-slash aliases. Independent red reproductions and final 37-root/four-demo green tests are retained; new hosted native verification remains pending. Scanner authentication must follow configured Authentik through explicit native semantic authentication metadata; that implementation and real-provider acceptance are now required release gates.
 
+The optional consumer has subsequently qualified frozen0515 with37 fresh base and18 integration tests, including the matched core logging correction and runtime integrity checks. This remains an isolated private candidate; immutable dependency publication and optional hosted CI are required before production adoption. Separate OAuth2 log-redaction work in the native-auth core branch is not included in0515.
+
 ## Scope and checkpoints
 
 Latest verified checkpoint: server `0926550` includes the standalone file-backed presence regression and the passing browser-to-native

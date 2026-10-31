@@ -1,10 +1,15 @@
 # Atomic capture authorization contract requested from Record Files
 
-Status: the adopted, verified `retained-contract-20261031-0238` binary has only
-`capture` and `revalidate`. A later read of upstream working source found the exact
-operation guard below already being implemented, with matching wrap points and
-new tests. That source is not an adopted artifact or a completed qualification.
-Please hand off a newly frozen bundle with complete checksums and verification.
+Status: fulfilled for the adopted `retained-contract-20261031-0352` bundle. Its
+guarded adapter passed 18 consumer tests, including real scanner revocation and
+session termination during registration, association and receipt commits and
+rollbacks. Evidence: `../evidence/20261031-094704Z/`. The newer 0515 candidate keeps
+the same Record Files bytes and guard contract while updating core/RDBMS; its
+separate qualification is tracked in `CORE-0515-ADOPTION.md`.
+
+The following preserves the original request, rationale and exact linearization
+requirements. Historical references to 0238 describe the previously identified
+gap, not the currently accepted guard implementation.
 
 ## Minimal SPI
 

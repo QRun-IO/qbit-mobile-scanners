@@ -19,8 +19,12 @@
 - [ ] Qualify production storage, content scanning/release and durable audit.
 - [x] Rebuild final source and rerun after upstream SPI changes, retaining the
   updated complete runtime manifest and source provenance.
+- [x] Explicitly qualify frozen0515's matched core/RDBMS pair in its separate
+  cache after the current base fix, retaining all 18 consumer cases and manifests.
 - [ ] Replace local frozen snapshot adoption with approved immutable published
   dependency coordinates/artifacts and wire the optional module into CI using
   those verified artifacts; the base qbit's normal build remains independent.
+  Exact missing inputs and owner handoff are documented in
+  `HOSTED-CI-DEPENDENCIES.md`; no usable published candidate tuple was found.
 - [ ] Root security/release review before publication; passing sequential uploads
   are not production 1.0 approval.

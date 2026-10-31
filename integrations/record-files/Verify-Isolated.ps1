@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-   [string]$Bundle = 'R:\Git.Local\QRunIO\qbit-documents\artifacts\retained-contract-20261031-0352',
+   [string]$Bundle = 'R:\Git.Local\QRunIO\qbit-documents\artifacts\retained-contract-20261031-0515',
+   [ValidatePattern('^isolated-m2(?:-[a-zA-Z0-9-]+)?$')][string]$RepositoryName = 'isolated-m2-0515',
    [switch]$SkipSeed,
    [switch]$SkipBaseBuild
 )
@@ -9,8 +10,12 @@ $ErrorActionPreference = 'Stop'
 $module = $PSScriptRoot
 $scanner = (Resolve-Path (Join-Path $module '../..')).Path
 $target = Join-Path $module 'target'
-$repository = Join-Path $target 'isolated-m2'
+$repository = Join-Path $target $RepositoryName
 $source = Join-Path $target 'scanner-source'
+foreach($directory in @($module, $target, $repository))
+{
+   if((Test-Path -LiteralPath $directory) -and ((Get-Item -LiteralPath $directory -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Refusing a reparse point in the isolated cache path.' }
+}
 New-Item -ItemType Directory -Force -Path $repository | Out-Null
 $successMarker = Join-Path $target 'verification-success.json'
 if(Test-Path -LiteralPath $successMarker) { Remove-Item -LiteralPath $successMarker }
@@ -69,6 +74,12 @@ $artifacts = @(
 Push-Location $module
 try
 {
+   $parentPom = Join-Path $bundleRoot 'qqq-parent-project-4.1.0-isolated-record-files-SNAPSHOT.pom'
+   if(Test-Path -LiteralPath $parentPom)
+   {
+      # Use the base POM while bootstrapping the candidate's exact flattened parent.
+      Invoke-Maven @('-f',(Join-Path $source 'pom.xml'),'-B','-ntp','org.apache.maven.plugins:maven-install-plugin:3.1.3:install-file',"-Dfile=$parentPom",'-DgroupId=com.kingsrook.qqq','-DartifactId=qqq-parent-project','-Dversion=4.1.0-isolated-record-files-SNAPSHOT','-Dpackaging=pom','-DgeneratePom=false')
+   }
    foreach($artifact in $artifacts)
    {
       $pom = if($artifact[1] -eq 'qbit-collaboration.pom.xml') { $collaborationPom } else { Join-Path $bundleRoot $artifact[1] }
@@ -76,6 +87,8 @@ try
    }
    Invoke-Maven @('-B','-ntp','org.apache.maven.plugins:maven-install-plugin:3.1.3:install-file',"-Dfile=$(Join-Path $bundleRoot 'qbit-record-files-0.1.0-SNAPSHOT-tests.jar')","-DpomFile=$(Join-Path $bundleRoot 'qbit-record-files.pom.xml')",'-DgroupId=com.kingsrook.qbits','-DartifactId=qbit-record-files','-Dversion=0.1.0-SNAPSHOT','-Dclassifier=tests','-Dpackaging=jar','-DgeneratePom=false')
    Remove-IsolatedBuildDirectory -ModuleRoot $module -LeafName 'module'
+   $runtimeClasspath = Join-Path $target 'runtime-classpath.txt'
+   if(Test-Path -LiteralPath $runtimeClasspath) { Remove-Item -LiteralPath $runtimeClasspath }
    Invoke-Maven @('-B','-ntp','clean','verify','org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath','-Dmdep.includeScope=test','-Dmdep.outputFile=target/runtime-classpath.txt')
    $runtime = (Get-Content -LiteralPath (Join-Path $target 'runtime-classpath.txt') -Raw).Trim().Split(';')
    $manifest = foreach($path in $runtime) { @{path=$path;sha256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()} }
@@ -108,7 +121,7 @@ try
    }
    $compiled | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $target 'compiled-sha256.json') -Encoding utf8
    $scannerArtifact = $manifest | Where-Object { [IO.Path]::GetFileName($_.path) -eq 'qbit-mobile-scanners-0.1.0-SNAPSHOT.jar' }
-   @{duplicateQqqClasses=0;classCount=$classes.Count;h2Version='2.2.224';baseBuildMode=$(if($SkipBaseBuild) { 'module-only-prior-scanner-binary' } else { 'fresh-source-clean-base-build' });scannerJarSha256=$scannerArtifact.sha256;derivedCollaborationPomSha256=(Get-FileHash -LiteralPath $collaborationPom -Algorithm SHA256).Hash.ToLowerInvariant()} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $target 'runtime-validation.json') -Encoding utf8
+   @{bundleName=(Split-Path -Leaf $bundleRoot);repositoryName=$RepositoryName;duplicateQqqClasses=0;classCount=$classes.Count;h2Version='2.2.224';baseBuildMode=$(if($SkipBaseBuild) { 'module-only-prior-scanner-binary' } else { 'fresh-source-clean-base-build' });scannerJarSha256=$scannerArtifact.sha256;derivedCollaborationPomSha256=(Get-FileHash -LiteralPath $collaborationPom -Algorithm SHA256).Hash.ToLowerInvariant()} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $target 'runtime-validation.json') -Encoding utf8
    @{verifiedAtUtc=[DateTime]::UtcNow.ToString('O');runtimeManifestSha256=(Get-FileHash -LiteralPath (Join-Path $target 'runtime-sha256.json')).Hash;compiledManifestSha256=(Get-FileHash -LiteralPath (Join-Path $target 'compiled-sha256.json')).Hash} | ConvertTo-Json | Set-Content -LiteralPath $successMarker -Encoding utf8
 }
 finally { Pop-Location }
