@@ -84,10 +84,10 @@ wrapper. `Test-IsolatedBuildPaths.ps1` verifies deleted Java/resource/class remo
 repeat synchronization, sibling preservation and refusal of unsafe/reparse paths.
 Module-only runs explicitly hash the prior scanner jar and do not overlay new source.
 
-The exact initial bundle is `retained-contract-20261031-0238` from the documents
-owner. Its collaboration POM contains an unresolved `${revision}`; the script
-creates a separate derived POM resolving only that artifact version to
-`0.1.0-record-files-SNAPSHOT`. The original bundle remains untouched. This candidate
+The current verified bundle is `retained-contract-20261031-0352` from the documents
+owner. All 20 root entries and seven source entries are verified. The script
+uses the owner's exact resolved collaboration POM, preserving its original bytes.
+Earlier 0238 evidence and its locally derived POM remain historical. This candidate
 uses the frozen isolated core/RDBMS, RC.20 middleware, and H2 2.2.224. The fixture
 found that H2 2.4.240 fails the shipped scanner `CHECK (status IN (...))` constraint
 after the DDL connection closes (`ConditionInConstantSet` references its closed
@@ -106,19 +106,20 @@ directory and starts a timed, isolated fixture. Its returned object contains PID
 and private credential-file path, never the password. Read the file locally for
 the ephemeral base URL and synthetic account; enroll/approve through ordinary
 native APIs. `mobileRecordPhotos` targets document/1. Stop only that PID or allow
-its lifetime to expire. The launcher has not been smoke-tested while root's
-workstation-load pause applies; `docs/SESSION-STATE.md` records verified scope.
+its lifetime to expire. The launcher and native synthetic camera/gallery flow have
+been exercised on TC22; `docs/SESSION-STATE.md` records exact verified scope.
 Private ACLs apply only to a newly created run directory, preserving its parent's
 ACL. The JVM is bounded to two visible processors and a 512 MiB heap. Startup waits
 a bounded time for the private readiness file instead of returning immediately.
 
 ## Remaining release boundary
 
-The frozen `CaptureIdentityProvider` SPI offers capture and revalidate, but does not
-wrap mutation in the scanner's `executeAuthorized` guard. It rejects already ended
-or revoked identities before resumed operations, but a concurrent revoke/end can
-race between revalidation and the retained write. This is an upstream integration
-contract gap, not a production atomicity guarantee. The facade exposes a guarded
-operation for an eventual owner-side authorization scope; cross-node revocation
-also requires a shared transactional strategy. Production release must resolve
-and test that race, rather than interpret a passing sequential test as sufficient.
+The adopted SPI executes operations through the scanner's `executeAuthorized`
+guard, including expected absence for genuine desktop callers. Eighteen passing
+integration/contract tests cover current identity, parent grants, actual retained
+registration/association/receipt commits, concurrent revoke/end and rollback.
+Evidence is retained under `evidence/20261031-094704Z`. The guard is scoped to one
+JVM; clustered operation requires a separately qualified transactional strategy.
+Immutable published dependency adoption, optional-module hosted CI and production
+storage/content-processing qualification remain open release gates. Test adapters
+and passing synthetic intake do not qualify a production storage deployment.

@@ -4,6 +4,16 @@ Status: not release-ready. The user requested a full client/server audit and pro
 
 ## Scope and checkpoints
 
+Latest verified checkpoint: server `cf835fa` includes the passing browser-to-native
+viewing regression after guarded-upload commit `84ffd7c`. Base 37, demo HTTP two,
+browser 15 and optional guarded integration 18 cases pass. Android's local reports
+show 91 JVM tests; TC22 navigation (12 cases), orientation, offline licenses,
+synthetic camera/gallery/rotation/logout, and the complete real-screen/session-end
+scenario pass. Native photo/session requests match published semantic operations.
+These are checkpoint results; final frozen-source audits, fresh Android hosted CI,
+production provider/immutable dependency qualification and actual lens acceptance
+remain open. Signing/distribution is owner-deferred until the final step.
+
 - Server semantic baseline: `7dd02b8874882ca2edcdcd89109b3dee6b4b0c88`, with all hosted checks passing. Documentation checkpoint: `a49724384f569a4b4b66ce2cd4aa69332ee1e0e8`.
 - Android semantic baseline: `6574ec4991dbb859b60c3a0be462af96918aee32`; hosted JVM/lint/APK, CodeQL and CircleCI checks passed, but both hosted native E2E jobs failed at compatible login before any credential request reached the server. Login/form reachability fixes are under verification; this baseline is not fully green.
 - Active implementation: [device/session history, live activity, actual app screen viewing, session termination, identity/presence/location and Record Files integration](DEVICE-SESSIONS.md).
