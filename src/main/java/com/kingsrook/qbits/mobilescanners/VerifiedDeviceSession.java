@@ -10,7 +10,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.temporal.Temporal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +35,7 @@ final class VerifiedDeviceSession extends QSession
     ** Immutable semantic copy of every session field that can grant or narrow
     ** access. QCredentialScope has no value equality, so its fields are copied.
     ***************************************************************************/
-   private record Authority(String userId, String uuid, String channel, Set<String> permissions, Map<String, List<Serializable>> securityKeys,
+   private record Authority(String userId, String uuid, String channel, Set<String> permissions, Map<String, Set<Serializable>> securityKeys,
                             Map<String, Serializable> variants, Scope scope, String unverifiable) implements Serializable
    {
    }
@@ -114,13 +113,17 @@ final class VerifiedDeviceSession extends QSession
    private static Authority authority(QSession session)
    {
       String unverifiable = null;
-      Map<String, List<Serializable>> keys = null;
+      Map<String, Set<Serializable>> keys = null;
       if(session.getSecurityKeyValues() != null)
       {
          keys = new HashMap<>();
          for(Map.Entry<String, List<Serializable>> entry : session.getSecurityKeyValues().entrySet())
          {
-            List<Serializable> values = entry.getValue() == null ? null : new ArrayList<>(entry.getValue());
+            //////////////////////////////////////////////////////////////////////////////////
+            // core row security tests List.contains: membership is authority, so order and //
+            // repeated identical appends are not changes. A null list stays distinct.      //
+            //////////////////////////////////////////////////////////////////////////////////
+            Set<Serializable> values = entry.getValue() == null ? null : new HashSet<>(entry.getValue());
             if(values != null && !values.stream().allMatch(VerifiedDeviceSession::isImmutable))
             {
                unverifiable = UUID.randomUUID().toString();

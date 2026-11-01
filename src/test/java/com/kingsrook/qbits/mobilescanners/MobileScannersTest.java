@@ -10,8 +10,10 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -334,6 +336,40 @@ class MobileScannersTest
       assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
       assertNull(SessionMutator.hook);
       assertSame(scanner, QContext.getQSession());
+   }
+
+
+
+   /***************************************************************************
+    ** Security keys compare as sets: repeats and order are not authority changes, new values are.
+    ***************************************************************************/
+   @Test
+   void securityKeysCompareAsSets() throws Exception
+   {
+      String id = approvedDevice();
+      scanner.withSecurityKeyValue("tenant", "t1").withSecurityKeyValue("tenant", "t2");
+      bind(id);
+      QSession bound = QContext.getQSession();
+      List<java.io.Serializable> original = new ArrayList<>(bound.getSecurityKeyValues().get("tenant"));
+
+      bound.withSecurityKeyValue("tenant", "t1");
+      bound.withSecurityKeyValue("tenant", "t1");
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      bound.getSecurityKeyValues().put("tenant", new ArrayList<>(List.of("t2", "t1")));
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      assertSame(bound, QContext.getQSession());
+
+      bound.withSecurityKeyValue("tenant", "t3");
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.getSecurityKeyValues().put("tenant", new ArrayList<>(List.of("t1", "t3")));
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.getSecurityKeyValues().put("tenant", new ArrayList<>(original));
+      bound.withSecurityKeyValue("other", "x");
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.getSecurityKeyValues().remove("other");
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      bound.setUser(new QUser().withIdReference("someoneElse"));
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
    }
 
 

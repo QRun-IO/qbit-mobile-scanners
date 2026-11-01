@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kingsrook.qbits.collaboration.CollaborationSecurity;
 import com.kingsrook.qbits.mobilescanners.recordfiles.MobileCaptureIdentityProvider;
 import com.kingsrook.qbits.mobilescanners.recordfiles.MobileRecordFilesContract;
 import com.kingsrook.qbits.mobilescanners.recordfiles.RecordFilesCaptureWidgetData;
@@ -678,7 +679,7 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       @Override
       public QSession createSession(QInstance instance, Map<String, String> context) throws QAuthenticationException
       {
-         return grant(super.createSession(instance, context));
+         return grant(instance, super.createSession(instance, context));
       }
 
 
@@ -692,7 +693,7 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          boolean valid = super.isSessionValid(instance, session);
          if(valid)
          {
-            grant(session);
+            grant(instance, session);
          }
          return valid;
       }
@@ -702,7 +703,7 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       /***********************************************************************
        ** Request fields cannot supply role or tenant grants.
        ***********************************************************************/
-      private QSession grant(QSession session)
+      private QSession grant(QInstance instance, QSession session)
       {
          if(session.getUser() == null)
          {
@@ -717,6 +718,7 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          {
             session.getPermissions().removeAll(deniedPermissions);
          }
+         CollaborationSecurity.applyToSession(instance, session);
          return session;
       }
    }

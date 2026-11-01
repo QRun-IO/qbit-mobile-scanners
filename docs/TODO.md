@@ -1,5 +1,8 @@
 # QQQ Mobile Scanners TODO
 
+- [x] Verify effective security-key set comparison and early Collaboration authentication initialization: scanner50/native Record Files18, Checkstyle0 on private coherent cohort.
+- [ ] Complete live Echo renderer/printer composition and physical TC22 print/rescan; startup smoke and simulated printing do not close this gate.
+
 - [ ] Deliver Echo example: choose authorized printer and media once, then one scan/render/accepted-print job at a time until leave; reproduce exact value and symbology with worker-owned integer-module fitting and quiet zones.
 - [ ] Coordinate qualified renderer fit, authorized printer/media discovery, least-privilege submit and retained-print adapter contracts with their owners via shared communications.
 - [x] Verify scanContext 1.3 with root44/demo7/optional18 and Checkstyle: following-step QR/Code 128 branching, legacy omission isolation, trusted attribution and exact retry binding; physical scanner acceptance remains separate.
