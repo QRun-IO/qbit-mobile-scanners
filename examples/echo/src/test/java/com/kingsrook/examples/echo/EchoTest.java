@@ -212,6 +212,9 @@ class EchoTest
       RunProcessOutput scanning = new RunProcessAction().execute(selection);
       String run = scanning.getValueString("echoRunId");
       assertNotNull(run);
+      Map<?, ?> scannerValues = (Map<?, ?>) new EchoWidget.Data().getSubBlocks().getFirst().get("values");
+      assertEquals("Print queued", scannerValues.get("acknowledgmentLabel"));
+      assertEquals(false, scannerValues.get("manualEntryEnabled"));
       RunProcessOutput first = scan(scanning, "CODE128", "001234567890");
       assertEquals(true, first.getValue("scanSaved"));
       assertEquals("QUEUED", first.getValue("printStatus"));

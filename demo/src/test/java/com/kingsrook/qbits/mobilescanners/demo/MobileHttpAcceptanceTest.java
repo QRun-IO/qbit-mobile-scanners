@@ -650,7 +650,7 @@ class MobileHttpAcceptanceTest
          }
       }
       assertNotNull(mobile);
-      assertEquals("1.3.0", mobile.getString("version"));
+      assertEquals("1.4.0", mobile.getString("version"));
       assertEquals("/qbit/mobile-scanners", mobile.getString("pathPrefix"));
       var openApiResponse = request("GET", "/qqq/v1/openapi.json", null, null, device);
       assertEquals(200, openApiResponse.statusCode());

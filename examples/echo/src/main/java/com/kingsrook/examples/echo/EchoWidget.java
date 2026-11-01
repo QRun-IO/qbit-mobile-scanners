@@ -45,7 +45,7 @@ public final class EchoWidget extends AbstractWidgetRenderer
          return List.of(Map.of("blockId", "echoScanner", "blockType", "SCANNER", "values",
             new java.util.HashMap<>(Map.of("title", "Echo — scan to print", "instructions",
                "Scan one barcode and wait for print queue acceptance. Leaving stops new scans; work already processing or accepted may still print.",
-               "manualLabel", "Manual entry is not supported for faithful copying", "submitLabel", "Scan with the trigger", "maxLength", 4096))));
+               "acknowledgmentLabel", "Print queued", "manualEntryEnabled", false, "maxLength", 4096))));
       }
    }
 }
