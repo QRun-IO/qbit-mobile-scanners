@@ -64,3 +64,6 @@ Future scope (not version one): offline queue, camera-based barcode decoding, ki
 - [ ] Complete the optional semantic API1.10 provider-logout capability and client AppAuth end-session handling; keep local cleanup reliable on provider failure, qualify real A-to-B handoff, and apply the user's pending sign-out policy. Existing prompt-only retained-SSO handoff is not accepted.
 
 - [ ] Validate native OIDC ID-token claims and original request nonce before creating the QQQ session. Review confirmed request continuity and S256 PKCE exist, but expected nonce is not currently carried to the server exchange. Add explicit semantic capability/wire compatibility and rejection tests; retain real-provider nonce acceptance as pending.
+
+- [x] Retain unchanged verified capture session identity with explicit current authority/reference checks;49root+7demo tests andCheckstylepass.
+- [ ] Qualify exact ownerRF18 upload/finalize using the frozen identity patch before final coherent host adoption.

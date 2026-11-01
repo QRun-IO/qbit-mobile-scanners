@@ -11,7 +11,9 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper;
@@ -38,6 +40,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.authentication.AuthScope;
 import com.kingsrook.qqq.backend.core.model.metadata.authentication.QAuthenticationMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
+import com.kingsrook.qqq.backend.core.model.session.QCredentialScope;
 import com.kingsrook.qqq.backend.core.model.session.QSession;
 import com.kingsrook.qqq.backend.core.model.session.QUser;
 import com.kingsrook.qqq.backend.module.rdbms.model.metadata.RDBMSBackendMetaData;
@@ -50,6 +53,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -111,6 +117,7 @@ class MobileScannersTest
    void clear()
    {
       MobilePermissions.REQUEST_DEVICE.remove();
+      SessionMutator.hook = null;
       QContext.clear();
    }
 
@@ -140,6 +147,222 @@ class MobileScannersTest
       MobileService.setApproval(id, false);
       QContext.init(instance, bound);
       assertThrows(QException.class, () -> MobileService.capture(scan()));
+   }
+
+
+
+   /***************************************************************************
+    ** Unchanged authority keeps the exact wrapper so scoped session state is stable.
+    ***************************************************************************/
+   @Test
+   void repeatedCaptureRetainsSameVerifiedSession() throws Exception
+   {
+      bind(approvedDevice());
+      QSession bound = QContext.getQSession();
+      var first = MobileDeviceAuthorization.captureCurrent();
+      assertSame(bound, QContext.getQSession());
+      var second = MobileDeviceAuthorization.captureCurrent();
+      assertSame(bound, QContext.getQSession());
+      assertTrue(first.isPresent());
+      assertEquals(first, second);
+   }
+
+
+
+   /***************************************************************************
+    ** A retained wrapper never grants after approval, permission, binding or device changes.
+    ***************************************************************************/
+   @Test
+   void retainedSessionRejectsChangedAuthority() throws Exception
+   {
+      String id = approvedDevice();
+      bind(id);
+      QSession bound = QContext.getQSession();
+      var identity = MobileDeviceAuthorization.captureCurrent().orElseThrow();
+
+      MobilePermissions.REQUEST_DEVICE.set(UUID.randomUUID().toString());
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      MobilePermissions.REQUEST_DEVICE.remove();
+      assertSame(bound, QContext.getQSession());
+
+      bound.setUser(new QUser().withIdReference("someoneElse"));
+      assertThrows(QException.class, () -> MobileDeviceAuthorization.revalidate(identity));
+      bound.setUser(new QUser().withIdReference("scanner"));
+      MobileDeviceAuthorization.revalidate(identity);
+
+      String uuid = bound.getUuid();
+      bound.setUuid(UUID.randomUUID().toString());
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.setUuid(uuid);
+
+      var permissions = bound.getPermissions();
+      bound.setPermissions(new HashSet<>());
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.setPermissions(permissions);
+      MobileDeviceAuthorization.captureCurrent();
+      assertSame(bound, QContext.getQSession());
+
+      QContext.init(instance, admin);
+      MobileService.setApproval(id, false);
+      QContext.init(instance, bound);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertThrows(QException.class, () -> MobileDeviceAuthorization.revalidate(identity));
+   }
+
+
+
+   /***************************************************************************
+    ** Credential ceilings, auth selectors, channel and keys cannot change under a retained wrapper.
+    ***************************************************************************/
+   @Test
+   void retainedSessionRejectsCredentialScopeAndSelectorChanges() throws Exception
+   {
+      String id = approvedDevice();
+      Set<String> apps = new HashSet<>(instance.getApps().keySet());
+      Set<String> tables = new HashSet<>(instance.getTables().keySet());
+      scanner.setClientChannel("token:cred-1");
+      scanner.setCredentialScope(new QCredentialScope().withCredentialId("cred-1").withApps(apps).withTables(tables));
+      QContext.init(instance, scanner);
+      bind(id);
+      QSession bound = QContext.getQSession();
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      assertSame(bound, QContext.getQSession());
+
+      QCredentialScope scope = bound.getCredentialScope();
+      assertNotSame(scanner.getCredentialScope(), scope);
+      Set<String> widerTables = new HashSet<>(tables);
+      widerTables.add("extraTable");
+      assertUnchangedAfterRestore(bound, () -> scope.withTables(widerTables), () -> scope.withTables(tables));
+      assertUnchangedAfterRestore(bound, () -> scope.withTables(null), () -> scope.withTables(tables));
+      assertUnchangedAfterRestore(bound, () -> scope.withApps(null), () -> scope.withApps(apps));
+      assertUnchangedAfterRestore(bound, () -> scope.withProcesses(Set.of()), () -> scope.withProcesses(null));
+      assertUnchangedAfterRestore(bound, () -> scope.withReports(Set.of("r")), () -> scope.withReports(null));
+      assertUnchangedAfterRestore(bound, () -> scope.withWidgets(Set.of("w")), () -> scope.withWidgets(null));
+      assertUnchangedAfterRestore(bound, () -> scope.withOperationIds(Set.of("GET /x")), () -> scope.withOperationIds(null));
+      assertUnchangedAfterRestore(bound, () -> scope.withReadOnly(true), () -> scope.withReadOnly(false));
+      assertUnchangedAfterRestore(bound, () -> scope.withCredentialId("cred-2"), () -> scope.withCredentialId("cred-1"));
+      assertUnchangedAfterRestore(bound, () -> bound.setCredentialScope(null), () -> bound.setCredentialScope(scope));
+      assertUnchangedAfterRestore(bound, () -> bound.setClientChannel("web"), () -> bound.setClientChannel("token:cred-1"));
+      assertUnchangedAfterRestore(bound, () -> bound.withSecurityKeyValue("tenant", "t1"), () -> bound.clearSecurityKeyValues());
+      assertUnchangedAfterRestore(bound, () -> bound.withBackendVariants(Map.of("db", "other")), () -> bound.withBackendVariants(null));
+      assertUnchangedAfterRestore(bound, () -> bound.withPermission(MobilePermissions.ADMIN), () -> bound.getPermissions().remove(MobilePermissions.ADMIN));
+      assertSame(bound, QContext.getQSession());
+   }
+
+
+
+   /***************************************************************************
+    ** Test-only post-query hook on the device read that approval/observation perform.
+    ***************************************************************************/
+   public static class SessionMutator extends MobileDeviceOnline
+   {
+      static Runnable hook;
+
+
+
+      /***********************************************************************
+       ** Run the pending change once, in the middle of the authorization checks.
+       ***********************************************************************/
+      @Override
+      public java.util.List<QRecord> apply(java.util.List<QRecord> records)
+      {
+         Runnable pending = hook;
+         hook = null;
+         if(pending != null)
+         {
+            pending.run();
+         }
+         return super.apply(records);
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Grants or ceilings changed by host hooks during the checks are never retained.
+    ***************************************************************************/
+   @Test
+   void authorityChangedDuringChecksIsNotRetained() throws Exception
+   {
+      String id = approvedDevice();
+      Set<String> tables = new HashSet<>(instance.getTables().keySet());
+      scanner.setClientChannel("token:cred-1");
+      scanner.setCredentialScope(new QCredentialScope().withCredentialId("cred-1").withTables(tables));
+      QContext.init(instance, scanner);
+      bind(id);
+      QSession bound = QContext.getQSession();
+      // swap the production MobileDeviceOnline for a subclass that runs it unchanged after the observed mutation
+      var role = com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers.POST_QUERY_RECORD.getRole();
+      var deviceCustomizers = instance.getTable(MobileScannersQBitProducer.DEVICE).getCustomizers();
+      assertEquals(MobileDeviceOnline.class.getName(), deviceCustomizers.get(role).getName());
+      deviceCustomizers.put(role, new com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference(SessionMutator.class));
+
+      // scoped first capture wraps a copy with exactly the same ceilings and grants
+      QContext.init(instance, scanner);
+      MobileDeviceAuthorization.captureCurrent();
+      QSession wrapped = QContext.getQSession();
+      assertInstanceOf(VerifiedDeviceSession.class, wrapped);
+      assertNotSame(scanner.getCredentialScope(), wrapped.getCredentialScope());
+      assertEquals(tables, wrapped.getCredentialScope().getTables());
+      assertEquals(scanner.getPermissions(), wrapped.getPermissions());
+      assertEquals("token:cred-1", wrapped.getClientChannel());
+
+      // retained wrapper: ceiling widened mid-check
+      QContext.init(instance, bound);
+      SessionMutator.hook = () -> bound.getCredentialScope().withTables(null);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertNull(SessionMutator.hook);
+      bound.getCredentialScope().withTables(tables);
+      MobileDeviceAuthorization.captureCurrent();
+
+      // retained wrapper: grant added mid-check
+      SessionMutator.hook = () -> bound.withPermission(MobilePermissions.ADMIN);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertNull(SessionMutator.hook);
+      bound.getPermissions().remove(MobilePermissions.ADMIN);
+
+      // retained wrapper: context session replaced mid-check
+      QSession other = new QSession().withUser(bound.getUser());
+      QContext.init(instance, bound);
+      SessionMutator.hook = () -> QContext.setQSession(other);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertNull(SessionMutator.hook);
+
+      // first capture: ceiling widened mid-check is not wrapped
+      QContext.init(instance, scanner);
+      SessionMutator.hook = () -> scanner.getCredentialScope().withTables(null);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertNull(SessionMutator.hook);
+      assertSame(scanner, QContext.getQSession());
+   }
+
+
+
+   /***************************************************************************
+    ** Mutable Serializable key/variant values cannot be proven unchanged, so they fail closed.
+    ***************************************************************************/
+   @Test
+   void mutableSessionValuesFailClosed() throws Exception
+   {
+      String id = approvedDevice();
+      scanner.withSecurityKeyValue("tenant", new java.util.ArrayList<>(java.util.List.of("a")));
+      bind(id);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+   }
+
+
+
+   /***************************************************************************
+    ** Apply a change (must fail closed, wrapper kept), then restore (must pass again).
+    ***************************************************************************/
+   private void assertUnchangedAfterRestore(QSession bound, Runnable change, Runnable restore) throws Exception
+   {
+      change.run();
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertSame(bound, QContext.getQSession());
+      restore.run();
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      assertSame(bound, QContext.getQSession());
    }
 
 

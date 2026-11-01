@@ -1,3 +1,8 @@
+## November 1 — verified capture identity retained without authority drift
+
+Claude's scanner fix preserves the same already-verified session only after current approval/binding/authentication and unchanged session reference/authority checks. First capture still wraps. Tests cover repeated object identity, current permission/credential ceilings/selectors, device and user binding, revocation, and real post-query-hook mutations during validation. Mutable opaque authority values refuse retention. Full scanner49 and real demoHTTP7 cases pass with Checkstyle0 against the frozen privatePU/f708 core.
+
+The files owner still must qualify its strict native upload/finalize18 against this exact patch; no per-instance enrichment policy or global registry is adopted. Normal server/data remain unchanged. Echo native TC22 now passes all5stages/86documentedrequests with client3bec46d; real renderer/printer output and final host integration remain open. Production signing is deferred.
 # QQQ Mobile Scanners session state
 
 ## November 1 typed scan context implementation
