@@ -10,6 +10,18 @@ Filesystem portability passes142 discovered/138 passed/four existing skips; its 
 
 Cross-chat coordination uses `R:\agent-comms\README.md` and the mobile master's owned `R:\agent-comms\qqq-mobile-scanner.md`, explicitly requested by the user. Record Files and Printing acknowledged the directory. Read the current summary at the top of each owner's mailbox before changing shared contracts.
 
+## November 1 Record Files consumer checkpoint
+
+The isolated core32/scanner1a3 cohort passes all 78 consumer cases (39 scanner,
+six demo HTTP, 18 Record Files and 15 real-browser process tests), with coherent
+backend versions, 214 optional runtime JARs and zero duplicate QQQ/QBit classes.
+Core verification combines the prior full reactor gate, the corrected filesystem
+full gate and an exhaustive final artifact class comparison; see the precise
+[qualification scope](../integrations/record-files/docs/CORE-32DF-CONSUMER-QUALIFICATION.md).
+The files-owner matching immutable handoff, optional default adoption and actual
+camera/gallery acceptance remain open. This cohort did not change the normal
+runtime, device or historical optional default.
+
 ## October 31 current checkpoint
 
 The normal local demo is now running the qualified `ecf0f550`/`b14d925` API1.9/mobile1.1 TABLE runtime at its existing loopback address. This supersedes the unchanged-runtime statements in the historical acceptance entries below. Read-only inspection froze its actual old classpath; old-runtime and old-after-new HTTP/login checks passed on historical and fresh closed backups before startup. Fresh copied invariants preserved every original column, row count, password/device-credential hash, barcode and UTC timestamp. Both original accounts passed live login, authenticated metadata and logout; ordinary semantic queries confirmed two devices and three scans, including the leading-zero barcode. The normal Android installation and peer services were preserved. Private backup/runtime evidence is retained in the task cache; old PID-specific maintenance helpers must never target the replacement JVM.

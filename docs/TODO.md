@@ -8,7 +8,7 @@
 - [x] Preserve legacy timestamp instants in the canonical supplied H2 schema with an explicit UTC migration connection; verify non-UTC file-backed upgrade, unchanged passwords/approval/scans and repeated initialization. The operator upgrade is preserved with UTC; a no-install reactor passes 37 base tests and five demo tests using the freshly built schema.
 - [x] Implement unique short names, editable names/descriptions, additive H2 migration and protected profile editing; qualify the preserving upgrade of the operator database before deployment.
 - [x] Implement separate approval/presence states, online-only fleet query and foreground location with accuracy/age and permission-denied behavior; actual GPS-fix acceptance remains in the release gates.
-- [x] Implement the optional Record Files contract/native capture/association path and verify18 HTTP consumer cases on the transitional custom-filesystem tuple.
+- [x] Implement the optional Record Files contract/native capture/association path and qualify the final coherent core32/scanner1a3 consumer cohort: 39 scanner, six demo HTTP, 18 Record Files and 15 browser cases. See [qualification scope](../integrations/record-files/docs/CORE-32DF-CONSUMER-QUALIFICATION.md); this is not a files-owner full-suite or default-adoption claim.
 - [ ] Qualify coherent immutable/default RF dependencies and actual TC22 camera/gallery permissions and durable authorized association; no normal-runtime adoption is implied.
 
 - [x] Device/session history, live activity and demand-based actual app-screen viewing through native QQQ administration and semantic extension 1.1.
