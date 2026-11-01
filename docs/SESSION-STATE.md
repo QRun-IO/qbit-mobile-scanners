@@ -1,5 +1,15 @@
 # QQQ Mobile Scanners session state
 
+## November 1 typed scan context implementation
+
+Extension 1.3 defines accepted `scanContext` for backend actions, preserving exact symbology and server-derived attribution. Legacy omissions are explicit UNKNOWN/MANUAL; event inputs are consumed, changed retry types/apps/processes are rejected, and pre-context state requires reopening the process. The default scanner loop remains while appended host steps can consume context. Qualified private API 1.10 verification passes 44 root, seven real-HTTP demo and 18 optional integration tests with normal Checkstyle; canonical contract generation passes two additional tests and preserves both release baselines. The source cohort is `qqq-server-typed-context-843fa0ee69b34535b1890cf7347492ee`; no normal runtime adoption is implied.
+
+## Echo implementation scope
+
+User requested example QQQ application Echo: first select printer and paper/label size, then continuously scan → render the same value/symbology → print until leaving. User chose one in-flight job and delegated first real printer/media choice to the printing master. Team implements the optional examples/echo host, ordinary semantic QQQ process metadata and server per-scan context; no new Android screen engine, barcode encoder, attachment framework or print queue.
+
+Owner coordination requests are posted in our shared mailbox. Source discovery found missing authorized media discovery/job options, worker barcode fit-to-stock, least-privilege printing submission and an immutable retained-print adapter handoff. These are concrete integration gates, not permission to change the other masters' source or live printer/service. Implementation and isolated tests can proceed while owners respond; no physical print or final working Echo claim yet.
+
 ## November 1 standards implementation and API 1.10 qualification
 
 Copyright/SPDX, member layout and optional PowerShell tooling fixes are applied. Unexpected server failures now produce fixed structured diagnostics without private values. The attachment test fixture closes its metadata-before-stream ownership gap. Fresh Checkstyle/compilation, 39 root tests and six real HTTP tests pass against the qualified private API1.10 cohort; optional integration verification is tracked in the standards review. These are source gates, not a normal-server deployment.

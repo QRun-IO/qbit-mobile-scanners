@@ -2,6 +2,13 @@
 
 Status: not release-ready. The user requested a full client/server audit and production-ready 1.0. This is an evidence ledger; a numerical quality score does not replace the gates below.
 
+## Latest verified checkpoint — November 1, 17:34 UTC
+
+Server standards checkpoint0b53f34 is signed/pushed and all eight hosted checks pass; a fresh private API1.10 cohort passes39 server, six demo HTTP and18 Record Files consumer cases with Checkstyle. Client strict compilation and163 JVM tests pass; final TC22 native acceptance is running and the Query artwork density warning is being corrected before installation. About includes bundled Query artwork and the exact public Dogfooding/Query links.
+
+Actual Authentik desktop acceptance now passes real negative nonce rejection, A login, explicit company logout, old-cookie rejection, fresh B credentials and B principal in the same retained browser context, followed by B local logout/rejection. HTTPS verification remained enabled with profile-only fixture trust. The owned provider required its documented company invalidation flow; no global flow or default client sign-out policy changed. This closes the earlier desktop A-to-B handoff failure for the qualified API1.10 fixture, not the actual Android external-browser callback gate. The normal server remains API1.9/mobile1.1 and operator data is preserved.
+
+CorePR1369's new hosted run exposed a missing explicit architecture allow-list entry for extracted private-session logout plumbing; a narrow policy-conforming correction is under verification. Do not call final core CI green. Remaining physical GPS/camera/projection/lifecycle/retry, immutable files-owner handoff, deployment and owner-deferred signing/distribution gates remain open. Dated matrix rows below retain their earlier source/runtime scope and are superseded by this checkpoint where stated.
 ## Current release ledger — November 1
 
 This is the current acceptance matrix; dated checkpoints below remain historical evidence. Android portrait-default source `7de2b5088fa376cb161ed5ac7e5358d2a2145d92` passes all eleven hosted checks. Documentation/QR fixture checkpoint `2e0fd962a7ece0f81328e5f9f05e4c1e2d77a853` does not establish physical QR acceptance. Server implementation `10416938724c9663d66f7848ff2b1a63fe635794` has qualified API1.9/mobile1.2 source evidence. Source publication, private consumer qualification and the installed operator runtime are distinct; no production APK or immutable dependency release is claimed.

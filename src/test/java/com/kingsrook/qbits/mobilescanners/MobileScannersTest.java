@@ -23,6 +23,7 @@ import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.instances.QInstanceValidator;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
@@ -36,6 +37,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.QAuthenticationType;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.authentication.AuthScope;
 import com.kingsrook.qqq.backend.core.model.metadata.authentication.QAuthenticationMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
 import com.kingsrook.qqq.backend.core.model.session.QSession;
 import com.kingsrook.qqq.backend.core.model.session.QUser;
 import com.kingsrook.qqq.backend.module.rdbms.model.metadata.RDBMSBackendMetaData;
@@ -170,6 +172,144 @@ class MobileScannersTest
          assertTrue(result.next());
          assertEquals(2, result.getInt(1));
       }
+   }
+
+
+
+   /***************************************************************************
+    ** Same text in different symbologies is distinct; retries bind the exact type.
+    ***************************************************************************/
+   @Test
+   void scanTypesArePreservedAndChangedRetryTypesAreRejected() throws Exception
+   {
+      bind(approvedDevice());
+      Map<String, Serializable> input = scan();
+      QRecord linear = MobileService.capture(input);
+      assertThrows(QException.class, () -> MobileService.capture(input, "anotherProcess"));
+      input.put("symbology", "QR_CODE");
+      assertThrows(QException.class, () -> MobileService.capture(input));
+      input.put("eventId", UUID.randomUUID().toString());
+      QRecord matrix = MobileService.capture(input);
+      assertEquals(linear.getValueString("barcode"), matrix.getValueString("barcode"));
+      assertEquals("CODE128", linear.getValueString("symbology"));
+      assertEquals("QR_CODE", matrix.getValueString("symbology"));
+      assertNotEquals(linear.getValueString("id"), matrix.getValueString("id"));
+      input.put("eventId", UUID.randomUUID().toString());
+      assertEquals("anotherProcess", MobileService.capture(input, "anotherProcess").getValueString("processName"));
+   }
+
+
+
+   /***************************************************************************
+    ** Legacy NULLs normalize without assigning a new claimed decoder on retry.
+    ***************************************************************************/
+   @Test
+   void missingTypesAndHistoricalNullsRemainExplicitAndIdempotent() throws Exception
+   {
+      bind(approvedDevice());
+      Map<String, Serializable> input = scan();
+      input.remove("symbology");
+      input.remove("scanSource");
+      QRecord saved = MobileService.capture(input);
+      assertEquals("UNKNOWN", saved.getValueString("symbology"));
+      assertEquals("UNKNOWN", saved.getValueString("scanSource"));
+      try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+         var statement = connection.prepareStatement("UPDATE mobileScan SET symbology = NULL, scanSource = NULL WHERE id = ?"))
+      {
+         statement.setString(1, saved.getValueString("id"));
+         assertEquals(1, statement.executeUpdate());
+      }
+      QRecord retry = MobileService.capture(input);
+      assertEquals(saved.getValueString("id"), retry.getValueString("id"));
+      assertEquals("UNKNOWN", retry.getValueString("symbology"));
+      input.put("symbology", "CODE128");
+      assertThrows(QException.class, () -> MobileService.capture(input));
+      input.put("eventId", UUID.randomUUID().toString());
+      input.remove("symbology");
+      input.put("scanSource", "manual");
+      assertEquals("MANUAL", MobileService.capture(input).getValueString("symbology"));
+      input.put("symbology", "MANUAL");
+      assertEquals("MANUAL", MobileService.capture(input).getValueString("symbology"));
+   }
+
+
+
+   /***************************************************************************
+    ** Ordinary process state cannot reuse the preceding event's decoder type.
+    ***************************************************************************/
+   @Test
+   void processCaptureConsumesRawFieldsAndReplacesForgedContext() throws Exception
+   {
+      String device = approvedDevice();
+      bind(device);
+      RunBackendStepInput input = new RunBackendStepInput().withProcessName(MobileScannersQBitProducer.CAPTURE).withValues(scan());
+      Map<String, Serializable> first = MobileScannerActions.capture(input);
+      assertEquals("CODE128", first.get("symbology"));
+      assertFalse(input.getValues().containsKey("symbology"));
+      assertFalse(input.getValues().containsKey("barcode"));
+      input.addValue("scanContext", new HashMap<>(Map.of("symbology", "QR_CODE", "userId", "forged-user", "deviceId", "forged-device")));
+      input.addValue("scanSaved", true);
+      input.addValue("acknowledgedEventId", first.get("eventId"));
+      input.addValue("barcode", "00001234");
+      input.addValue("eventId", UUID.randomUUID().toString());
+      input.addValue("capturedAt", "2026-11-01T12:00:00Z");
+      Map<String, Serializable> legacy = MobileScannerActions.capture(input);
+      assertEquals("UNKNOWN", legacy.get("symbology"));
+      assertEquals("UNKNOWN", legacy.get("scanSource"));
+      assertEquals("scanner", legacy.get("userId"));
+      assertEquals(device, legacy.get("deviceId"));
+      assertFalse(input.getValues().containsKey("scanContext"));
+      input.addValue("barcode", legacy.get("barcode"));
+      input.addValue("eventId", legacy.get("eventId"));
+      input.addValue("capturedAt", legacy.get("capturedAt"));
+      input.addValue("symbology", "QR_CODE");
+      assertThrows(QException.class, () -> MobileScannerActions.capture(input));
+      assertFalse(input.getValues().containsKey("symbology"), "A rejected event must not contaminate the following submission.");
+   }
+
+
+
+   /***************************************************************************
+    ** Pre-context saved state must be reopened rather than reuse stale input.
+    ***************************************************************************/
+   @Test
+   void preContextProcessStateRequiresRestartWithoutSaving() throws Exception
+   {
+      bind(approvedDevice());
+      RunBackendStepInput input = new RunBackendStepInput().withProcessName(MobileScannersQBitProducer.CAPTURE).withValues(scan());
+      input.addValue("scanSaved", true);
+      input.addValue("acknowledgedEventId", UUID.randomUUID().toString());
+      input.addValue("symbology", "QR_CODE");
+      assertTrue(assertThrows(QException.class, () -> MobileScannerActions.capture(input)).getMessage().contains("Restart the scanner process"));
+      assertThrows(QException.class, () -> MobileScannerActions.capture(input));
+      try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+         var statement = connection.createStatement(); var rows = statement.executeQuery("SELECT COUNT(*) FROM mobileScan"))
+      {
+         assertTrue(rows.next());
+         assertEquals(0, rows.getInt(1));
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Application attribution is registered backend configuration, not user input.
+    ***************************************************************************/
+   @Test
+   void hostApplicationContextRejectsUnknownAppsAndCrossAppRetries() throws Exception
+   {
+      bind(approvedDevice());
+      instance.addApp(new QAppMetaData().withName("hostScanner"));
+      Map<String, Serializable> submitted = scan();
+      submitted.put("appId", "forged-client-app");
+      RunBackendStepInput input = new RunBackendStepInput().withProcessName(MobileScannersQBitProducer.CAPTURE).withValues(new HashMap<>(submitted));
+      assertThrows(QException.class, () -> MobileScannerActions.capture(input, "unregistered-app"));
+      Map<String, Serializable> accepted = MobileScannerActions.capture(input, "hostScanner");
+      assertEquals("hostScanner", accepted.get("appId"));
+      input.setValues(new HashMap<>(submitted));
+      assertEquals(accepted.get("scanId"), MobileScannerActions.capture(input, "hostScanner").get("scanId"));
+      input.setValues(new HashMap<>(submitted));
+      assertThrows(QException.class, () -> MobileScannerActions.capture(input, MobileScannersQBitProducer.APP));
    }
 
 

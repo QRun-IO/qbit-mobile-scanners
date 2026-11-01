@@ -53,9 +53,16 @@ public final class MobileScannersSchemas
          "values", ref("MobileScannersScannerValuesV1")), "blockId", "blockType", "values"));
       schemas.put("MobileScannersScanEventV1", object("Values submitted to the current core process frontend step. barcode, eventId and capturedAt required. eventId remains unchanged on retry; identity comes only from verified user/device context, never these values. Barcode is a nonempty string, preserving leading zeroes.", Map.of(
          "barcode", text(4096), "eventId", uuid(), "capturedAt", text(40).withFormat("date-time"),
-         "symbology", text(200), "scanSource", text(200)), "barcode", "eventId", "capturedAt"));
-      schemas.put("MobileScannersScanAcknowledgmentV1", object("Properties in core process response values after persistence. All are required to acknowledge success: scanSaved=true, acknowledgedEventId matches submitted eventId and scanId is nonempty. Async polling must complete first. A repeated event returns its original scanId.", Map.of(
-         "acknowledgedEventId", uuid(), "scanId", text(64), "scanSaved", new Schema().withType(Type.BOOLEAN)), "acknowledgedEventId", "scanId", "scanSaved"));
+         "symbology", text(200).withDescription("Exact decoder identifier, never inferred from barcode text. If absent or blank, the server uses MANUAL for scanSource manual, otherwise UNKNOWN."),
+         "scanSource", text(200).withDescription("Capture method, for example datawedge, camera or manual. Absent or blank becomes UNKNOWN.")), "barcode", "eventId", "capturedAt"));
+      Map<String, Schema> scanContext = new TreeMap<>();
+      scanContext.putAll(Map.of("scanId", text(64), "barcode", text(4096), "symbology", text(200), "scanSource", text(200), "eventId", uuid(),
+         "capturedAt", text(40).withFormat("date-time"), "receivedAt", text(40).withFormat("date-time")));
+      scanContext.putAll(Map.of("userId", text(200), "deviceId", uuid(), "appId", text(200), "processName", text(200)));
+      schemas.put("MobileScannersScanContextV1", object("Persisted accepted scan for subsequent backend actions. Decoder identifiers are preserved; absent legacy type is UNKNOWN, or MANUAL for explicit manual source. Identity is server-derived. appId identifies the server-configured application; processName is the registered executing process. Raw event inputs are consumed so the next event cannot inherit them.", scanContext, scanContext.keySet().toArray(String[]::new)));
+      schemas.put("MobileScannersScanAcknowledgmentV1", object("Properties in core process response values after persistence. scanSaved=true, acknowledgedEventId matching the submitted eventId, and a nonempty scanId acknowledge success after async polling completes. Extension 1.3 always supplies scanContext for subsequent backend steps. It remains optional in this schema for older 1.x servers. A retry returns its original scanId and context; changed type/source/process is rejected.", Map.of(
+         "acknowledgedEventId", uuid(), "scanId", text(64), "scanSaved", new Schema().withType(Type.BOOLEAN),
+         "scanContext", ref("MobileScannersScanContextV1")), "acknowledgedEventId", "scanId", "scanSaved"));
       schemas.putAll(MobileSessionSchemas.components());
       return schemas;
    }

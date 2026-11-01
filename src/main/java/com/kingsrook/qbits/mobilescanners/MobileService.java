@@ -254,7 +254,27 @@ public final class MobileService
     ***************************************************************************/
    static QRecord capture(Map<String, Serializable> input) throws QException
    {
-      return MobileSessionService.withActiveSession(() -> captureApproved(input));
+      return capture(input, MobileScannersQBitProducer.CAPTURE);
+   }
+
+
+
+   /***************************************************************************
+    ** Process identity comes from the executing backend step, never its values.
+    ***************************************************************************/
+   static QRecord capture(Map<String, Serializable> input, String processName) throws QException
+   {
+      return capture(input, processName, MobileScannersQBitProducer.APP);
+   }
+
+
+
+   /***************************************************************************
+    ** Host code supplies application metadata identity, never request values.
+    ***************************************************************************/
+   static QRecord capture(Map<String, Serializable> input, String processName, String appId) throws QException
+   {
+      return MobileSessionService.withActiveSession(() -> captureApproved(input, processName, appId));
    }
 
 
@@ -262,7 +282,7 @@ public final class MobileService
    /***************************************************************************
     ** Serialize the local authorization check and write with session ending.
     ***************************************************************************/
-   private static QRecord captureApproved(Map<String, Serializable> input) throws QException
+   private static QRecord captureApproved(Map<String, Serializable> input, String processName, String appId) throws QException
    {
       MobilePermissions.require(MobilePermissions.SCAN);
       String deviceId = QContext.getQSession() instanceof VerifiedDeviceSession verified ? verified.deviceId() : null;
@@ -280,10 +300,12 @@ public final class MobileService
          throw new QException("capturedAt must be an ISO-8601 timestamp.");
       }
       String id = hash(deviceId + ":" + eventId);
+      String scanSource = normalizedScanSource(optional(input, "scanSource", 200));
+      String symbology = normalizedSymbology(optional(input, "symbology", 200), scanSource);
       QRecord record = new QRecord().withValue("id", id).withValue("deviceId", deviceId).withValue("eventId", eventId)
-         .withValue("barcode", barcode).withValue("symbology", optional(input, "symbology", 200)).withValue("scanSource", optional(input, "scanSource", 200))
+         .withValue("barcode", barcode).withValue("symbology", symbology).withValue("scanSource", scanSource)
          .withValue("capturedAt", captured).withValue("receivedAt", Instant.now()).withValue("userId", userId())
-         .withValue("appId", MobileScannersQBitProducer.APP).withValue("processName", MobileScannersQBitProducer.CAPTURE);
+         .withValue("appId", appId).withValue("processName", processName);
       for(String field : new String[] { "manufacturer", "model", "osVersion", "appVersion" })
       {
          record.setValue(field, device.getValue(field));
@@ -316,14 +338,42 @@ public final class MobileService
     ***************************************************************************/
    private static QRecord sameEvent(QRecord existing, QRecord requested) throws QException
    {
-      for(String field : new String[] { "barcode", "symbology", "scanSource", "userId" })
+      String originalSource = normalizedScanSource(existing.getValueString("scanSource"));
+      String originalSymbology = normalizedSymbology(existing.getValueString("symbology"), originalSource);
+      if(!originalSource.equals(requested.getValueString("scanSource")) || !originalSymbology.equals(requested.getValueString("symbology")))
+      {
+         throw new QException("This eventId was already used for a different scan.");
+      }
+      for(String field : new String[] { "barcode", "userId", "processName", "appId" })
       {
          if(!Objects.equals(existing.getValueString(field), requested.getValueString(field)))
          {
             throw new QException("This eventId was already used for a different scan.");
          }
       }
+      existing.setValue("scanSource", originalSource);
+      existing.setValue("symbology", originalSymbology);
       return existing;
+   }
+
+
+
+   /***************************************************************************
+    ** Legacy clients may omit source; absence must not invent a capture method.
+    ***************************************************************************/
+   private static String normalizedScanSource(String scanSource)
+   {
+      return scanSource == null || scanSource.isBlank() ? "UNKNOWN" : scanSource;
+   }
+
+
+
+   /***************************************************************************
+    ** Preserve decoder identifiers exactly; barcode text never implies a type.
+    ***************************************************************************/
+   private static String normalizedSymbology(String symbology, String scanSource)
+   {
+      return symbology == null || symbology.isBlank() ? ("manual".equalsIgnoreCase(scanSource) ? "MANUAL" : "UNKNOWN") : symbology;
    }
 
 

@@ -23,8 +23,16 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import com.kingsrook.qbits.mobilescanners.MobileScannersQBitProducer;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
 import com.kingsrook.qqq.middleware.javalin.QApplicationJavalinServer;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -60,6 +68,116 @@ class MobileHttpAcceptanceTest
    void resetBackendProviders()
    {
       com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager.resetConnectionProviders();
+   }
+
+
+
+   /*******************************************************************************
+    ** Real process steps branch on decoder context without querying saved scans.
+    *******************************************************************************/
+   @Test
+   void typedScanContextReachesFollowingBackendStepOverHttp() throws Exception
+   {
+      String database = "jdbc:h2:mem:typedScans" + UUID.randomUUID().toString().replace("-", "") + ";DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE";
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      MobileScannersDemo application = new MobileScannersDemo(database);
+      application.initializeDatabase(scannerPassword, adminPassword);
+      application.defineQInstance().getProcess(MobileScannersQBitProducer.CAPTURE)
+         .withStep(new QBackendStepMetaData().withName("routeTypedScan").withCode(new QCodeReference(TypedScanConsumer.class)));
+      Integer port;
+      try(ServerSocket socket = new ServerSocket(0))
+      {
+         port = socket.getLocalPort();
+      }
+      origin = "http://127.0.0.1:" + port;
+      QApplicationJavalinServer server = application.start(port);
+      try
+      {
+         assertSemanticDiscovery(false);
+         String scanner = login("scanner", scannerPassword);
+         String admin = login("admin", adminPassword);
+         JSONObject device = new JSONObject(request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner,
+            new JSONObject().put("installationId", UUID.randomUUID().toString()).toString(), false).body());
+         deviceId = device.getString("deviceId");
+         deviceToken = device.getString("deviceToken");
+         runAdminFromRecord("mobileDeviceApprove", admin);
+         JSONObject launch = complete(processInit(MobileScannersQBitProducer.CAPTURE, scanner, true), MobileScannersQBitProducer.CAPTURE, scanner, true);
+         String processId = launch.getString("processUUID");
+         JSONObject values = null;
+         for(String type : List.of("CODE128", "QR_CODE"))
+         {
+            values = new JSONObject().put("barcode", "00001234").put("symbology", type).put("scanSource", "camera")
+               .put("eventId", UUID.randomUUID().toString()).put("capturedAt", "2026-11-01T12:00:00Z")
+               .put("userId", "forged-user").put("deviceId", "forged-device").put("processName", "forged-process");
+            JSONObject first = complete(processStep(MobileScannersQBitProducer.CAPTURE, processId, "scan", scanner, values, true), MobileScannersQBitProducer.CAPTURE, scanner, true);
+            JSONObject acknowledgment = first.getJSONObject("values");
+            assertSchema("MobileScannersScanAcknowledgmentV1", acknowledgment);
+            JSONObject context = acknowledgment.getJSONObject("scanContext");
+            assertSchema("MobileScannersScanContextV1", context);
+            assertEquals(type, context.getString("symbology"));
+            assertEquals(type, acknowledgment.getString("observedScanType"));
+            assertEquals("QR_CODE".equals(type) ? "OPEN_QR" : "LOOKUP_ITEM", acknowledgment.getString("scanDecision"));
+            assertEquals("00001234", context.getString("barcode"));
+            assertEquals(values.getString("eventId"), context.getString("eventId"));
+            assertEquals("2026-11-01T12:00:00Z", context.getString("capturedAt"));
+            assertNotNull(Instant.parse(context.getString("receivedAt")));
+            assertEquals("scanner", context.getString("userId"));
+            assertEquals(deviceId, context.getString("deviceId"));
+            assertEquals(MobileScannersQBitProducer.CAPTURE, context.getString("processName"));
+            assertEquals(MobileScannersQBitProducer.APP, context.getString("appId"));
+            JSONObject retry = complete(processStep(MobileScannersQBitProducer.CAPTURE, processId, "scan", scanner, values, true), MobileScannersQBitProducer.CAPTURE, scanner, true);
+            assertEquals(context.getString("scanId"), retry.getJSONObject("values").getString("scanId"));
+            assertEquals(type, retry.getJSONObject("values").getString("observedScanType"));
+         }
+         JSONObject legacy = new JSONObject().put("barcode", "00001234").put("eventId", UUID.randomUUID().toString())
+            .put("capturedAt", "2026-11-01T12:00:00Z");
+         JSONObject unknown = complete(processStep(MobileScannersQBitProducer.CAPTURE, processId, "scan", scanner, legacy, true), MobileScannersQBitProducer.CAPTURE, scanner, true);
+         assertEquals("UNKNOWN", unknown.getJSONObject("values").getJSONObject("scanContext").getString("symbology"));
+         assertEquals("UNKNOWN", unknown.getJSONObject("values").getString("observedScanType"));
+         assertEquals("scanner", unknown.getJSONObject("values").getJSONObject("scanContext").getString("userId"));
+         int calls = TypedScanConsumer.CALLS.get();
+         assertNotNull(values);
+         values.put("symbology", "CODE128");
+         complete(processStep(MobileScannersQBitProducer.CAPTURE, processId, "scan", scanner, values, true), MobileScannersQBitProducer.CAPTURE, scanner, true, true);
+         assertEquals(calls, TypedScanConsumer.CALLS.get(), "A conflicting type must not reach the following action.");
+         assertEquals(3, scanCount(database));
+      }
+      finally
+      {
+         server.stop();
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** A host action sees only the accepted process values, with no scan table read.
+    *******************************************************************************/
+   public static class TypedScanConsumer implements BackendStep
+   {
+      private static final AtomicInteger CALLS = new AtomicInteger();
+
+
+
+      /***************************************************************************
+       ** Use decoder type to select a business action independently of text.
+       ***************************************************************************/
+      @Override
+      public void run(RunBackendStepInput input, RunBackendStepOutput output)
+      {
+         CALLS.incrementAndGet();
+         Map<?, ?> context = (Map<?, ?>) input.getValue("scanContext");
+         String type = (String) context.get("symbology");
+         assertNotNull(type);
+         assertEquals("scanner", context.get("userId"));
+         assertEquals(MobileScannersQBitProducer.CAPTURE, context.get("processName"));
+         assertFalse(input.getValues().containsKey("symbology"));
+         assertFalse(input.getValues().containsKey("barcode"));
+         output.addValue("observedScanType", type);
+         output.addValue("scanDecision", "QR_CODE".equals(type) ? "OPEN_QR" : "LOOKUP_ITEM");
+         output.getProcessState().setNextStepName("scan");
+      }
    }
 
 
@@ -532,7 +650,7 @@ class MobileHttpAcceptanceTest
          }
       }
       assertNotNull(mobile);
-      assertEquals("1.2.0", mobile.getString("version"));
+      assertEquals("1.3.0", mobile.getString("version"));
       assertEquals("/qbit/mobile-scanners", mobile.getString("pathPrefix"));
       var openApiResponse = request("GET", "/qqq/v1/openapi.json", null, null, device);
       assertEquals(200, openApiResponse.statusCode());
@@ -904,6 +1022,16 @@ class MobileHttpAcceptanceTest
     *******************************************************************************/
    private JSONObject complete(HttpResponse<String> response, String process, String session, boolean device) throws Exception
    {
+      return complete(response, process, session, device, false);
+   }
+
+
+
+   /*******************************************************************************
+    ** Await both accepted and rejected asynchronous process steps before checking.
+    *******************************************************************************/
+   private JSONObject complete(HttpResponse<String> response, String process, String session, boolean device, boolean expectError) throws Exception
+   {
       assertEquals(200, response.statusCode(), "Process HTTP failure");
       JSONObject body = new JSONObject(response.body());
       long deadline = System.nanoTime() + Duration.ofSeconds(15).toNanos();
@@ -917,7 +1045,7 @@ class MobileHttpAcceptanceTest
          assertEquals(200, response.statusCode());
          body = new JSONObject(response.body());
       }
-      assertFalse(body.has("error"), "Native process error: " + body.optString("error"));
+      assertEquals(expectError, body.has("error"), "Unexpected native process outcome.");
       return body;
    }
 

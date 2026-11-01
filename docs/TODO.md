@@ -1,5 +1,9 @@
 # QQQ Mobile Scanners TODO
 
+- [ ] Deliver Echo example: choose authorized printer and media once, then one scan/render/accepted-print job at a time until leave; reproduce exact value and symbology with worker-owned integer-module fitting and quiet zones.
+- [ ] Coordinate qualified renderer fit, authorized printer/media discovery, least-privilege submit and retained-print adapter contracts with their owners via shared communications.
+- [x] Verify scanContext 1.3 with root44/demo7/optional18 and Checkstyle: following-step QR/Code 128 branching, legacy omission isolation, trusted attribution and exact retry binding; physical scanner acceptance remains separate.
+
 - [x] Apply the full scoped standards review corrections and verify server39/demo6 with Checkstyle; see [review](CODING-STANDARDS-REVIEW-2026-11-01.md).
 - [ ] Finish final hosted checks and remaining physical/provider acceptance; source compliance is not production release approval.
 

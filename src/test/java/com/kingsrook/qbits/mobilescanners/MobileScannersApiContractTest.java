@@ -63,7 +63,7 @@ class MobileScannersApiContractTest
          assertTrue(model.getComponents().getSchemas().containsKey(schema), schema);
       }
       assertEquals(7, extension.getSpecs().size());
-      assertEquals("1.2.0", extension.getSemanticVersion());
+      assertEquals("1.3.0", extension.getSemanticVersion());
       assertTrue(generated.contains("mobileScannersEnrollDevice"));
       assertTrue(generated.contains("X-QQQ-Device-Token"));
       assertTrue(generated.contains("acknowledgedEventId"));
