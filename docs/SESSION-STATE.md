@@ -1,6 +1,10 @@
 # QQQ Mobile Scanners session state
 
-Updated: 2026-10-31
+Updated: 2026-11-01
+
+## November 1 release reconciliation
+
+Published server1041693 passes all eight hosted checks. Its exact-source API1.9/mobile1.2 consumer passes39 server/six demo/all15 browser cases and strict195-JAR/2,441-unique-QQQ-class/zero-duplicate provenance. The normal operator runtime remains the preserving ecf/b14 API1.9/mobile1.1 upgrade; do not substitute the new1.2 server without another current-data backup and ownership-guarded upgrade. Normal Android has now been updated in place to reviewed F3AF638E…E9FAA with signer/backup preserved, then signed in and navigated to Scan Capture; actual EMDK trigger acceptance remains open. Its5ba source passes CircleCI native/unit and GitHub static/build checks; both GitHub native E2E jobs were observed live, terminal verdict pending. Independent release-workflow review found no actionable source finding; actual GitHub release protections/signing/device acceptance remain open. The current requirement-by-requirement ledger is [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md); older entries below retain historical scope.
 
 Cross-chat coordination uses `R:\agent-comms\README.md` and the mobile master's owned `R:\agent-comms\qqq-mobile-scanner.md`, explicitly requested by the user. Record Files and Printing acknowledged the directory. Read the current summary at the top of each owner's mailbox before changing shared contracts.
 
