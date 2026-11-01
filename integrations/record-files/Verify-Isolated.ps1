@@ -142,7 +142,27 @@ try
    }
    $compiled | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $target 'compiled-sha256.json') -Encoding utf8
    $scannerArtifact = $manifest | Where-Object { [IO.Path]::GetFileName($_.path) -eq 'qbit-mobile-scanners-0.1.0-SNAPSHOT.jar' }
-   @{bundleName=(Split-Path -Leaf $bundleRoot); repositoryName=$RepositoryName; duplicateQqqClasses=0; classCount=$classes.Count; h2Version='2.2.224'; baseBuildMode=$(if($SkipBaseBuild) { 'module-only-prior-scanner-binary' } else { 'fresh-source-clean-base-build' }); scannerJarSha256=$scannerArtifact.sha256; derivedCollaborationPomSha256=(Get-FileHash -LiteralPath $collaborationPom -Algorithm SHA256).Hash.ToLowerInvariant() } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $target 'runtime-validation.json') -Encoding utf8
-   @{verifiedAtUtc=[DateTime]::UtcNow.ToString('O'); runtimeManifestSha256=(Get-FileHash -LiteralPath (Join-Path $target 'runtime-sha256.json')).Hash; compiledManifestSha256=(Get-FileHash -LiteralPath (Join-Path $target 'compiled-sha256.json')).Hash } | ConvertTo-Json | Set-Content -LiteralPath $successMarker -Encoding utf8
+   $baseBuildMode = 'fresh-source-clean-base-build'
+   if($SkipBaseBuild) { $baseBuildMode = 'module-only-prior-scanner-binary' }
+   $collaborationPomSha256 = (Get-FileHash -LiteralPath $collaborationPom -Algorithm SHA256).Hash.ToLowerInvariant()
+   $validation = @{
+      bundleName                    = (Split-Path -Leaf $bundleRoot)
+      repositoryName                = $RepositoryName
+      duplicateQqqClasses           = 0
+      classCount                    = $classes.Count
+      h2Version                     = '2.2.224'
+      baseBuildMode                 = $baseBuildMode
+      scannerJarSha256              = $scannerArtifact.sha256
+      derivedCollaborationPomSha256 = $collaborationPomSha256
+   }
+   $validation | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $target 'runtime-validation.json') -Encoding utf8
+   $runtimeManifestSha256 = (Get-FileHash -LiteralPath (Join-Path $target 'runtime-sha256.json')).Hash
+   $compiledManifestSha256 = (Get-FileHash -LiteralPath (Join-Path $target 'compiled-sha256.json')).Hash
+   $marker = @{
+      verifiedAtUtc          = [DateTime]::UtcNow.ToString('O')
+      runtimeManifestSha256  = $runtimeManifestSha256
+      compiledManifestSha256 = $compiledManifestSha256
+   }
+   $marker | ConvertTo-Json | Set-Content -LiteralPath $successMarker -Encoding utf8
 }
 finally { Pop-Location }
