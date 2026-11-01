@@ -7,6 +7,7 @@ package com.kingsrook.qbits.mobilescanners;
 
 
 import java.util.List;
+import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
@@ -26,6 +27,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitProducer;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
 
 
 /*******************************************************************************
@@ -42,7 +44,13 @@ public class MobileScannersQBitProducer implements QBitProducer
    public static final String WIDGET = "mobileScanner";
    public static final String APP = "mobileScanApp";
    public static final String ADMIN_APP = "mobileScannerAdmin";
+   public static final String SESSION = "mobileSession";
+   public static final String SESSION_BINDING = "mobileSessionBinding";
+   public static final String SESSION_END = "mobileSessionEnd";
+   public static final String SESSION_SCREEN = "mobileSessionScreen";
    private MobileScannersQBitConfig config;
+
+
 
    /***************************************************************************
     ** Configure the storage backend.
@@ -52,6 +60,8 @@ public class MobileScannersQBitProducer implements QBitProducer
       this.config = config;
       return this;
    }
+
+
 
    /***************************************************************************
     ** Install once per QInstance; names are intentionally stable for clients.
@@ -66,14 +76,24 @@ public class MobileScannersQBitProducer implements QBitProducer
       config.validate(instance);
       instance.addQBit(new QBitMetaData().withGroupId("com.kingsrook.qbits").withArtifactId("qbit-mobile-scanners")
          .withVersion("0.1.0-SNAPSHOT").withNamespace(namespace).withConfig(config));
+      MobileScannersUiApi.register(instance);
       QTableMetaData device = table(DEVICE, "Mobile Devices", 36);
       for(String field : List.of("installationId", "displayName", "manufacturer", "model", "osVersion", "appVersion", "status", "enrolledBy", "approvedBy"))
       {
          device.withField(text(field, 200));
       }
       device.withField(time("enrolledAt")).withField(time("approvedAt"));
+      device.withField(text("shortName", 32).withIsRequired(true)).withField(text("description", 2000))
+         .withUniqueKey(new UniqueKey("shortName"))
+         .withCustomizer(TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(MobileDeviceProfileCustomizer.class));
+      MobileDeviceActivity.addFields(device);
+      for(var field : device.getFields().values())
+      {
+         field.setIsEditable(List.of("shortName", "displayName", "description").contains(field.getName()));
+      }
+      device.getField("status").setLabel("Approval Status");
       instance.addTable(device);
-      instance.addTable(table(CREDENTIAL, "Device Credentials", 36).withField(text("tokenHash", 64).withIsHidden(true)));
+      instance.addTable(table(CREDENTIAL, "Device Credentials", 36).withField(text("tokenHash", 64).withIsHidden(true).withIsSensitive(true)));
       QTableMetaData scan = table(SCAN, "Barcode Scans", 64);
       for(String field : List.of("deviceId", "eventId", "userId", "appId", "processName", "symbology", "scanSource", "manufacturer", "model", "osVersion", "appVersion"))
       {
@@ -81,6 +101,7 @@ public class MobileScannersQBitProducer implements QBitProducer
       }
       scan.withField(text("barcode", 4096)).withField(time("capturedAt")).withField(time("receivedAt"));
       instance.addTable(scan);
+      MobileSessionMetadata.register(instance, config.getBackendName());
       instance.addWidget(new QWidgetMetaData().withName(WIDGET).withLabel("Scan a barcode").withType("composite")
          .withCodeReference(new QCodeReference(MobileScannerWidget.class)).withPermissionRules(rules()));
       instance.addProcess(new QProcessMetaData().withName(CAPTURE).withLabel("Scan Capture").withPermissionRules(rules())
@@ -91,18 +112,26 @@ public class MobileScannersQBitProducer implements QBitProducer
       for(String process : List.of(APPROVE, REVOKE))
       {
          instance.addProcess(new QProcessMetaData().withName(process).withLabel(process.equals(APPROVE) ? "Approve Device" : "Revoke Device")
-            .withTableName(DEVICE).withPermissionRules(rules())
+            .withTableName(DEVICE).withMaxInputRecords(100).withPermissionRules(rules())
+            .withStep(new QBackendStepMetaData().withName("prepare").withCode(new QCodeReference(MobileDeviceAdminPrepareStep.class)))
             .withStep(new QFrontendStepMetaData().withName("input").withLabel("Device")
-               .withFormField(text("deviceId", 36).withLabel("Device ID").withIsRequired(true))
+               .withViewField(text("selectionSummary", 30000).withLabel("Devices to process"))
+               .withFormField(text("deviceId", 3700).withLabel("Device IDs").withIsRequired(true))
+               .withComponent(new QFrontendComponentMetaData().withType(QComponentType.VIEW_FORM))
                .withComponent(new QFrontendComponentMetaData().withType(QComponentType.EDIT_FORM)))
-            .withStep(new QBackendStepMetaData().withName("apply").withCode(new QCodeReference(MobileDeviceAdminStep.class))));
+            .withStep(new QBackendStepMetaData().withName("apply").withCode(new QCodeReference(MobileDeviceAdminStep.class)))
+            .withStep(new QFrontendStepMetaData().withName("result").withLabel("Result")
+               .withViewField(text("result", 200).withLabel("Result"))
+               .withComponent(new QFrontendComponentMetaData().withType(QComponentType.VIEW_FORM))));
       }
       instance.addApp(new QAppMetaData().withName(APP).withLabel("Scan Capture").withIcon(new QIcon("qr_code_scanner"))
          .withPermissionRules(rules()).withSection(new QAppSection().withName("scan").withLabel("Scanning").withProcesses(List.of(CAPTURE))));
       instance.addApp(new QAppMetaData().withName(ADMIN_APP).withLabel("Mobile Scanner Administration").withIcon(new QIcon("devices"))
          .withPermissionRules(rules()).withSection(new QAppSection().withName("devices").withLabel("Devices and Scans")
-            .withTables(List.of(DEVICE, SCAN)).withProcesses(List.of(APPROVE, REVOKE))));
+            .withTables(List.of(DEVICE, SESSION, SCAN)).withProcesses(List.of(APPROVE, REVOKE, SESSION_END))));
    }
+
+
 
    /***************************************************************************
     ** Every table action is guarded, including generic UI API mutations.
@@ -113,6 +142,8 @@ public class MobileScannersQBitProducer implements QBitProducer
          .withPrimaryKeyField("id").withField(text("id", idLength).withIsRequired(true)).withPermissionRules(rules());
    }
 
+
+
    /***************************************************************************
     ** Common guarded metadata rules.
     ***************************************************************************/
@@ -122,6 +153,8 @@ public class MobileScannersQBitProducer implements QBitProducer
          .withCustomPermissionChecker(new QCodeReference(MobilePermissions.class));
    }
 
+
+
    /***************************************************************************
     ** Bound all text before it reaches persistence.
     ***************************************************************************/
@@ -129,6 +162,8 @@ public class MobileScannersQBitProducer implements QBitProducer
    {
       return new QFieldMetaData(name, QFieldType.STRING).withMaxLength(length);
    }
+
+
 
    /***************************************************************************
     ** Native timestamp metadata.

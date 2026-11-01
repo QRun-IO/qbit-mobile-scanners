@@ -1,0 +1,134 @@
+[
+  {
+    "path": "AUTHORIZED-BROWSING.md",
+    "sha256": "ebc2a4db713b1f47722a6f5e466b956704aca45e6536469fac18f0635a058c02"
+  },
+  {
+    "path": "CONTENT-READER.md",
+    "sha256": "2897cb46e64b865fd25d0dd0315443bb8eff6152033a031293de5c66a61a00c4"
+  },
+  {
+    "path": "core-0445-compatibility-verification.log",
+    "sha256": "6c336fdaa5733f154b7002e048f2cc0a9da7c989b3fa316d3137699557e8b861"
+  },
+  {
+    "path": "HTTP-CONSUMER-FIXTURE.md",
+    "sha256": "0e3d0021f30d07e8ccac6d75d7fb231fe9ccfbffc2e41c2ba9eeff9faaaaf713"
+  },
+  {
+    "path": "INGESTION-CONTRACT.md",
+    "sha256": "3942c4d1f8ae47b30e4c37f467db33164dfce36c2d5ce0ac074d661ea62f3e14"
+  },
+  {
+    "path": "MYSQL.md",
+    "sha256": "16b3759e2d3c9609c903e8dca7162156e73e61cca45daff6e4cf531a83a57927"
+  },
+  {
+    "path": "NATIVE-WORKFLOWS.md",
+    "sha256": "691e5a37f3566c4f7f7c2c0c5b0f212f54fd946f39d95ed5972e0266a4347331"
+  },
+  {
+    "path": "PRINT-OBSERVATIONS.md",
+    "sha256": "0d927dbe4b0d5f93291726f73192682b38b955a3f39189e24f07fde9353206a4"
+  },
+  {
+    "path": "PRIOR-0352-README.md",
+    "sha256": "f8fe431b217c1c9527c140a05a17f95bf9077f8efe5e5602d8c11425d65580f0"
+  },
+  {
+    "path": "qbit-collaboration-0.1.0-record-files-SNAPSHOT.jar",
+    "sha256": "87c6a9aac52a0821edd66dad2924a014d2c70aa929ead011dcf7a89a0f94c854"
+  },
+  {
+    "path": "qbit-collaboration.pom.xml",
+    "sha256": "3edb8deabe52093cf868d1972a5d70fccf46930e20b9e49451518f40b18566e0"
+  },
+  {
+    "path": "qbit-collaboration.resolved.pom.xml",
+    "sha256": "32bb2afb6645f525323e500570f71b319cc13d00403c7555d4b3e23d6e0ea766"
+  },
+  {
+    "path": "qbit-record-files-0.1.0-SNAPSHOT-tests.jar",
+    "sha256": "d19dcbc173eb4b45c808638936fab352b39f7fb636cc25d342982d7d4b648e81"
+  },
+  {
+    "path": "qbit-record-files-0.1.0-SNAPSHOT.jar",
+    "sha256": "9024fb61805ac33022e624bf283db1a58d839415dda52b669e4e8099c65ebbfd"
+  },
+  {
+    "path": "qbit-record-files.pom.xml",
+    "sha256": "ee17af6afbdff319d24e7e536813e13a04c8e0f8934c40b2ccb16a8c2392cfe0"
+  },
+  {
+    "path": "qqq-backend-core-4.1.0-isolated-record-files-SNAPSHOT.jar",
+    "sha256": "c7e9da29afe886ada550d0590b10491b8f3b1a621a1b3b79ca3fb5f807dcf894"
+  },
+  {
+    "path": "qqq-backend-core.pom.xml",
+    "sha256": "86fe5d56a9ce05be5dc1e788448ea0967206cf3ce990c0f8d5bdb477fc4651ee"
+  },
+  {
+    "path": "qqq-backend-module-rdbms-4.1.0-isolated-record-files-SNAPSHOT.jar",
+    "sha256": "562ec0f2653dd156d06b7b7df7268c40ac87a2c8a79c4f2f7811666507338728"
+  },
+  {
+    "path": "qqq-backend-module-rdbms.pom.xml",
+    "sha256": "68bfdfae61fa579c6f8afdd75c898aef4fc463aa6cc474a4cac391f448c7b2e4"
+  },
+  {
+    "path": "qqq-parent-project-4.1.0-isolated-record-files-SNAPSHOT.pom",
+    "sha256": "0158658f28d868b2ac5b323c7ede46b7075d8e5f33a2da9a49c34402abe24afe"
+  },
+  {
+    "path": "README.md",
+    "sha256": "2b1b865bcd5ac5a7461c96e752ad117ecbdbc3a8557122ba872b6a2ffb4669be"
+  },
+  {
+    "path": "source-sha256.json",
+    "sha256": "e5d1f01fa9e49bc080662436c0dac1d0f6341d11cf7c633bd160cea6d6ebf6e5"
+  },
+  {
+    "path": "source\\src\\main\\java\\com\\kingsrook\\qbits\\recordfiles\\api\\CaptureIdentityProvider.java",
+    "sha256": "80194faa0a14baa955418ac57f9bbd816a3d41f19ed21d441409452adafd80ff"
+  },
+  {
+    "path": "source\\src\\main\\java\\com\\kingsrook\\qbits\\recordfiles\\ingestion\\UploadFinalizer.java",
+    "sha256": "569d3971a34af168216bd30e6837e42a8669d3fad84e33ce76260fb204b3e9cf"
+  },
+  {
+    "path": "source\\src\\main\\java\\com\\kingsrook\\qbits\\recordfiles\\ingestion\\UploadMaintenance.java",
+    "sha256": "25acb4bc8a983bafce3794444300f2e9fb54a25ee6122bcbdcc07be1a2bddf58"
+  },
+  {
+    "path": "source\\src\\main\\java\\com\\kingsrook\\qbits\\recordfiles\\ingestion\\UploadRuntime.java",
+    "sha256": "efe94032239b3053282fb8b0696e35c46b266b9dc815b68ba33efd0947a69f63"
+  },
+  {
+    "path": "source\\src\\main\\java\\com\\kingsrook\\qbits\\recordfiles\\ingestion\\UploadSessionService.java",
+    "sha256": "eafd981d8ec0b91d59ffdcea8654db7dbd670101e7b1540bb99885852f27fc4c"
+  },
+  {
+    "path": "source\\src\\test\\java\\com\\kingsrook\\qbits\\recordfiles\\ingestion\\UploadApiHttpTest.java",
+    "sha256": "df14757c362d25a2135f45884404006b6c08ee335fe9aeaa9180717667c0aa73"
+  },
+  {
+    "path": "source\\src\\test\\java\\com\\kingsrook\\qbits\\recordfiles\\ingestion\\UploadSessionServiceTest.java",
+    "sha256": "4c3677d7804a1a975792f1b92a9ddaa563f2fb8c44d10887b5f8dc5e54952e3e"
+  },
+  {
+    "path": "TRACKED-DOWNLOADS.md",
+    "sha256": "b66782966acf7162d6de0528a8979d3f4829c4e7285c6cb001c97e22e6cd65ef"
+  },
+  {
+    "path": "transactional-jobs\\h2-additive.sql",
+    "sha256": "969bf71792a32527459c1c08c5f9c1a61523f3da545ce6d50ff661d35e9c1a6e"
+  },
+  {
+    "path": "transactional-jobs\\mysql-additive.sql",
+    "sha256": "1b3369856ed39708c0e976ea3bda1bae9910da3d5d65341e09ecef3a6d656e10"
+  },
+  {
+    "path": "transactional-jobs\\README.md",
+    "sha256": "f2d0bd1fe50817269535b5941e9cbb0883602aa8f68c1c790932519693238569"
+  }
+]

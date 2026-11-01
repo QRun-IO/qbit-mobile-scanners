@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaData;
+import com.kingsrook.qqq.middleware.javalin.specs.v1.MiddlewareVersionV1;
 import io.javalin.Javalin;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,8 @@ class MobileBrandingTest
       assertEquals("#AABBCC", config.withPrimaryColor("#aabbcc").getPrimaryColor());
    }
 
+
+
    /***************************************************************************
     ** Defaults remain available with no session and stale device credentials.
     ***************************************************************************/
@@ -66,10 +69,19 @@ class MobileBrandingTest
       {
          config.jetty.host = "127.0.0.1";
          config.routes.apiBuilder(provider.getJavalinEndpointGroup());
+         config.routes.apiBuilder(() ->
+         {
+            MobileBrandingSpec brandingSpec = new MobileBrandingSpec();
+            brandingSpec.setQInstance(instance);
+            brandingSpec.defineRoute(new MiddlewareVersionV1(), "v1");
+            MobileStatusSpec statusSpec = new MobileStatusSpec();
+            statusSpec.setQInstance(instance);
+            statusSpec.defineRoute(new MiddlewareVersionV1(), "v1");
+         });
       }).start(0);
       try
       {
-         HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + "/mobile/v1/branding"))
+         HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + "/qqq/v1/qbit/mobile-scanners/branding"))
             .timeout(Duration.ofSeconds(5)).header(MobileScannersRouteProvider.DEVICE_HEADER, "stale")
             .header(MobileScannersRouteProvider.TOKEN_HEADER, "invalid").GET().build();
          var response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
@@ -79,7 +91,7 @@ class MobileBrandingTest
          assertEquals(2, branding.length());
          assertEquals("QQQ Mobile Scanners", branding.getString("displayName"));
          assertEquals("#1565C0", branding.getString("primaryColor"));
-         HttpRequest heartbeat = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + "/mobile/v1/status"))
+         HttpRequest heartbeat = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + "/qqq/v1/qbit/mobile-scanners/status"))
             .timeout(Duration.ofSeconds(5)).header(MobileScannersRouteProvider.DEVICE_HEADER, "stale")
             .header(MobileScannersRouteProvider.TOKEN_HEADER, "invalid").GET().build();
          var status = HttpClient.newHttpClient().send(heartbeat, HttpResponse.BodyHandlers.ofString());

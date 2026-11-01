@@ -13,6 +13,7 @@ import com.kingsrook.qqq.backend.core.model.actions.AbstractActionInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.MetaDataWithPermissionRules;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
@@ -29,12 +30,18 @@ public class MobilePermissions implements CustomPermissionChecker
    static final ThreadLocal<String> REQUEST_DEVICE = new ThreadLocal<>();
    static final ThreadLocal<Boolean> INTERNAL = new ThreadLocal<>();
 
+
+
    /***************************************************************************
     ** Clone before attaching request identity: stored sessions may be shared.
     ***************************************************************************/
    @Override
    public void checkPermissionsThrowing(AbstractActionInput action, MetaDataWithPermissionRules metadata) throws QPermissionDeniedException
    {
+      if(metadata instanceof QTableMetaData && MobileScannersQBitProducer.DEVICE.equals(metadata.getName()) && action instanceof QueryInput query)
+      {
+         MobileDeviceOnline.includeProjectionDependency(query);
+      }
       if(Boolean.TRUE.equals(INTERNAL.get()))
       {
          return;
@@ -56,6 +63,7 @@ public class MobilePermissions implements CustomPermissionChecker
                throw new QPermissionDeniedException("An approved device credential is required.");
             }
             MobileService.requireApproved(deviceId);
+            MobileSessionService.observe(deviceId);
             if(action instanceof RunProcessInput)
             {
                QContext.setQSession(new VerifiedDeviceSession(QContext.getQSession(), deviceId));
@@ -70,12 +78,34 @@ public class MobilePermissions implements CustomPermissionChecker
       require(ADMIN);
       if(metadata instanceof QTableMetaData table)
       {
-         if(MobileScannersQBitProducer.CREDENTIAL.equals(table.getName()) || action instanceof InsertInput || action instanceof UpdateInput || action instanceof DeleteInput)
+         if(MobileScannersQBitProducer.DEVICE.equals(table.getName()))
+         {
+            try
+            {
+               if(action instanceof UpdateInput update)
+               {
+                  MobileSessionService.requireNotEnded();
+                  if(update.getRecords() != null)
+                  {
+                     MobileDeviceProfileCustomizer.sanitize(update.getRecords());
+                  }
+                  return;
+               }
+            }
+            catch(Exception failure)
+            {
+               throw new QPermissionDeniedException("Device profile or online status could not be verified.");
+            }
+         }
+         if(MobileScannersQBitProducer.CREDENTIAL.equals(table.getName()) || MobileScannersQBitProducer.SESSION_BINDING.equals(table.getName())
+            || action instanceof InsertInput || action instanceof UpdateInput || action instanceof DeleteInput)
          {
             throw new QPermissionDeniedException("Use the mobile device processes; direct writes and credential reads are forbidden.");
          }
       }
    }
+
+
 
    /***************************************************************************
     ** Explicit authenticated user and permission, even for direct backend calls.

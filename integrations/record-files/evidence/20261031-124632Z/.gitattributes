@@ -1,0 +1,2 @@
+# Preserve the exact manifest bytes referenced by the retained verification marker.
+*.json -text !eol diff whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -1,6 +1,6 @@
 # Customer branding and connection status
 
-The shared Android APK loads appearance from the selected QQQ server before login. A customer can configure the in-app display name, primary color and optional logo without compiling another APK. The installed application's Android launcher name, icon and package identity remain properties of the APK.
+The shared Android APK checks the selected server's semantic API compatibility, then loads appearance before login. A customer can configure the in-app display name, primary color and optional logo without compiling another APK. The installed application's Android launcher name, icon and package identity remain properties of the APK. Branding and connectivity are documented operations in the [mobile-scanners semantic UI API extension](UI-API.md).
 
 ## Host configuration
 
@@ -28,7 +28,7 @@ Unset variables use defaults: `QQQ Mobile Scanners`, `#1565C0`, and no logo. Res
 
 ## Public client contract
 
-`GET /mobile/v1/branding` returns HTTP 200 with `Cache-Control: no-store` and JSON:
+`GET /qqq/v1/qbit/mobile-scanners/branding` returns HTTP 200 with `Cache-Control: no-store` and JSON:
 
 ```json
 {
@@ -38,6 +38,6 @@ Unset variables use defaults: `QQQ Mobile Scanners`, `#1565C0`, and no logo. Res
 }
 ```
 
-The `logoUrl` property is omitted when unset. The endpoint requires no session or approved device and ignores stale device headers. It exposes only those allowlisted appearance fields, never qbit configuration, backend names, secrets or enrollment records. A client connecting to an older server without this endpoint should retain its default theme.
+The `logoUrl` property is omitted when unset. The endpoint requires no session or approved device and ignores stale device headers. It exposes only those allowlisted appearance fields, never qbit configuration, backend names, secrets or enrollment records. A compatible server's unavailable or malformed branding uses the client's default theme. A server missing the required extension is blocked before login with an upgrade/configuration message.
 
-`GET /mobile/v1/status` likewise returns HTTP 200, `Cache-Control: no-store`, and `{"status":"ok"}` without authentication. This means the HTTP service is reachable; it does not test database readiness, authenticate a user, or approve a device. Clients must continue using authenticated device status and normal process responses for those decisions. No diagnostics, database details or credentials are returned.
+`GET /qqq/v1/qbit/mobile-scanners/status` likewise returns HTTP 200, `Cache-Control: no-store`, and `{"status":"ok"}` without authentication. This means the HTTP service is reachable; it does not test database readiness, authenticate a user, or approve a device. Clients must continue using authenticated device status and normal process responses for those decisions. No diagnostics, database details or credentials are returned.

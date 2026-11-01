@@ -1,0 +1,26 @@
+{
+  "footerHTML" : null,
+  "dropdownLabelList" : null,
+  "dropdownNeedsSelectedText" : null,
+  "blockType" : "COMPOSITE",
+  "dropdownNameList" : null,
+  "subBlocks" : [ {
+    "blockId" : "recordFilesCapture",
+    "blockType" : "RECORD_FILES_CAPTURE",
+    "values" : {
+      "parent" : {
+        "recordId" : "1",
+        "tableName" : "document"
+      },
+      "instructions" : "Capture or choose a photo for the first fixture document.",
+      "title" : "Document photos"
+    }
+  } ],
+  "label" : null,
+  "type" : "composite",
+  "sublabel" : null,
+  "dropdownDefaultValueList" : null,
+  "csvData" : null,
+  "hasPermission" : null,
+  "dropdownDataList" : null
+}

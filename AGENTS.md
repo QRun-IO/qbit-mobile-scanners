@@ -9,10 +9,13 @@ The Android host is maintained in [QRun-IO/qqq-android](https://github.com/QRun-
 - From this directory: `./mvnw verify install`, then `./mvnw -f demo/pom.xml verify`.
 - Windows equivalents use `mvnw.cmd`. Checkstyle runs during `validate`; do not disable it or skip tests for a completed change.
 - Root tests cover H2 persistence, permissions, concurrent retries and async identity. Demo tests cover the real native HTTP protocol. Hardware acceptance is separate: `docs/TC22-ACCEPTANCE.md`.
+- Every table-based process must work from a single record's Actions menu and from bulk selection. Cover explicit row selections and select-all/first-N filters with browser E2E tests, including confirmation, persisted changes, visible results, and unaffected unselected rows. Backend-only process tests do not replace these UI tests.
+- Every mobile process needs real native UI-to-server E2E coverage in the Android repository as well as the HTTP contract. Use isolated test accounts, databases and Android application IDs; never reset the user's demo or scanner data to run tests.
 
 ## Implementation conventions
 
 - Keep ordinary QQQ app/process/widget metadata and existing native API paths. Do not create a second generic mobile-screen framework.
+- All mobile endpoints must be registered in the versioned semantic UI API extension, with discovery, stable operation IDs, typed OpenAPI schemas and compatibility regressions. Keep the Android client channel registered and test real HTTP requests with that channel. Do not add parallel unversioned/custom business routes.
 - Kingsrook Java formatting: three spaces, Allman braces, banner documentation, explicit imports, Apache SPDX headers. `checkstyle/checkstyle.xml` is the enforced authority.
 - Preserve online-only semantics, idempotent event retries and server-derived user/device attribution.
 - Device credentials belong only in scoped HTTP headers and private hashed storage, never process inputs, responses beyond enrollment, fixtures, logs or notes.

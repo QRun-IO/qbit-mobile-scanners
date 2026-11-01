@@ -1,0 +1,30 @@
+[
+  {
+    "sha256": "8801988fb5d0b129056ace39b11b2eb286d22e1e1bf9ba7252b25de228fcb464",
+    "path": "integrations/record-files/src/main/java/com/kingsrook/qbits/mobilescanners/recordfiles/MobileCaptureIdentityProvider.java"
+  },
+  {
+    "sha256": "6b308e31d890f11e5c22fe7ed959f7d694fe647e9d385212a347bea3183e5846",
+    "path": "integrations/record-files/src/main/java/com/kingsrook/qbits/mobilescanners/recordfiles/MobileRecordFilesContract.java"
+  },
+  {
+    "sha256": "9e546c32241e8a0f7f50e678f4c14399c77ab9a0f66668f52f2c36d544b25bd8",
+    "path": "integrations/record-files/src/main/java/com/kingsrook/qbits/mobilescanners/recordfiles/RecordFilesCaptureWidgetData.java"
+  },
+  {
+    "sha256": "10338dc0aab361b6593155a9abea263e372d3d84af15308c6d80e0be3e2928df",
+    "path": "integrations/record-files/src/test/java/com/kingsrook/qbits/mobilescanners/DiskAttachmentStorage.java"
+  },
+  {
+    "sha256": "e13e8491ac3b0bb1ed596bd753d526485b47bfe54f84ceb050e933e5c12484f7",
+    "path": "integrations/record-files/src/test/java/com/kingsrook/qbits/mobilescanners/MobileAuthorizationCommitProbe.java"
+  },
+  {
+    "sha256": "3cdc55a8b1c8072870f57535a47043d790e3025146b9ffbf60bceef8465c3f4a",
+    "path": "integrations/record-files/src/test/java/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest.java"
+  },
+  {
+    "sha256": "fb6e1284b5a049df8baaa283d6f5ccd89d7c5faeac692d8e350fb1dc1355ad03",
+    "path": "integrations/record-files/src/test/java/com/kingsrook/qbits/mobilescanners/RecordFilesCaptureContractTest.java"
+  }
+]

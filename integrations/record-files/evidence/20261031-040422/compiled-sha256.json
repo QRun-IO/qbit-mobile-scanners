@@ -1,0 +1,62 @@
+[
+  {
+    "path": "target/module/classes/com/kingsrook/qbits/mobilescanners/recordfiles/MobileCaptureIdentityProvider.class",
+    "sha256": "7e0efc7142fd06ff04862631fb9e44f4c1271a346358b62e47a5a6f5bc7d9384"
+  },
+  {
+    "path": "target/module/classes/com/kingsrook/qbits/mobilescanners/recordfiles/MobileRecordFilesContract.class",
+    "sha256": "b176691c11247551a814ccacc438f3e7a2c3a77c37cfe796a54104ae63ed5764"
+  },
+  {
+    "path": "target/module/classes/com/kingsrook/qbits/mobilescanners/recordfiles/MobileRecordFilesContract$NonblankString.class",
+    "sha256": "6136fbcce0c473a011920b7f55d2991e29f8af486c831480886049f118f70853"
+  },
+  {
+    "path": "target/module/classes/com/kingsrook/qbits/mobilescanners/recordfiles/RecordFilesCaptureWidgetData.class",
+    "sha256": "243b074a2845b0943f3281aafa0ed57badc5b347a81e98a077540ea49f9e9d8f"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/DiskAttachmentStorage.class",
+    "sha256": "d4837b9318aaa3ad41d6011a1f756e8c9a4f401ec20ff7f9d88a7fe09f80f8f3"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/DiskAttachmentStorage$1.class",
+    "sha256": "b72af87ca3af6257a228ab208352529e926521af32241c94434365a5a7026970"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/DiskAttachmentStorage$Staging.class",
+    "sha256": "b9cc2861ed24958bbc3013f981962041c0706971819f83322da9513138b0142e"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest.class",
+    "sha256": "6480d3572cf59be1bb63763992cc27a5edbad203297c5b5df4efd4ca65854fff"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$1.class",
+    "sha256": "ee070839b831d7b348010a256967ebdff773b6d6f28b9c5621236e557304dc9a"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$2.class",
+    "sha256": "c576478a5a64286e075823e61803d9bac23370eb6f20c3ddbf7a68123dfe7707"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$Authentication.class",
+    "sha256": "6730c57336227341acb6280c105c707f39bb5aeff3748cfe2821cc82b9a1b915"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$CapturePermissions.class",
+    "sha256": "652ca9ab44dd29c8cea2598f3210f5470a550abe518fa7e2418e0be4eab5d382"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$CapturePrepare.class",
+    "sha256": "84e59679ee3763c4c359d3d1deef676aa541a6b8fffc39e1c54418f947203e92"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$CaptureWidget.class",
+    "sha256": "9b77d2f7dcae1a65e47fac0cf6d977ad85fe93645d86d4d55fa8fd4f5b6f5c05"
+  },
+  {
+    "path": "target/module/test-classes/com/kingsrook/qbits/mobilescanners/RecordFilesCaptureContractTest.class",
+    "sha256": "52e60f29889fb662a12930e9d796ca46d59013d176103644f1dcd4254e322777"
+  }
+]

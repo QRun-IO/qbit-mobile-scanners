@@ -13,17 +13,25 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import com.kingsrook.qqq.backend.core.actions.QBackendTransaction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
+import com.kingsrook.qqq.backend.core.exceptions.QBadRequestException;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 
@@ -33,6 +41,10 @@ import com.kingsrook.qqq.backend.core.model.data.QRecord;
  *******************************************************************************/
 public final class MobileService
 {
+   static final ThreadLocal<QBackendTransaction> TRANSACTION = new ThreadLocal<>();
+
+
+
    /***************************************************************************
     ** No service instances or global mutable storage.
     ***************************************************************************/
@@ -40,12 +52,15 @@ public final class MobileService
    {
    }
 
+
+
    /***************************************************************************
     ** Register once; a guessed installation ID never rotates an approved token.
     ***************************************************************************/
    public static Map<String, Object> enroll(Map<String, Object> input) throws QException
    {
       MobilePermissions.require(MobilePermissions.SCAN);
+      MobileSessionService.requireNotEnded();
       String id = uuid(required(input, "installationId", 36));
       if(get(MobileScannersQBitProducer.DEVICE, id) != null || get(MobileScannersQBitProducer.CREDENTIAL, id) != null)
       {
@@ -61,11 +76,49 @@ public final class MobileService
       {
          device.setValue(name, optional(input, name, 200));
       }
-      // Credential first: a failed second insert leaves no usable approved device.
-      insert(MobileScannersQBitProducer.CREDENTIAL, credential);
-      insert(MobileScannersQBitProducer.DEVICE, device);
-      return Map.of("deviceId", id, "deviceToken", token, "status", "PENDING");
+      String shortName = optional(input, "shortName", 32);
+      device.setValue("shortName", shortName == null ? "scanner-" + id.replace("-", "").substring(0, 12) : MobileDeviceProfileCustomizer.canonical(shortName));
+      device.setValue("description", optional(input, "description", 2000));
+      for(int attempt = 0; ; attempt++)
+      {
+         try
+         {
+            transaction(() ->
+            {
+               insert(MobileScannersQBitProducer.CREDENTIAL, credential);
+               insert(MobileScannersQBitProducer.DEVICE, device);
+               return null;
+            });
+            break;
+         }
+         catch(QException failure)
+         {
+            if(shortName != null || attempt >= 3 || !shortNameExists(device.getValueString("shortName")))
+            {
+               throw failure;
+            }
+            credential.getErrors().clear();
+            device.getErrors().clear();
+            device.setValue("shortName", "scanner-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+         }
+      }
+      return Map.of("deviceId", id, "deviceToken", token, "status", "PENDING", "shortName", device.getValueString("shortName"),
+         "displayName", Objects.toString(device.getValueString("displayName"), ""), "description", Objects.toString(device.getValueString("description"), ""));
    }
+
+
+
+   /***************************************************************************
+    ** Retry only generated-name collisions after the failed transaction rolls back.
+    ***************************************************************************/
+   private static boolean shortNameExists(String name) throws QException
+   {
+      return internally(() -> !new QueryAction().execute(new QueryInput().withTableName(MobileScannersQBitProducer.DEVICE)
+         .withFilter(new QQueryFilter(new QFilterCriteria("shortName", QCriteriaOperator.EQUALS, name)).withLimit(1)))
+         .getRecords().isEmpty());
+   }
+
+
 
    /***************************************************************************
     ** Compare a token digest in constant time; return no credential material.
@@ -90,6 +143,8 @@ public final class MobileService
       return device;
    }
 
+
+
    /***************************************************************************
     ** Re-read status for every operation, including resumed asynchronous steps.
     ***************************************************************************/
@@ -103,10 +158,26 @@ public final class MobileService
       return device;
    }
 
+
+
    /***************************************************************************
     ** Only admin processes may change device approval.
     ***************************************************************************/
    public static void setApproval(String deviceId, boolean approved) throws QException
+   {
+      MobileSessionService.withActiveSession(() ->
+      {
+         applyApproval(deviceId, approved);
+         return null;
+      });
+   }
+
+
+
+   /***************************************************************************
+    ** Approval writes execute inside the active-session authorization boundary.
+    ***************************************************************************/
+   private static void applyApproval(String deviceId, boolean approved) throws QException
    {
       MobilePermissions.require(MobilePermissions.ADMIN);
       if(get(MobileScannersQBitProducer.DEVICE, deviceId) == null)
@@ -117,16 +188,101 @@ public final class MobileService
          .withValue("approvedBy", userId()).withValue("approvedAt", Instant.now());
       internally(() ->
       {
-         var output = new UpdateAction().execute(new UpdateInput().withTableName(MobileScannersQBitProducer.DEVICE).withRecord(record));
+         var output = new UpdateAction().execute(new UpdateInput().withTableName(MobileScannersQBitProducer.DEVICE).withTransaction(TRANSACTION.get()).withRecord(record));
          check(output.getRecords().getFirst());
          return null;
       });
    }
 
+
+
+   /***************************************************************************
+    ** A failed bulk approval rolls back the entire confirmed selection.
+    ***************************************************************************/
+   static void setApproval(List<String> ids, boolean approved) throws QException
+   {
+      MobileSessionService.withActiveSession(() -> transaction(() ->
+      {
+         for(String id : ids)
+         {
+            applyApproval(id, approved);
+         }
+         return null;
+      }));
+   }
+
+
+
+   /***************************************************************************
+    ** Related writes require a real backend transaction, never the no-op base.
+    ***************************************************************************/
+   static <T> T transaction(Operation<T> operation) throws QException
+   {
+      if(TRANSACTION.get() != null)
+      {
+         return operation.run();
+      }
+      try(QBackendTransaction transaction = QBackendTransaction.openFor(new GetInput().withTableName(MobileScannersQBitProducer.DEVICE)))
+      {
+         if(transaction.getClass().equals(QBackendTransaction.class))
+         {
+            throw new QException("Mobile scanners requires a transactional storage backend.");
+         }
+         TRANSACTION.set(transaction);
+         try
+         {
+            T result = operation.run();
+            transaction.commit();
+            return result;
+         }
+         catch(Exception failure)
+         {
+            transaction.rollback();
+            throw failure;
+         }
+         finally
+         {
+            TRANSACTION.remove();
+         }
+      }
+   }
+
+
+
    /***************************************************************************
     ** A deterministic primary key deduplicates request retries across servers.
     ***************************************************************************/
    static QRecord capture(Map<String, Serializable> input) throws QException
+   {
+      return capture(input, MobileScannersQBitProducer.CAPTURE);
+   }
+
+
+
+   /***************************************************************************
+    ** Process identity comes from the executing backend step, never its values.
+    ***************************************************************************/
+   static QRecord capture(Map<String, Serializable> input, String processName) throws QException
+   {
+      return capture(input, processName, MobileScannersQBitProducer.APP);
+   }
+
+
+
+   /***************************************************************************
+    ** Host code supplies application metadata identity, never request values.
+    ***************************************************************************/
+   static QRecord capture(Map<String, Serializable> input, String processName, String appId) throws QException
+   {
+      return MobileSessionService.withActiveSession(() -> captureApproved(input, processName, appId));
+   }
+
+
+
+   /***************************************************************************
+    ** Serialize the local authorization check and write with session ending.
+    ***************************************************************************/
+   private static QRecord captureApproved(Map<String, Serializable> input, String processName, String appId) throws QException
    {
       MobilePermissions.require(MobilePermissions.SCAN);
       String deviceId = QContext.getQSession() instanceof VerifiedDeviceSession verified ? verified.deviceId() : null;
@@ -144,10 +300,12 @@ public final class MobileService
          throw new QException("capturedAt must be an ISO-8601 timestamp.");
       }
       String id = hash(deviceId + ":" + eventId);
+      String scanSource = normalizedScanSource(optional(input, "scanSource", 200));
+      String symbology = normalizedSymbology(optional(input, "symbology", 200), scanSource);
       QRecord record = new QRecord().withValue("id", id).withValue("deviceId", deviceId).withValue("eventId", eventId)
-         .withValue("barcode", barcode).withValue("symbology", optional(input, "symbology", 200)).withValue("scanSource", optional(input, "scanSource", 200))
+         .withValue("barcode", barcode).withValue("symbology", symbology).withValue("scanSource", scanSource)
          .withValue("capturedAt", captured).withValue("receivedAt", Instant.now()).withValue("userId", userId())
-         .withValue("appId", MobileScannersQBitProducer.APP).withValue("processName", MobileScannersQBitProducer.CAPTURE);
+         .withValue("appId", appId).withValue("processName", processName);
       for(String field : new String[] { "manufacturer", "model", "osVersion", "appVersion" })
       {
          record.setValue(field, device.getValue(field));
@@ -173,20 +331,52 @@ public final class MobileService
       }
    }
 
+
+
    /***************************************************************************
     ** Reusing a request ID for another scan is an error, not a silent overwrite.
     ***************************************************************************/
    private static QRecord sameEvent(QRecord existing, QRecord requested) throws QException
    {
-      for(String field : new String[] { "barcode", "symbology", "scanSource", "userId" })
+      String originalSource = normalizedScanSource(existing.getValueString("scanSource"));
+      String originalSymbology = normalizedSymbology(existing.getValueString("symbology"), originalSource);
+      if(!originalSource.equals(requested.getValueString("scanSource")) || !originalSymbology.equals(requested.getValueString("symbology")))
+      {
+         throw new QException("This eventId was already used for a different scan.");
+      }
+      for(String field : new String[] { "barcode", "userId", "processName", "appId" })
       {
          if(!Objects.equals(existing.getValueString(field), requested.getValueString(field)))
          {
             throw new QException("This eventId was already used for a different scan.");
          }
       }
+      existing.setValue("scanSource", originalSource);
+      existing.setValue("symbology", originalSymbology);
       return existing;
    }
+
+
+
+   /***************************************************************************
+    ** Legacy clients may omit source; absence must not invent a capture method.
+    ***************************************************************************/
+   private static String normalizedScanSource(String scanSource)
+   {
+      return scanSource == null || scanSource.isBlank() ? "UNKNOWN" : scanSource;
+   }
+
+
+
+   /***************************************************************************
+    ** Preserve decoder identifiers exactly; barcode text never implies a type.
+    ***************************************************************************/
+   private static String normalizedSymbology(String symbology, String scanSource)
+   {
+      return symbology == null || symbology.isBlank() ? ("manual".equalsIgnoreCase(scanSource) ? "MANUAL" : "UNKNOWN") : symbology;
+   }
+
+
 
    /***************************************************************************
     ** Read only through QQQ and the narrowly scoped internal permission grant.
@@ -199,18 +389,21 @@ public final class MobileService
          input.setTableName(table);
          input.setPrimaryKey(id);
          input.setShouldOmitHiddenFields(false);
+         input.setTransaction(TRANSACTION.get());
          return new GetAction().execute(input).getRecord();
       });
    }
 
+
+
    /***************************************************************************
     ** Row-level errors must be checked before acknowledging a scan.
     ***************************************************************************/
-   private static QRecord insert(String table, QRecord record) throws QException
+   static QRecord insert(String table, QRecord record) throws QException
    {
       return internally(() ->
       {
-         var output = new InsertAction().execute(new InsertInput().withTableName(table).withRecord(record));
+         var output = new InsertAction().execute(new InsertInput().withTableName(table).withTransaction(TRANSACTION.get()).withRecord(record));
          if(output.getRecords() == null || output.getRecords().size() != 1)
          {
             throw new QException("The record could not be saved.");
@@ -220,6 +413,8 @@ public final class MobileService
          return saved;
       });
    }
+
+
 
    /***************************************************************************
     ** Never expose persistence details or credentials in a client error.
@@ -232,10 +427,12 @@ public final class MobileService
       }
    }
 
+
+
    /***************************************************************************
     ** Restore the permission scope even when a backend throws.
     ***************************************************************************/
-   private static <T> T internally(Operation<T> operation) throws QException
+   static <T> T internally(Operation<T> operation) throws QException
    {
       Boolean previous = MobilePermissions.INTERNAL.get();
       MobilePermissions.INTERNAL.set(true);
@@ -256,10 +453,12 @@ public final class MobileService
       }
    }
 
+
+
    /***************************************************************************
     ** QQQ operation with checked failure.
     ***************************************************************************/
-   private interface Operation<T>
+   interface Operation<T>
    {
       /***********************************************************************
        ** Execute one internal persistence operation.
@@ -267,13 +466,17 @@ public final class MobileService
       T run() throws QException;
    }
 
+
+
    /***************************************************************************
     ** Server-authenticated identity only.
     ***************************************************************************/
-   private static String userId()
+   static String userId()
    {
       return QContext.getQSession().getUser().getIdReference();
    }
+
+
 
    /***************************************************************************
     ** Required bounded strings preserve leading zeroes in barcodes.
@@ -283,15 +486,17 @@ public final class MobileService
       String value = optional(input, name, maximum);
       if(value == null || value.isEmpty())
       {
-         throw new QException(name + " is required.");
+         throw new QBadRequestException(name + " is required.");
       }
       return value;
    }
 
+
+
    /***************************************************************************
     ** Reject non-string and oversized metadata.
     ***************************************************************************/
-   private static String optional(Map<String, ?> input, String name, int maximum) throws QException
+   static String optional(Map<String, ?> input, String name, int maximum) throws QException
    {
       Object value = input.get(name);
       if(value == null)
@@ -300,10 +505,12 @@ public final class MobileService
       }
       if(!(value instanceof String text) || text.length() > maximum)
       {
-         throw new QException(name + " must be a string of at most " + maximum + " characters.");
+         throw new QBadRequestException(name + " must be a string of at most " + maximum + " characters.");
       }
       return text;
    }
+
+
 
    /***************************************************************************
     ** Enforce canonical UUIDs before using them as identifiers.
@@ -321,14 +528,16 @@ public final class MobileService
       }
       catch(IllegalArgumentException e)
       {
-         throw new QException("A canonical UUID is required.");
+         throw new QBadRequestException("A canonical UUID is required.");
       }
    }
+
+
 
    /***************************************************************************
     ** SHA-256 of high-entropy tokens, never plaintext storage.
     ***************************************************************************/
-   private static String hash(String value)
+   static String hash(String value)
    {
       try
       {
@@ -339,6 +548,8 @@ public final class MobileService
          throw new IllegalStateException(e);
       }
    }
+
+
 
    /***************************************************************************
     ** Explicit conflict so callers can restart enrollment with a new identity.

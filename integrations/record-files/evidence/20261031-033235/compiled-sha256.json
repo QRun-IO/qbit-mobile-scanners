@@ -1,0 +1,46 @@
+[
+  {
+    "path": "classes/com/kingsrook/qbits/mobilescanners/recordfiles/MobileCaptureIdentityProvider.class",
+    "sha256": "7e0efc7142fd06ff04862631fb9e44f4c1271a346358b62e47a5a6f5bc7d9384"
+  },
+  {
+    "path": "classes/com/kingsrook/qbits/mobilescanners/recordfiles/RecordFilesCaptureWidgetData.class",
+    "sha256": "a40139434123901b98aa6d435057b9522259a838bafdc23c619507e2cff43530"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/DiskAttachmentStorage.class",
+    "sha256": "d4837b9318aaa3ad41d6011a1f756e8c9a4f401ec20ff7f9d88a7fe09f80f8f3"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/DiskAttachmentStorage$1.class",
+    "sha256": "b72af87ca3af6257a228ab208352529e926521af32241c94434365a5a7026970"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/DiskAttachmentStorage$Staging.class",
+    "sha256": "b9cc2861ed24958bbc3013f981962041c0706971819f83322da9513138b0142e"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest.class",
+    "sha256": "7f259fbcf5640b653caa71c68852be1a5b0ea7d3003307569319bd324ab54cab"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$1.class",
+    "sha256": "41cf313c9f179bdea43ddac071a1b389ed20a5811999f9a3ed623fe27dda90a4"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$2.class",
+    "sha256": "94ca35db5907fffe4df967839e4787156d2e9fb026222eef656c6e03ba7c5ccc"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$Authentication.class",
+    "sha256": "c468e74a1a3644b57c06ea2070d23d2f441443fa694a5d7226885d169cd5e051"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$CapturePermissions.class",
+    "sha256": "ddd83a0153251c3274c34625caa304093c28f3c0c79f5f291a51d3ff8f4f7099"
+  },
+  {
+    "path": "test-classes/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest$CaptureWidget.class",
+    "sha256": "1e9a8b62295a629cb722b09b46a605f13b2ed5784071b989cbd67157ffbe5d7e"
+  }
+]

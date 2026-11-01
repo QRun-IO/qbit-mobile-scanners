@@ -7,7 +7,7 @@ This repository follows the current QRun-IO QBit pipeline structure: a canonical
 | Check | What runs |
 | --- | --- |
 | CircleCI `setup` and generated `verify` | Shared `kingsrook/qqq-orb@0.8` QBit verification, including Maven tests and reports |
-| GitHub `Demo acceptance` / `Verify demo HTTP contract` | Wrapper-pinned root verification/install, then the real demo HTTP acceptance suite |
+| GitHub `Demo acceptance` / `Verify demo HTTP contract` | Wrapper-pinned root verification/install, real demo HTTP acceptance, then browser E2E against the packaged frontend |
 | GitHub `Demo acceptance` / `Check Windows demo helpers` | PSScriptAnalyzer checks for the local Windows launcher and credential helpers |
 | GitHub `CodeQL` | QRun-IO's shared QBit source analysis worker, pinned to an immutable commit |
 | Dependabot | Weekly grouped Maven and GitHub Actions update pull requests targeting `develop` |
@@ -15,6 +15,8 @@ This repository follows the current QRun-IO QBit pipeline structure: a canonical
 The three orb version declarations must match exactly. The `0.8` minor track receives centrally managed patch updates, matching the live QRun-IO QBit fleet. Use an exact published patch in all three positions when reproducing a historical pipeline or rolling back. The canonical setup caller does not accept extra jobs; the project-specific demo check therefore lives in GitHub Actions.
 
 Run the same project checks locally with `./mvnw verify install` and `./mvnw -f demo/pom.xml verify`. The wrapper pins Maven 3.9.9 and validates its distribution checksum. Java 21 is required. The demo uses no external database or user credentials in CI.
+
+[Process acceptance tests](TESTING.md) documents the browser and native test runners. Browser E2E runs inside the existing required demo job, so failures block that check. The Android repository runs the isolated scanner-host E2E against a pinned server revision on pull requests and pushes, in addition to its shared native UI suite.
 
 For workflow syntax, run `actionlint .github/workflows/codeql.yml .github/workflows/demo-acceptance.yml`. Validate the setup caller with `circleci config validate --org gh/QRun-IO .circleci/config.yml`, using your existing CircleCI authentication. The shared orb is private; without organization scope and authorization, the compiler can report that it cannot find the orb. Do not place tokens in config files or command arguments.
 

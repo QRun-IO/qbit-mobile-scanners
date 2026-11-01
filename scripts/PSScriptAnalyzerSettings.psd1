@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Kingsrook, LLC
+# SPDX-License-Identifier: Apache-2.0
+
 # KofTwentyTwo PowerShell analysis (K22-CODE-SH-05). CI runs:
 #   Invoke-ScriptAnalyzer -Path . -Recurse -Settings ./PSScriptAnalyzerSettings.psd1 -EnableExit
 # and `Invoke-Formatter` with the same settings for layout. PowerShell supports the

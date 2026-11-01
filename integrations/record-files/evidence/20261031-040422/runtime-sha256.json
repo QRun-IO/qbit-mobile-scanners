@@ -1,0 +1,858 @@
+[
+  {
+    "path": "maven/com/kingsrook/qbits/qbit-mobile-scanners/0.1.0-SNAPSHOT/qbit-mobile-scanners-0.1.0-SNAPSHOT.jar",
+    "sha256": "4eb8482bb6220cf0c1d609e0e43ff554ec023671eb51ee89b120be96bcafc85a"
+  },
+  {
+    "path": "maven/com/kingsrook/qqq/qqq-backend-core/4.1.0-isolated-record-files-SNAPSHOT/qqq-backend-core-4.1.0-isolated-record-files-SNAPSHOT.jar",
+    "sha256": "2d3ff9af8b63f46653fcb2eafbab0c34a86f7c83b93c045d1a59e96ce2baf63f"
+  },
+  {
+    "path": "maven/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar",
+    "sha256": "69e5c9fa35da7a51a5fd2099dfe56a2d8d32cf233e2f6d770e796146440263f4"
+  },
+  {
+    "path": "maven/commons-validator/commons-validator/1.10.1/commons-validator-1.10.1.jar",
+    "sha256": "ed74711a78d793ca37f6075e4a1e93d107233dfd20d0bb17e32bad88d38e56aa"
+  },
+  {
+    "path": "maven/commons-beanutils/commons-beanutils/1.11.0/commons-beanutils-1.11.0.jar",
+    "sha256": "9e44ba68ec9a3f21286fa2a8bbb003b735c0f69101bb43144b79f4f8aaa74709"
+  },
+  {
+    "path": "maven/commons-digester/commons-digester/2.1/commons-digester-2.1.jar",
+    "sha256": "e0b2b980a84fc6533c5ce291f1917b32c507f62bcad64198fff44368c2196a3d"
+  },
+  {
+    "path": "maven/commons-logging/commons-logging/1.3.5/commons-logging-1.3.5.jar",
+    "sha256": "6d7a744e4027649fbb50895df9497d109f98c766a637062fe8d2eabbb3140ba4"
+  },
+  {
+    "path": "maven/commons-collections/commons-collections/3.2.2/commons-collections-3.2.2.jar",
+    "sha256": "eeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/quicksight/2.41.10/quicksight-2.41.10.jar",
+    "sha256": "1a517a32c9ab6ef6b0e8d8ac3c76fff440e1bffd7fca38805a3e6363eeb775aa"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/protocol-core/2.41.10/protocol-core-2.41.10.jar",
+    "sha256": "cec41447843ae209a9c99595a8b04c7a10ff435a98db6a2b5a80c5b94176dea9"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/aws-json-protocol/2.41.10/aws-json-protocol-2.41.10.jar",
+    "sha256": "6708f94226081f8d47e327faaae6221d51a74ab8a0b51fa9795349160129eaac"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/third-party-jackson-core/2.41.10/third-party-jackson-core-2.41.10.jar",
+    "sha256": "ddb4bf13df3b4a0d9720a9a4c099f78e1b4712739c1903a24d25292dd4b88ca3"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/http-auth-aws/2.41.10/http-auth-aws-2.41.10.jar",
+    "sha256": "ffe1c16d5096bafca087419c5706d6b72a97f53cb23370c2ed2839bd0b127796"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/checksums-spi/2.41.10/checksums-spi-2.41.10.jar",
+    "sha256": "d848c307f290bfb4e685e2246c01257e9f1a77b5acf116deee999ea9cd8c5d56"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/checksums/2.41.10/checksums-2.41.10.jar",
+    "sha256": "98fcb1f850894757f7706bb05b241b8fb42eb17b51dc6c74fd5087bbcad50986"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/sdk-core/2.41.10/sdk-core-2.41.10.jar",
+    "sha256": "af431c018f6c7e10f323f492fd3a918743ee55ee2f7e3a523fa8cb8a35d19f49"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/profiles/2.41.10/profiles-2.41.10.jar",
+    "sha256": "79419cb6a7fa8c5d53ab00d35a9afa7b37260d044a74bb7b011564551dd18383"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/retries/2.41.10/retries-2.41.10.jar",
+    "sha256": "105b2d03a4f0ec2f650dcaa5e762bb8605c958f02099821587a368ed0ca4dfa1"
+  },
+  {
+    "path": "maven/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar",
+    "sha256": "f75ca597789b3dac58f61857b9ac2e1034a68fa672db35055a8fb4509e325f28"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/auth/2.41.10/auth-2.41.10.jar",
+    "sha256": "56a429c8f191b14b81b88fb848fd09416be8acb8cfe1c86f2a67a352cbac6968"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/http-auth-aws-eventstream/2.41.10/http-auth-aws-eventstream-2.41.10.jar",
+    "sha256": "1629ed794b43ba81c8fae845f1502ffec8d5b4601ad6796d3b8fd5fff2f53485"
+  },
+  {
+    "path": "maven/software/amazon/eventstream/eventstream/1.0.1/eventstream-1.0.1.jar",
+    "sha256": "0c37d8e696117f02c302191b8110b0d0eb20fa412fce34c3a269ec73c16ce822"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/http-auth-spi/2.41.10/http-auth-spi-2.41.10.jar",
+    "sha256": "974dbd758f140edf209f13b30a2eee72605b4d5852133b99ca61f94dacff2b40"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/http-auth/2.41.10/http-auth-2.41.10.jar",
+    "sha256": "97f53fb7266058b5a154f7ae95b03ff71f3b6d440d02c20da4ce32961e26190c"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/identity-spi/2.41.10/identity-spi-2.41.10.jar",
+    "sha256": "c880fe296412c1ae5d5ad9475718cf286d3ccbacbc1af6ccc942f1ce6dff17b9"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/http-client-spi/2.41.10/http-client-spi-2.41.10.jar",
+    "sha256": "a626e831aa0f2a408dcc563684c8612139883ac5deaa474f4fbd6248dd4d9736"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/regions/2.41.10/regions-2.41.10.jar",
+    "sha256": "4e149ce6e8a0b69cad14e301009a009ef0f0416c7cfa5f6e2e45f48fd98648ed"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/annotations/2.41.10/annotations-2.41.10.jar",
+    "sha256": "9c05ad9a9bb7107ea55c2949092015cca23bd281cfb09ab88542c547a335a197"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/utils/2.41.10/utils-2.41.10.jar",
+    "sha256": "c5c9f2b855ccc739db5703fdce6c0ebab32eae67a8cd0477baea665f5e0861f0"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/aws-core/2.41.10/aws-core-2.41.10.jar",
+    "sha256": "f790329d989d42f75c9bc72d1b25d3b13153415983140ed3f7f75da6261ed10a"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/utils-lite/2.41.10/utils-lite-2.41.10.jar",
+    "sha256": "14b6dbe56b3cfccc93e5481e5ede898cf7302e254384dc20f7695168b3c73882"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/metrics-spi/2.41.10/metrics-spi-2.41.10.jar",
+    "sha256": "f7ab5df3db8f9c9404548be3542f64b258057fee57db7024a087c64ea2029a2d"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/json-utils/2.41.10/json-utils-2.41.10.jar",
+    "sha256": "258b586fbbbeed74dc7e7ca005f38be20bb2942f0d92f2c8f813b25fb479b1a9"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/endpoints-spi/2.41.10/endpoints-spi-2.41.10.jar",
+    "sha256": "d201f1dc994b4947f6aa457373a1e624fe1f6e4d3383220db4ce93dbd6d67748"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/retries-spi/2.41.10/retries-spi-2.41.10.jar",
+    "sha256": "0d686efa47f3be5b8f7a9ea120f3894b6becb2e82efd430c34d579264e74f9b5"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/apache-client/2.41.10/apache-client-2.41.10.jar",
+    "sha256": "f854982b2079a1909ec2722c9eaea48431b1e503436134fbda31f800bc1a7618"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/netty-nio-client/2.41.10/netty-nio-client-2.41.10.jar",
+    "sha256": "88f20731ac4067fb0bf2c923fd33b873faef908c21e86bab1c24602824294fb9"
+  },
+  {
+    "path": "maven/io/netty/netty-codec-http/4.1.130.Final/netty-codec-http-4.1.130.Final.jar",
+    "sha256": "5b6addc1df7b3397a193bd6544a8bfdb18ecac99fd13bee4ec75b1781a664e5e"
+  },
+  {
+    "path": "maven/io/netty/netty-codec-http2/4.1.130.Final/netty-codec-http2-4.1.130.Final.jar",
+    "sha256": "f8ffdb550368fd5dee7c7f1393fa49552522f280ed8de96aebf4269cab0dc8f3"
+  },
+  {
+    "path": "maven/io/netty/netty-codec/4.1.130.Final/netty-codec-4.1.130.Final.jar",
+    "sha256": "52636bc29bd62120b97bbe5d1d21eab9b1cb2bef8efbb54d2221c5f3fa08d8cd"
+  },
+  {
+    "path": "maven/io/netty/netty-transport/4.1.130.Final/netty-transport-4.1.130.Final.jar",
+    "sha256": "1bf573266d271f856705a9984d25449c56a1d73c02a16af12033ceccfe555dbb"
+  },
+  {
+    "path": "maven/io/netty/netty-common/4.1.130.Final/netty-common-4.1.130.Final.jar",
+    "sha256": "53921f28dd5a352b1bed0e1cbcc54d013dc60ffebeae9b2b1e53eabef317e581"
+  },
+  {
+    "path": "maven/io/netty/netty-buffer/4.1.130.Final/netty-buffer-4.1.130.Final.jar",
+    "sha256": "00a522b67ea35cb7b4dd9cf27f85c6c58f5e306785aa045302e5f6b2d4944a87"
+  },
+  {
+    "path": "maven/io/netty/netty-handler/4.1.130.Final/netty-handler-4.1.130.Final.jar",
+    "sha256": "98c78ec187ca30a4b9775bf6f632f5c9929db6bf06a60e6971f945813880ca0f"
+  },
+  {
+    "path": "maven/io/netty/netty-transport-native-unix-common/4.1.130.Final/netty-transport-native-unix-common-4.1.130.Final.jar",
+    "sha256": "cf5efc4168597d7cd14695b469418cac2a1134533f9a0c82ef0538d796fd39e1"
+  },
+  {
+    "path": "maven/io/netty/netty-transport-classes-epoll/4.1.130.Final/netty-transport-classes-epoll-4.1.130.Final.jar",
+    "sha256": "1c352508d70aca1ccc3068daac907ad1e9d8dc68b07148d57426730bf0d0c8b6"
+  },
+  {
+    "path": "maven/io/netty/netty-resolver/4.1.130.Final/netty-resolver-4.1.130.Final.jar",
+    "sha256": "48c5b218a89d184e1b601d46433957f515fcefdb4464182b1348bce4f5a18f35"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/apigateway/2.41.10/apigateway-2.41.10.jar",
+    "sha256": "13f12255a17e89dbef63da12672a1e991e884df3200e1e063865c1b5d3f76973"
+  },
+  {
+    "path": "maven/com/amazonaws/aws-java-sdk-secretsmanager/1.12.797/aws-java-sdk-secretsmanager-1.12.797.jar",
+    "sha256": "a7f9f597610144ecf57693abda47a451c9c25088e9e4496a3605a4d283560e4f"
+  },
+  {
+    "path": "maven/com/amazonaws/aws-java-sdk-core/1.12.797/aws-java-sdk-core-1.12.797.jar",
+    "sha256": "75c70d4a7a5b6f3ee3f1fc86b1c7f91106acba4769744791fa4159c4c35bfebc"
+  },
+  {
+    "path": "maven/com/fasterxml/jackson/dataformat/jackson-dataformat-cbor/2.17.2/jackson-dataformat-cbor-2.17.2.jar",
+    "sha256": "1d7dc634ba3d7981d7017f4f44d43cf371e922c80028b4eb3e5374ce6546d5f6"
+  },
+  {
+    "path": "maven/joda-time/joda-time/2.12.7/joda-time-2.12.7.jar",
+    "sha256": "385282b005818cfaccdbe8bd2429811e7e641782f2b88932a6b8ff51d668f616"
+  },
+  {
+    "path": "maven/com/amazonaws/jmespath-java/1.12.797/jmespath-java-1.12.797.jar",
+    "sha256": "4c4a5f0dcf19f4f6d3a966d19ad73638e325d35db26183e5ca4c27eeb97e5d0f"
+  },
+  {
+    "path": "maven/org/apache/httpcomponents/httpclient/4.5.14/httpclient-4.5.14.jar",
+    "sha256": "c8bc7e1c51a6d4ce72f40d2ebbabf1c4b68bfe76e732104b04381b493478e9d6"
+  },
+  {
+    "path": "maven/commons-codec/commons-codec/1.11/commons-codec-1.11.jar",
+    "sha256": "e599d5318e97aa48f42136a2927e6dfa4e8881dff0e6c8e3109ddbbff51d7b7d"
+  },
+  {
+    "path": "maven/org/apache/httpcomponents/httpcore/4.4.16/httpcore-4.4.16.jar",
+    "sha256": "6c9b3dd142a09dc468e23ad39aad6f75a0f2b85125104469f026e52a474e464f"
+  },
+  {
+    "path": "maven/com/google/crypto/tink/tink/1.23.0/tink-1.23.0.jar",
+    "sha256": "5bcdc8798ce106f5145acb4a0e993c5e5861337b1e75ca88ceb6ab9da10fa512"
+  },
+  {
+    "path": "maven/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar",
+    "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7"
+  },
+  {
+    "path": "maven/com/google/code/gson/gson/2.13.2/gson-2.13.2.jar",
+    "sha256": "dd0ce1b55a3ed2080cb70f9c655850cda86c206862310009dcb5e5c95265a5e0"
+  },
+  {
+    "path": "maven/com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.jar",
+    "sha256": "a56e782b5b50811ac204073a355a21d915a2107fce13ec711331ad036f660fcc"
+  },
+  {
+    "path": "maven/com/google/protobuf/protobuf-java/4.33.6/protobuf-java-4.33.6.jar",
+    "sha256": "c24b2464ecfe9ac1d44e3a8fe281fca09e6ad2ca73dbd689dd7d6d719df987b5"
+  },
+  {
+    "path": "maven/com/twelvemonkeys/imageio/imageio-webp/3.12.0/imageio-webp-3.12.0.jar",
+    "sha256": "43dc447ccfe34c5c5c6f5d31190270e1f9bf65f60375d697ae2a8ff433468526"
+  },
+  {
+    "path": "maven/com/twelvemonkeys/imageio/imageio-core/3.12.0/imageio-core-3.12.0.jar",
+    "sha256": "34c6f91bf3b217ed0115bce8283238fbd0264562aa682b4226a3960d0ede9815"
+  },
+  {
+    "path": "maven/com/twelvemonkeys/imageio/imageio-metadata/3.12.0/imageio-metadata-3.12.0.jar",
+    "sha256": "797d026b67d07e6d5eb00a1ab53a55acaab6f80a71c5ee325572093eb90c0caa"
+  },
+  {
+    "path": "maven/com/twelvemonkeys/common/common-lang/3.12.0/common-lang-3.12.0.jar",
+    "sha256": "5c65e504b5b64d80683e0fa70a1dd154dd83d4de7da37f21e950f5a9c03bc66d"
+  },
+  {
+    "path": "maven/com/twelvemonkeys/common/common-io/3.12.0/common-io-3.12.0.jar",
+    "sha256": "bfacfeb02acac47dbfd1fab0002eaeca65547d04249498b654320c9e0fdf6647"
+  },
+  {
+    "path": "maven/com/twelvemonkeys/common/common-image/3.12.0/common-image-3.12.0.jar",
+    "sha256": "62a3821c724fadfda346c1e2d83b0c506a0c4074be269a52bf4e3192c7dd92bc"
+  },
+  {
+    "path": "maven/com/ibm/icu/icu4j/78.2/icu4j-78.2.jar",
+    "sha256": "70627c3ff4b9077f6c3dc2156fb480821f9c1a041b645373f2a0391aae3552a1"
+  },
+  {
+    "path": "maven/com/fasterxml/jackson/core/jackson-databind/2.21.7/jackson-databind-2.21.7.jar",
+    "sha256": "1290c2795e93e8a6861a6c4d9ff0d844d32f5ea178362cb2721edf5561e828b1"
+  },
+  {
+    "path": "maven/com/fasterxml/jackson/core/jackson-annotations/2.21/jackson-annotations-2.21.jar",
+    "sha256": "53ca085f4a150f703f49e1aabd935bd03b43e1ea3d55d135438292af22cef56b"
+  },
+  {
+    "path": "maven/com/fasterxml/jackson/core/jackson-core/2.21.7/jackson-core-2.21.7.jar",
+    "sha256": "8c5623b98f32d5f7e1287ff61ed50e08ab7b11381e991fff89327faabba42261"
+  },
+  {
+    "path": "maven/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.21.7/jackson-datatype-jsr310-2.21.7.jar",
+    "sha256": "5989b937f0aa5b6407e7a061077c9bfcac0590dc0a32e54b2fac6a3e2d49e812"
+  },
+  {
+    "path": "maven/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.21.7/jackson-dataformat-yaml-2.21.7.jar",
+    "sha256": "df2b3e6a194181dc067b7211d750926b4ae9e4f3c892a0005b8219a9b59be681"
+  },
+  {
+    "path": "maven/org/yaml/snakeyaml/2.5/snakeyaml-2.5.jar",
+    "sha256": "e6682acf1ace77508ef13649cbf4f8d09d2cf5457bdb61d25ffb6ac0233d78dd"
+  },
+  {
+    "path": "maven/org/json/json/20251224/json-20251224.jar",
+    "sha256": "2a3438fbf9293174ea82bdfa35e83d8b965cfe6bddc034a1ac5d60107174c209"
+  },
+  {
+    "path": "maven/org/apache/commons/commons-csv/1.14.1/commons-csv-1.14.1.jar",
+    "sha256": "32be0e1e76673092f5d12cb790bd2acb6c2ab04c4ea6efc69ea5ee17911c24fe"
+  },
+  {
+    "path": "maven/com/github/hervian/safety-mirror/4.0.1/safety-mirror-4.0.1.jar",
+    "sha256": "6b2caaef2637a24905c0e53d6c7cb046df8e1ed7053827617044900facd461c4"
+  },
+  {
+    "path": "maven/org/jetbrains/annotations/20.1.0/annotations-20.1.0.jar",
+    "sha256": "edc8e3ec9796a5f41c1ae44b2d318507ee6ac1212f121d93d33699b3d0aff638"
+  },
+  {
+    "path": "maven/org/dhatim/fastexcel/0.19.0/fastexcel-0.19.0.jar",
+    "sha256": "2aab9961e107a96c58ef806d6c09ec3dc054e30c5db5164deabaf611be067722"
+  },
+  {
+    "path": "maven/com/github/rzymek/opczip/1.2.0/opczip-1.2.0.jar",
+    "sha256": "253a4e1bca79cbf242cc52efb7c931121bc28c3393e2aef24f1efe03cd6d9c28"
+  },
+  {
+    "path": "maven/org/dhatim/fastexcel-reader/0.19.0/fastexcel-reader-0.19.0.jar",
+    "sha256": "ec9ee7b2413f9ae9db1525c334140798725a4d54b58e2bc73bd447a1c282f9e8"
+  },
+  {
+    "path": "maven/com/fasterxml/aalto-xml/1.3.3/aalto-xml-1.3.3.jar",
+    "sha256": "28829eebb36863b058108fa1b9b8b5cfb94c1871346e4a4f73e69e1fe0a5f0f6"
+  },
+  {
+    "path": "maven/org/codehaus/woodstox/stax2-api/4.2.2/stax2-api-4.2.2.jar",
+    "sha256": "a61c48d553efad78bc01fffc4ac528bebbae64cbaec170b2a5e39cf61eb51abe"
+  },
+  {
+    "path": "maven/org/apache/commons/commons-compress/1.27.1/commons-compress-1.27.1.jar",
+    "sha256": "293d80f54b536b74095dcd7ea3cf0a29bbfc3402519281332495f4420d370d16"
+  },
+  {
+    "path": "maven/org/apache/poi/poi/5.5.1/poi-5.5.1.jar",
+    "sha256": "6c52e876ca75775a11b56e4b36a7541f682827f56406725fcd87560b792ee3d8"
+  },
+  {
+    "path": "maven/org/apache/commons/commons-collections4/4.5.0/commons-collections4-4.5.0.jar",
+    "sha256": "00f93263c267be201b8ae521b44a7137271b16688435340bf629db1bac0a5845"
+  },
+  {
+    "path": "maven/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar",
+    "sha256": "1e56d7b058d28b65abd256b8458e3885b674c1d588fa43cd7d1cbb9c7ef2b308"
+  },
+  {
+    "path": "maven/com/zaxxer/SparseBitSet/1.3/SparseBitSet-1.3.jar",
+    "sha256": "f76b85adb0c00721ae267b7cfde4da7f71d3121cc2160c9fc00c0c89f8c53c8a"
+  },
+  {
+    "path": "maven/org/apache/poi/poi-ooxml/5.5.1/poi-ooxml-5.5.1.jar",
+    "sha256": "bd7be2fdfe3fd2c1684fa813351c2798fd636b44f6236e0674500d4f8ff1c2f9"
+  },
+  {
+    "path": "maven/org/apache/poi/poi-ooxml-lite/5.5.1/poi-ooxml-lite-5.5.1.jar",
+    "sha256": "e6e37adeb6d6ee8b40ec491ad955d934d8f99827ab050f105b18286e59b1d9e7"
+  },
+  {
+    "path": "maven/org/apache/xmlbeans/xmlbeans/5.3.0/xmlbeans-5.3.0.jar",
+    "sha256": "6cc69da3b4d35b83c5e477cd4daba204e44109833e34af2b9a8a2c8788289917"
+  },
+  {
+    "path": "maven/com/github/virtuald/curvesapi/1.08/curvesapi-1.08.jar",
+    "sha256": "ad95b08b8bbf9d7d17e5e00814898fa23324f32bc5b62f1a37801e6a56ce0079"
+  },
+  {
+    "path": "maven/org/commonmark/commonmark/0.27.1/commonmark-0.27.1.jar",
+    "sha256": "22aec6eec3b8e2d078dd1ac205291bf0ec58168c68fcf95fdf39fe2d48650a8f"
+  },
+  {
+    "path": "maven/commons-io/commons-io/2.21.0/commons-io-2.21.0.jar",
+    "sha256": "7d643a2afea8b058b762aa6fb90e5b256f6c729739f8b3784c3370ddc609e88d"
+  },
+  {
+    "path": "maven/com/nimbusds/oauth2-oidc-sdk/11.31.1/oauth2-oidc-sdk-11.31.1.jar",
+    "sha256": "8af45d9f00d3d30070f5ac1b0a21db15dd0986e3ea5fa1c72c6bf50ddfd20c7a"
+  },
+  {
+    "path": "maven/com/github/stephenc/jcip/jcip-annotations/1.0-1/jcip-annotations-1.0-1.jar",
+    "sha256": "4fccff8382aafc589962c4edb262f6aa595e34f1e11e61057d1c6a96e8fc7323"
+  },
+  {
+    "path": "maven/com/nimbusds/content-type/2.3/content-type-2.3.jar",
+    "sha256": "60349793e006fba96b532cb0c21e10e969fe0db8d87f91c3b9eaf82ba2998895"
+  },
+  {
+    "path": "maven/net/minidev/json-smart/2.5.2/json-smart-2.5.2.jar",
+    "sha256": "4fbdedb0105cedc7f766b95c297d2e88fb6a560da48f3bbaa0cc538ea8b7bf71"
+  },
+  {
+    "path": "maven/net/minidev/accessors-smart/2.5.2/accessors-smart-2.5.2.jar",
+    "sha256": "9b8a7bc43861d6156c021166d941fb7dddbe4463e2fa5ee88077e4b01452a836"
+  },
+  {
+    "path": "maven/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar",
+    "sha256": "8cadd43ac5eb6d09de05faecca38b917a040bb9139c7edeb4cc81c740b713281"
+  },
+  {
+    "path": "maven/com/nimbusds/lang-tag/1.7/lang-tag-1.7.jar",
+    "sha256": "e8c1c594e2425bdbea2d860de55c69b69fc5d59454452449a0f0913c2a5b8a31"
+  },
+  {
+    "path": "maven/com/nimbusds/nimbus-jose-jwt/10.6/nimbus-jose-jwt-10.6.jar",
+    "sha256": "7ef3b0dd4a27407639d469cd75e7770463b4ee36e2c13535465da175d3b8f964"
+  },
+  {
+    "path": "maven/com/auth0/auth0/3.0.0/auth0-3.0.0.jar",
+    "sha256": "145defc90d013fbf518a69e9de90423da8053dbba39261ab1548a924c5d160af"
+  },
+  {
+    "path": "maven/com/squareup/okhttp3/okhttp/5.2.1/okhttp-5.2.1.jar",
+    "sha256": "e720a383fdc3eb1df4aac77a085e61b7730837364151de867093fdbcafcb44aa"
+  },
+  {
+    "path": "maven/com/squareup/okio/okio/3.16.1/okio-3.16.1.jar",
+    "sha256": "c9964f394c4cd32b79bf338afbfa2f2297221eee08311787061cea55f87dd60e"
+  },
+  {
+    "path": "maven/com/squareup/okio/okio-jvm/3.16.1/okio-jvm-3.16.1.jar",
+    "sha256": "31f48e6463ec587d6d262d042c91da00659c983b6ad20d5982bf31e85222693c"
+  },
+  {
+    "path": "maven/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.18.2/jackson-datatype-jdk8-2.18.2.jar",
+    "sha256": "f30d77f5826b9e9813342e84ab412095ed4ed5cf4fef6f93cebb848cb0fd0294"
+  },
+  {
+    "path": "maven/com/squareup/okhttp3/logging-interceptor/5.2.1/logging-interceptor-5.2.1.jar",
+    "sha256": "94dee77ec5dc48f6db0e7b3d7b086fb152a01f32d434bda6b670711927e386d7"
+  },
+  {
+    "path": "maven/com/squareup/okhttp3/okhttp-jvm/5.2.1/okhttp-jvm-5.2.1.jar",
+    "sha256": "9632c08567dbb21c569b13d793107834c8580d44e4eea74b2eae0722f0506179"
+  },
+  {
+    "path": "maven/net/jodah/failsafe/2.4.4/failsafe-2.4.4.jar",
+    "sha256": "ac3f916e536db9a69f93706f778e90e2be476bdebea0c45cca6d9675ee99ec30"
+  },
+  {
+    "path": "maven/com/auth0/java-jwt/4.5.0/java-jwt-4.5.0.jar",
+    "sha256": "defc50d5066630d46737ba3077e1e13df7201baf5817394c9a4d3d23e2ad3019"
+  },
+  {
+    "path": "maven/com/auth0/jwks-rsa/0.23.0/jwks-rsa-0.23.0.jar",
+    "sha256": "d20c5222c0eab0b801b20f4e390568af7771412aef2224e2c32d8cbb58a360bc"
+  },
+  {
+    "path": "maven/com/google/guava/guava/32.1.2-jre/guava-32.1.2-jre.jar",
+    "sha256": "bc65dea7cfd9e4dacf8419d8af0e741655857d27885bb35d943d7187fc3a8fce"
+  },
+  {
+    "path": "maven/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar",
+    "sha256": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26"
+  },
+  {
+    "path": "maven/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+    "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99"
+  },
+  {
+    "path": "maven/org/checkerframework/checker-qual/3.33.0/checker-qual-3.33.0.jar",
+    "sha256": "e316255bbfcd9fe50d165314b85abb2b33cb2a66a93c491db648e498a82c2de1"
+  },
+  {
+    "path": "maven/com/google/j2objc/j2objc-annotations/2.8/j2objc-annotations-2.8.jar",
+    "sha256": "f02a95fa1a5e95edb3ed859fd0fb7df709d121a35290eff8b74dce2ab7f4d6ed"
+  },
+  {
+    "path": "maven/io/github/cdimascio/dotenv-java/3.2.0/dotenv-java-3.2.0.jar",
+    "sha256": "47f5d208b29497f286a454817c955750cc92b99b4680392dd40e5db592259d22"
+  },
+  {
+    "path": "maven/org/apache/velocity/velocity-engine-core/2.4.1/velocity-engine-core-2.4.1.jar",
+    "sha256": "1c19157d1171d560088e485be97c93a7a2f7e9f56e517f0a30273c5c39df6231"
+  },
+  {
+    "path": "maven/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar",
+    "sha256": "d3ef575e3e4979678dc01bf1dcce51021493b4d11fb7f1be8ad982877c16a1c0"
+  },
+  {
+    "path": "maven/org/jsoup/jsoup/1.23.2/jsoup-1.23.2.jar",
+    "sha256": "e9d8c856856680427f096d156f02a414289985c930998fcb519ce5be39b42003"
+  },
+  {
+    "path": "maven/com/openhtmltopdf/openhtmltopdf-core/1.0.10/openhtmltopdf-core-1.0.10.jar",
+    "sha256": "3e6fd2250d833d500b7cd48b7a896700d0c33bd9f77a219e820493b01566eda3"
+  },
+  {
+    "path": "maven/com/openhtmltopdf/openhtmltopdf-pdfbox/1.0.10/openhtmltopdf-pdfbox-1.0.10.jar",
+    "sha256": "7de90df1b3ecf84e6f0daf808d724c11142007a2f22bff1936479bf17251d31a"
+  },
+  {
+    "path": "maven/org/apache/pdfbox/pdfbox/2.0.24/pdfbox-2.0.24.jar",
+    "sha256": "3c2c0553ec0e7533c490b4c952e1af113621de5275af6e380e11d0d9a0a4f3d6"
+  },
+  {
+    "path": "maven/org/apache/pdfbox/fontbox/2.0.24/fontbox-2.0.24.jar",
+    "sha256": "2e8c0a569a90b04734fbc0c805d77f4ec03f98c11f5705055ccd7718c1953d68"
+  },
+  {
+    "path": "maven/org/apache/pdfbox/xmpbox/2.0.24/xmpbox-2.0.24.jar",
+    "sha256": "27383df2285b9e228c39f2c755adeebbef774793d33c4f20f0dc99e9ebaaf673"
+  },
+  {
+    "path": "maven/de/rototor/pdfbox/graphics2d/0.32/graphics2d-0.32.jar",
+    "sha256": "37f8f387395f96c214ac44f7475c7a2e1f832dfc1de289a3610e0ffbf728f679"
+  },
+  {
+    "path": "maven/com/google/api-client/google-api-client/1.35.2/google-api-client-1.35.2.jar",
+    "sha256": "f195cd6228d3f99fa7e30ff2dee60ad0f2c7923be31399a7dcdc1abd679aa22e"
+  },
+  {
+    "path": "maven/com/google/oauth-client/google-oauth-client/1.34.1/google-oauth-client-1.34.1.jar",
+    "sha256": "193edf97aefa28b93c5892bdc598bac34fa4c396588030084f290b1440e8b98a"
+  },
+  {
+    "path": "maven/com/google/http-client/google-http-client-gson/1.42.0/google-http-client-gson-1.42.0.jar",
+    "sha256": "cb852272c1cb0c8449d8b1a70f3e0f2c1efb2063e543183faa43078fb446f540"
+  },
+  {
+    "path": "maven/com/google/http-client/google-http-client-apache-v2/1.42.0/google-http-client-apache-v2-1.42.0.jar",
+    "sha256": "1fc4964236b67cf3c5651d7ac1dff668f73b7810c7f1dc0862a0e5bc01608785"
+  },
+  {
+    "path": "maven/com/google/http-client/google-http-client/1.42.0/google-http-client-1.42.0.jar",
+    "sha256": "82ca0e08171846d1768d5ac3f13244d6fe5a54102c14735ef40bf15d57d478e5"
+  },
+  {
+    "path": "maven/io/opencensus/opencensus-api/0.31.1/opencensus-api-0.31.1.jar",
+    "sha256": "f1474d47f4b6b001558ad27b952e35eda5cc7146788877fc52938c6eba24b382"
+  },
+  {
+    "path": "maven/io/grpc/grpc-context/1.27.2/grpc-context-1.27.2.jar",
+    "sha256": "bcbf9055dff453fd6508bd7cca2a0aa2d5f059a9c94beed1f5fda1dc015607b8"
+  },
+  {
+    "path": "maven/io/opencensus/opencensus-contrib-http-util/0.31.1/opencensus-contrib-http-util-0.31.1.jar",
+    "sha256": "3ea995b55a4068be22989b70cc29a4d788c2d328d1d50613a7a9afd13fdd2d0a"
+  },
+  {
+    "path": "maven/com/google/auth/google-auth-library-oauth2-http/1.41.0/google-auth-library-oauth2-http-1.41.0.jar",
+    "sha256": "a8f534242b5a54ff3c6a5d1f53678df9d2de71468bed0d74323b7ba05e672113"
+  },
+  {
+    "path": "maven/com/google/auto/value/auto-value-annotations/1.11.0/auto-value-annotations-1.11.0.jar",
+    "sha256": "5a055ce4255333b3346e1a8703da5bf8ff049532286fdcd31712d624abe111dd"
+  },
+  {
+    "path": "maven/com/google/auth/google-auth-library-credentials/1.41.0/google-auth-library-credentials-1.41.0.jar",
+    "sha256": "26162b1b9c448b119cfc6edf43346274a15a28ed8ff7a9b4c908f44071e33dad"
+  },
+  {
+    "path": "maven/com/google/api/api-common/2.53.0/api-common-2.53.0.jar",
+    "sha256": "f7073fb389c2aa329981ee65241db7947e8744c988e6c4d975f18bf2748b935a"
+  },
+  {
+    "path": "maven/javax/annotation/javax.annotation-api/1.3.2/javax.annotation-api-1.3.2.jar",
+    "sha256": "e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b"
+  },
+  {
+    "path": "maven/com/google/apis/google-api-services-drive/v3-rev20251114-2.0.0/google-api-services-drive-v3-rev20251114-2.0.0.jar",
+    "sha256": "9345ab816ecf13f06820976bc6262aca4274c2acb012ffccf38c5336717b0cdb"
+  },
+  {
+    "path": "maven/com/amazonaws/aws-java-sdk-sqs/1.12.797/aws-java-sdk-sqs-1.12.797.jar",
+    "sha256": "4403fe5b4c45f92276b7ec4bdf681cdb4afb068951f5d1ba06f70b0ad8223f3e"
+  },
+  {
+    "path": "maven/com/amazonaws/aws-java-sdk-ses/1.12.797/aws-java-sdk-ses-1.12.797.jar",
+    "sha256": "7c64e825bb95b3cb304e158c02383265a51374667dcf7ec9405e97f2b9e47db4"
+  },
+  {
+    "path": "maven/org/quartz-scheduler/quartz/2.5.2/quartz-2.5.2.jar",
+    "sha256": "452e418739c0da1bff255f7c1343dd3a92e1fdd3ceb126b185939edae9922091"
+  },
+  {
+    "path": "maven/jakarta/xml/bind/jakarta.xml.bind-api/4.0.4/jakarta.xml.bind-api-4.0.4.jar",
+    "sha256": "c507ca69a8c6dd11bf4afeec9e0d412c4fa3933fffb0a84680ea5727e8472124"
+  },
+  {
+    "path": "maven/com/mchange/mchange-commons-java/0.6.0/mchange-commons-java-0.6.0.jar",
+    "sha256": "ef4cc2e5c15df799af5e96a27ceded23d07bd9b15a538069886dd2cd3e3a1210"
+  },
+  {
+    "path": "maven/org/apache/logging/log4j/log4j-slf4j-impl/2.25.5/log4j-slf4j-impl-2.25.5.jar",
+    "sha256": "3d25b926bc6025c47ec010459749c12aa66b9d5537ba1922d67d89a098a66607"
+  },
+  {
+    "path": "maven/com/sun/mail/jakarta.mail/2.0.2/jakarta.mail-2.0.2.jar",
+    "sha256": "536f0ae5dd774e257f3064f19a2b982aa56072c07c675c70f98cdc262047b4b5"
+  },
+  {
+    "path": "maven/com/sun/activation/jakarta.activation/2.0.1/jakarta.activation-2.0.1.jar",
+    "sha256": "b9e24b7dd6e07495562ea96531be3130c96dba4d78e1dfd88adbbdebf4332871"
+  },
+  {
+    "path": "maven/org/eclipse/angus/angus-activation/2.0.3/angus-activation-2.0.3.jar",
+    "sha256": "a6bd35c538cf90fff941ad6258c40c08fca0b5c9c3f536c657114f27ce0527a7"
+  },
+  {
+    "path": "maven/jakarta/activation/jakarta.activation-api/2.1.4/jakarta.activation-api-2.1.4.jar",
+    "sha256": "c9db52100ce6c8aac95cc39075f95720d2e561b11f8051b81c121ad4effd7004"
+  },
+  {
+    "path": "maven/org/apache/logging/log4j/log4j-api/2.25.5/log4j-api-2.25.5.jar",
+    "sha256": "64777f73ea0b3104c04eb82befbdccc30a425a19e83ad06cb2f93aa303511863"
+  },
+  {
+    "path": "maven/org/apache/logging/log4j/log4j-core/2.25.5/log4j-core-2.25.5.jar",
+    "sha256": "050c4f85deb48b055e9c041ac39043fbb79ce477841a11a1eb2969c86c6a0072"
+  },
+  {
+    "path": "maven/com/kingsrook/qqq/qqq-middleware-javalin/4.1.0-RC.20/qqq-middleware-javalin-4.1.0-RC.20.jar",
+    "sha256": "ef33a9c88e29269d6bc8efbbc0a1411b0409893baee49a1f06473e3803c4443c"
+  },
+  {
+    "path": "maven/com/kingsrook/qqq/qqq-openapi/4.1.0-RC.20/qqq-openapi-4.1.0-RC.20.jar",
+    "sha256": "bbf2257dfce5cedb670dd04ce378bcf177ac157288ff3a28f95a96f3c50de09d"
+  },
+  {
+    "path": "maven/info/picocli/picocli/4.7.7/picocli-4.7.7.jar",
+    "sha256": "f86e30fffd10d2b13b8caa8d4b237a7ee61f2ffccf5b1941de718b765d235bf8"
+  },
+  {
+    "path": "maven/io/javalin/javalin/7.2.3/javalin-7.2.3.jar",
+    "sha256": "c27b5052e8fb259acd8fd1d9f598c8543e43fe4df9271c7697a9c832c9a66e17"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-server/12.1.12/jetty-server-12.1.12.jar",
+    "sha256": "9ba04bb8d011444a10873a51b1cb8297c04f70db55c8a8d9efcc3a9b97896787"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-http/12.1.12/jetty-http-12.1.12.jar",
+    "sha256": "5476e16ef7e28883dba3669ee06491021e4a9aeba9a76f901a3f5c2bb5252a3e"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-util/12.1.12/jetty-util-12.1.12.jar",
+    "sha256": "f6fbfa61cfcca032ff82ad8ff3b66a14374047f15486521dbc89a6c0df19ccf2"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-io/12.1.12/jetty-io-12.1.12.jar",
+    "sha256": "a809a6a534adccfaa08bca94aa54328e3ac858973ccddbda770f7e9e0f5099fc"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/ee10/jetty-ee10-servlet/12.1.12/jetty-ee10-servlet-12.1.12.jar",
+    "sha256": "021375ea80d84b5f9d46260916fc0450dc4fae5a95ce80f8289e87a0db07de47"
+  },
+  {
+    "path": "maven/jakarta/servlet/jakarta.servlet-api/6.0.0/jakarta.servlet-api-6.0.0.jar",
+    "sha256": "c034eb1afb158987dbb53a5fea0cadf611c8dae8daadd59c44d9d5ab70129cef"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-security/12.1.12/jetty-security-12.1.12.jar",
+    "sha256": "fcc0206c1ac66b632ef29a59ccf76c3f3737a62ef54694b1d111eeb2e6efe804"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-session/12.1.12/jetty-session-12.1.12.jar",
+    "sha256": "73aea4cdd91f2027da1a09cd5953b661625017971d53d8e1ff342f8547752b06"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/ee10/websocket/jetty-ee10-websocket-jetty-server/12.1.12/jetty-ee10-websocket-jetty-server-12.1.12.jar",
+    "sha256": "bce3641addd34a0d9a3ce8080f31f3b7f45b2bbdf3e7d5655ccd5f4d529c7816"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/ee10/jetty-ee10-annotations/12.1.12/jetty-ee10-annotations-12.1.12.jar",
+    "sha256": "c45ba9ff724845ef5848f86cf164c87824d4be18095216b9cba66a94a72b83b6"
+  },
+  {
+    "path": "maven/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar",
+    "sha256": "5f65fdaf424eee2b55e1d882ba9bb376be93fb09b37b808be6e22e8851c909fe"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-annotations/12.1.12/jetty-annotations-12.1.12.jar",
+    "sha256": "ce51d231435cdd774336abcb44a7817195fd12487ed213327e8d43db172af467"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/ee10/jetty-ee10-plus/12.1.12/jetty-ee10-plus-12.1.12.jar",
+    "sha256": "80d050384ef31c921e0fbeeded3c70fc8d35a29b7951511a9ccfaeb06b5e29c7"
+  },
+  {
+    "path": "maven/jakarta/enterprise/jakarta.enterprise.cdi-api/4.0.1/jakarta.enterprise.cdi-api-4.0.1.jar",
+    "sha256": "beaf74c4f2618189309e3f4a09c43effab633dd96aa1f6dc58a6ba7ee0042717"
+  },
+  {
+    "path": "maven/jakarta/enterprise/jakarta.enterprise.lang-model/4.0.1/jakarta.enterprise.lang-model-4.0.1.jar",
+    "sha256": "53acafe65b6ef0195fa1b8a0ef2650e5aa024c32cb4059c4df372d6b32089cd3"
+  },
+  {
+    "path": "maven/jakarta/inject/jakarta.inject-api/2.0.1/jakarta.inject-api-2.0.1.jar",
+    "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c"
+  },
+  {
+    "path": "maven/jakarta/interceptor/jakarta.interceptor-api/2.1.0/jakarta.interceptor-api-2.1.0.jar",
+    "sha256": "ef787d3f713fc6ff4f02cd4b0dbed08f93d8af3400c90cbb43fb4b5c0583710b"
+  },
+  {
+    "path": "maven/jakarta/transaction/jakarta.transaction-api/2.0.1/jakarta.transaction-api-2.0.1.jar",
+    "sha256": "50c0a7c760c13ae6c042acf182b28f0047413db95b4636fb8879bcffab5ba875"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-jndi/12.1.12/jetty-jndi-12.1.12.jar",
+    "sha256": "a701368f9810433103836f0f2c0c0f6a2ca49f951d25d155e4e507821cb54b43"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-plus/12.1.12/jetty-plus-12.1.12.jar",
+    "sha256": "0e29a87abf5b651f77e5c3e7c726f0ecef30a9bc57a5e0aa5aa3f784cfc0a7bd"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/ee10/jetty-ee10-webapp/12.1.12/jetty-ee10-webapp-12.1.12.jar",
+    "sha256": "84de1014bb79f957f0fc66d3db9b2bc7eec19f01c8ace4e250b4707af0eed0f3"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/jetty-xml/12.1.12/jetty-xml-12.1.12.jar",
+    "sha256": "1c7b6320e3ad4ccca861ecfd1347f10ac6130ca2c2eb788a6b5dff3ab0c0f532"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/ee/jetty-ee-webapp/12.1.12/jetty-ee-webapp-12.1.12.jar",
+    "sha256": "f70d9b30fdfd970e8bbc462b9d6b4cb85f850428d8640529fcc1f1912b2941b4"
+  },
+  {
+    "path": "maven/org/ow2/asm/asm-commons/9.10.1/asm-commons-9.10.1.jar",
+    "sha256": "6d0abefb7cbf972ea16edb37ec14835372505063a45f976ab7ea889ed9497895"
+  },
+  {
+    "path": "maven/org/ow2/asm/asm-tree/9.10.1/asm-tree-9.10.1.jar",
+    "sha256": "3dfb0d5b6a106cd40b5b250e39935fbf2f927f4477546a5369a3ac609cf0506b"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/ee10/websocket/jetty-ee10-websocket-servlet/12.1.12/jetty-ee10-websocket-servlet-12.1.12.jar",
+    "sha256": "83a58b4ee3bf6d0284c50304725cf93b694a67b1b1cc139af72500296dbf7359"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/websocket/jetty-websocket-core-server/12.1.12/jetty-websocket-core-server-12.1.12.jar",
+    "sha256": "d91becae70e7b15e6200f40d02239d8315f8b26c90d4ab38348fcdad41c0ebf5"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/websocket/jetty-websocket-jetty-api/12.1.12/jetty-websocket-jetty-api-12.1.12.jar",
+    "sha256": "887090638bf758dce9268478a3ccf168929de52dcdecdddb4eaff62263cbd961"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/websocket/jetty-websocket-jetty-common/12.1.12/jetty-websocket-jetty-common-12.1.12.jar",
+    "sha256": "933d05b566effad97f84b5d986be810a2928685c875d7fb90f301163f24d2718"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/websocket/jetty-websocket-core-common/12.1.12/jetty-websocket-core-common-12.1.12.jar",
+    "sha256": "a1ef0c79a4b8b9e4ce969e70d8de9fbed4776625863bdbd5eb5f69fb70208399"
+  },
+  {
+    "path": "maven/org/eclipse/jetty/websocket/jetty-websocket-jetty-server/12.1.12/jetty-websocket-jetty-server-12.1.12.jar",
+    "sha256": "0b189ffab87b02a4da1187dc4022410c5f235b5a1a7ccfeea3cc4846a8e80664"
+  },
+  {
+    "path": "maven/org/jetbrains/kotlin/kotlin-stdlib/2.3.0/kotlin-stdlib-2.3.0.jar",
+    "sha256": "887587c91713250ad52fe14ad9166d042c33835049890e9437f355ffc5a195b1"
+  },
+  {
+    "path": "maven/org/slf4j/slf4j-simple/2.0.18/slf4j-simple-2.0.18.jar",
+    "sha256": "8268bd018a5709b07209e0d8ca6221a37584ba1bc12ba985b8335a82c648bdd0"
+  },
+  {
+    "path": "maven/com/kingsrook/qbits/qbit-record-files/0.1.0-SNAPSHOT/qbit-record-files-0.1.0-SNAPSHOT.jar",
+    "sha256": "a49f1eb3ff27c720fbd09c2af8c63704b3c157c9603da6307b0356e2b939a347"
+  },
+  {
+    "path": "maven/com/kingsrook/qbits/qbit-collaboration/0.1.0-record-files-SNAPSHOT/qbit-collaboration-0.1.0-record-files-SNAPSHOT.jar",
+    "sha256": "87c6a9aac52a0821edd66dad2924a014d2c70aa929ead011dcf7a89a0f94c854"
+  },
+  {
+    "path": "maven/com/kingsrook/qbits/qbit-object-storage/0.1.0-RC.4/qbit-object-storage-0.1.0-RC.4.jar",
+    "sha256": "edb931794d0153fe27e65ef34f4bb5ad93dbfcff2bd7d0eb10e2701ffe1910f2"
+  },
+  {
+    "path": "maven/com/kingsrook/qqq/qqq-backend-module-filesystem/4.1.0-RC.6/qqq-backend-module-filesystem-4.1.0-RC.6.jar",
+    "sha256": "241d3bc3cc1200680ce6b6991f7da425ffefec45028d9a85edd9320862f26f13"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/s3/2.41.34/s3-2.41.34.jar",
+    "sha256": "d4a3acd700845a93738bee3b0e2089b86e4cb1d5be3c2d4d00deb61edccdd760"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/aws-xml-protocol/2.41.34/aws-xml-protocol-2.41.34.jar",
+    "sha256": "e9157b4908b2540feda3a9aa8e08e692ec938fe933b972bffe3b201b879bab27"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/aws-query-protocol/2.41.34/aws-query-protocol-2.41.34.jar",
+    "sha256": "d57caf18f117b42e682a29a177c334110a88fc6ba3b3bdf290a543bf9bf9a4be"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/arns/2.41.34/arns-2.41.34.jar",
+    "sha256": "0ecf3fd1af7dbc52d931b9f3a145b11b8bc7b07fb31c631a52505647815b6873"
+  },
+  {
+    "path": "maven/software/amazon/awssdk/crt-core/2.41.34/crt-core-2.41.34.jar",
+    "sha256": "bba14689c6b538b8e383919af8be6529eb6a35f789b7a264fb362a8ca15d9aff"
+  },
+  {
+    "path": "maven/com/kingsrook/qqq/qqq-backend-module-rdbms/4.1.0-isolated-record-files-SNAPSHOT/qqq-backend-module-rdbms-4.1.0-isolated-record-files-SNAPSHOT.jar",
+    "sha256": "e3af4b9367548fb340f3860516b9fea27cfb8920331568b40c1aac8cfaa5dc85"
+  },
+  {
+    "path": "maven/com/mysql/mysql-connector-j/9.5.0/mysql-connector-j-9.5.0.jar",
+    "sha256": "f2ca3dfaf00d4aa311470db7ea3051962944ba0cb60005a2f75467549c39f425"
+  },
+  {
+    "path": "maven/com/mchange/c3p0/0.14.0/c3p0-0.14.0.jar",
+    "sha256": "7b700e8fc71d0519dbad7c22916e85eaa38d544802837a928655c70be3b9f37f"
+  },
+  {
+    "path": "maven/com/kingsrook/qbits/qbit-record-files/0.1.0-SNAPSHOT/qbit-record-files-0.1.0-SNAPSHOT-tests.jar",
+    "sha256": "65d2f53aa112673c87bf2a40671c01b7755b0a99b174a5186080e13e0b217bfe"
+  },
+  {
+    "path": "maven/com/h2database/h2/2.2.224/h2-2.2.224.jar",
+    "sha256": "b9d8f19358ada82a4f6eb5b174c6cfe320a375b5a9cb5a4fe456d623e6e55497"
+  },
+  {
+    "path": "maven/org/junit/jupiter/junit-jupiter/5.11.4/junit-jupiter-5.11.4.jar",
+    "sha256": "aa880e4afba87d447357e4c1fc098c5cb1d200cb9403496c00d3b35a5bd0e8db"
+  },
+  {
+    "path": "maven/org/junit/jupiter/junit-jupiter-api/5.11.4/junit-jupiter-api-5.11.4.jar",
+    "sha256": "ab83ef9e51ac4597d59d26b4b58812129550e2f579a404c8af7d09f5ce5b4293"
+  },
+  {
+    "path": "maven/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar",
+    "sha256": "48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b"
+  },
+  {
+    "path": "maven/org/junit/platform/junit-platform-commons/1.11.4/junit-platform-commons-1.11.4.jar",
+    "sha256": "9edd969b0d0670c54105bc91ae79bd1c6f503e12115faba82073b84c86bbc334"
+  },
+  {
+    "path": "maven/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar",
+    "sha256": "b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38"
+  },
+  {
+    "path": "maven/org/junit/jupiter/junit-jupiter-params/5.11.4/junit-jupiter-params-5.11.4.jar",
+    "sha256": "02a6e015de7ce94ac7f256e7fa05b8091dea861fe79a555a7993313d0f6c7d96"
+  },
+  {
+    "path": "maven/org/junit/jupiter/junit-jupiter-engine/5.11.4/junit-jupiter-engine-5.11.4.jar",
+    "sha256": "cdf8ac59f3fad774ca738ad03890950eeb91833ef0e8908753177edd26f1581c"
+  },
+  {
+    "path": "maven/org/junit/platform/junit-platform-engine/1.11.4/junit-platform-engine-1.11.4.jar",
+    "sha256": "b1dd998f64f9acadc15966d9cd3d08074662677b3e390f0a38fcbf0bb4c72330"
+  },
+  {
+    "path": "maven/org/assertj/assertj-core/3.27.7/assertj-core-3.27.7.jar",
+    "sha256": "c4a445426c3c2861666863b842cc4ec7bbb1c4226fefd370b6d2fe83d6c4ff0f"
+  },
+  {
+    "path": "maven/net/bytebuddy/byte-buddy/1.18.3/byte-buddy-1.18.3.jar",
+    "sha256": "d78396e3c5bce3f2865c9186647481e5589d34cacc632484715b686108d17c66"
+  }
+]
