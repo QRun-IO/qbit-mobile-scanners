@@ -139,7 +139,7 @@ final class EchoStore
                      }
                      if(!scan.barcode().equals(row.getString("barcode")) || !scan.symbology().equals(row.getString("symbology"))
                         || !scan.scanSource().equals(row.getString("scanSource")) || !scan.capturedAt().equals(row.getString("capturedAt"))
-                        || !scan.mobileScanId().equals(row.getString("mobileScanId")) || !scan.receivedAt().equals(row.getString("receivedAt")))
+                        || !scan.mobileScanId().equals(row.getString("mobileScanId")))
                      {
                         throw new QException("This scan event was already used for different barcode context.");
                      }

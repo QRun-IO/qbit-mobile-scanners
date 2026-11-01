@@ -248,6 +248,9 @@ class EchoTest
       Map<String, Serializable> context = captured("CODE128", "001234567890");
       var first = config.service.print(run, context);
       assertEquals(first, config.service.print(run, context));
+      Map<String, Serializable> persistedPrecision = new HashMap<>(context);
+      persistedPrecision.put("receivedAt", "2026-11-01T18:00:00.123456Z");
+      assertEquals(first, config.service.print(run, persistedPrecision));
       assertEquals(1, requests.size());
       Map<String, Serializable> changed = new HashMap<>(context);
       changed.put("symbology", "QRCODE");
@@ -512,6 +515,75 @@ class EchoTest
       mobile.otherOperator();
       QContext.getQSession().withSecurityKeyValue("qqq.session.userId", "operator");
       assertEquals(null, source(acceptedScan.scanId()));
+   }
+
+
+
+   /***************************************************************************
+    ** Leaving capture does not remove the original actor's ordinary source-read
+    ** right, and a desktop read cannot acquire process or capture authority.
+    ***************************************************************************/
+   @Test
+   void desktopOriginalActorCanReadRetainedSourceWithoutScannerAuthority() throws Exception
+   {
+      String run = config.service.start("printer", "4x6");
+      Map<String, Serializable> context = captured("CODE128", "000001");
+      var acceptedScan = config.service.print(run, context);
+      config.service.close(run);
+      desktop("operator", true);
+      assertEquals("000001", source(acceptedScan.scanId()).getValueString("barcode"));
+      assertThrows(QException.class, () -> config.service.print(run, context));
+      assertThrows(QException.class, () -> new EchoPermissions().checkPermissionsThrowing(
+         new RunProcessInput().withProcessName(EchoQBitProducer.PROCESS), QContext.getQInstance().getProcess(EchoQBitProducer.PROCESS)));
+      assertThrows(QException.class, () -> new com.kingsrook.qqq.backend.core.actions.tables.UpdateAction().execute(
+         new com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput().withTableName(EchoQBitProducer.SCAN_TABLE)
+            .withRecord(new com.kingsrook.qqq.backend.core.model.data.QRecord().withValue("id", acceptedScan.scanId()).withValue("barcode", "forged"))));
+      assertThrows(QException.class, () -> new com.kingsrook.qqq.backend.core.actions.tables.DeleteAction().execute(
+         new com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput().withTableName(EchoQBitProducer.SCAN_TABLE)
+            .withPrimaryKey(acceptedScan.scanId())));
+      assertEquals("000001", source(acceptedScan.scanId()).getValueString("barcode"));
+   }
+
+
+
+   /***************************************************************************
+    ** Current grants and actual actor identity govern each retained source read;
+    ** an old operator identity or spoofed security key cannot restore access.
+    ***************************************************************************/
+   @Test
+   void desktopRevokedOrDifferentActorCannotReadRetainedSource() throws Exception
+   {
+      String run = config.service.start("printer", "4x6");
+      var acceptedScan = config.service.print(run, captured("CODE128", "000001"));
+      config.service.close(run);
+      desktop("operator", false);
+      assertThrows(QException.class, () -> source(acceptedScan.scanId()));
+      desktop("other-operator", true);
+      QContext.getQSession().withSecurityKeyValue("qqq.session.userId", "operator");
+      assertEquals(null, source(acceptedScan.scanId()));
+      desktop("operator", true);
+      QContext.getQSession().setUser(null);
+      assertThrows(QException.class, () -> source(acceptedScan.scanId()));
+   }
+
+
+
+   /***************************************************************************
+    ** A fresh desktop session deliberately has no approved-device request scope
+    ** or mobile.scan grant; it contains only the current native actor's rights.
+    ***************************************************************************/
+   private void desktop(String actor, boolean allowed)
+   {
+      QInstance instance = QContext.getQInstance();
+      EchoMobileFixture.clear();
+      var session = new com.kingsrook.qqq.backend.core.model.session.QSession()
+         .withUser(new com.kingsrook.qqq.backend.core.model.session.QUser().withIdReference(actor));
+      session.setUuid(UUID.randomUUID().toString());
+      if(allowed)
+      {
+         session.withPermission(EchoQBitProducer.PERMISSION);
+      }
+      QContext.init(instance, session);
    }
 
 

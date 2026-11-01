@@ -56,7 +56,8 @@ public final class EchoQBitProducer
       QTableMetaData scan = new QTableMetaData().withName(SCAN_TABLE).withLabel("Echo Scans").withBackendName(config.backendName)
          .withBackendDetails(new RDBMSTableBackendDetails().withTableName("echo_scan")).withPrimaryKeyField("id")
          .withRecordSecurityLock(new RecordSecurityLock().withFieldName("actorId").withSecurityKeyType("qqq.session.userId"))
-         .withPermissionRules(rules());
+         .withPermissionRules(new QPermissionRules().withLevel(PermissionLevel.HAS_ACCESS_PERMISSION)
+            .withCustomPermissionChecker(new QCodeReference(EchoSourceReadPermissions.class)));
       for(String name : List.of("id", "runId", "eventId", "actorId", "deviceId", "mobileScanId", "symbology", "rendererSymbology", "scanSource", "capturedAt", "receivedAt", "state", "printJobId"))
       {
          scan.withField(text(name, 200).withIsEditable(false));

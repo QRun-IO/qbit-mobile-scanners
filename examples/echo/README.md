@@ -37,3 +37,13 @@ Tests use actual QQQ process state, H2 persistence and the mobile QBit's real ap
 ## License packaging
 
 Echo uses Apache License 2.0. Packaging includes the existing repository `LICENSE` and `NOTICE` unchanged under `META-INF/qqq-echo/`, alongside Echo's SQL resources. This namespace preserves dependency notices. No duplicate license source files or modified license text are maintained in the example.
+
+## Isolated native UI fixture
+
+`com.kingsrook.examples.echo.fixture.EchoHttpFixture` is a test-scope HTTP host using the existing demo TABLE authentication and registered QQQ semantic routes. It brands itself **Echo UI E2E — simulated printing**. The simulated printer/media and acceptance recorder exercise navigation and receipts only; they never render or print.
+
+Launch its test classpath with one unused loopback port argument and private environment variables `ECHO_FIXTURE_TYPE=echo-ui-e2e`, `ECHO_FIXTURE_SCANNER_PASSWORD`, and `ECHO_FIXTURE_ADMIN_PASSWORD`. Use generated secrets of at least 24 characters. Accounts are `scanner` and `admin`. The process initializes a fresh random in-memory H2 database, refuses known production/test-peer ports, and emits `ECHO_UI_E2E_READY port=<port> simulatedPrinting=true`. Closing it stops only its own server. Keep its credentials in private run descriptors, never this repository.
+
+The printer/media choices are `fixture-printer` / `fixture-4x6`, labeled “Simulated printer” / “Simulated 4 x 6 in — 300 dpi”. Standard native queries of `echoScan` and test-only `echoFixtureRun` use the scanner session and approved device credentials, retaining actor locks. The HTTP smoke covers login, real enrollment/admin approval, metadata, setup, two symbologies, same-event retry, queued receipts, row inspection and cancellation. Android device acceptance remains a separate test; none of these fixture results qualify physical output.
+
+Retained Echo source reads use a separate read-only permission: the current authenticated actor must still have `echo.use`, and native actor row locks restrict results to that actor. Desktop source reads after leaving Echo do not reconstruct a scanner session or grant capture authority. Echo app/process/widget/capture operations still require the currently approved device. Direct source-table writes are denied. Accepted print delivery/retry also requires the printing owner's reviewed original-actor source-reauthorization policy; this table read rule alone does not qualify delayed byte release.
