@@ -165,10 +165,12 @@ components:
       - "status"
       type: "object"
     MobileScannersHeartbeatRequestV1:
-      description: "Display activity only. Optional null or absent values clear previous\
-        \ metadata. Never include form values, barcodes, passwords or raw error messages.\
-        \ JSON maximum 4096 bytes. screenAvailable is true only for eligible foreground\
-        \ app content; false clears the retained frame."
+      description: "Display activity only. Never include form values, barcodes, passwords\
+        \ or raw error messages. JSON maximum 4096 bytes. Omitted captureMode means\
+        \ APP_CONTENT, requiring foreground eligible app pixels. DEVICE_SCREEN requires\
+        \ explicit per-session Android operator consent and may remain available in\
+        \ background. False screenAvailable clears pixels and lease; changing mode\
+        \ invalidates old demand."
       properties:
         appName:
           maxLength: 200
@@ -177,6 +179,12 @@ components:
         captureBlockedReason:
           maxLength: 80
           nullable: true
+          type: "string"
+        captureMode:
+          enum:
+          - "APP_CONTENT"
+          - "DEVICE_SCREEN"
+          maxLength: 20
           type: "string"
         errorCode:
           maxLength: 80
@@ -249,6 +257,14 @@ components:
           - "ACTIVE"
           maxLength: 20
           type: "string"
+        supportedCaptureModes:
+          items:
+            enum:
+            - "APP_CONTENT"
+            - "DEVICE_SCREEN"
+            maxLength: 20
+            type: "string"
+          type: "array"
       required:
       - "sessionId"
       - "status"
@@ -381,6 +397,12 @@ components:
         \ expiresAt minus heartbeat serverTime. Sequence is scoped to this lease and\
         \ resumes at nextSequence after client restart."
       properties:
+        captureMode:
+          enum:
+          - "APP_CONTENT"
+          - "DEVICE_SCREEN"
+          maxLength: 20
+          type: "string"
         expiresAt:
           format: "date-time"
           maxLength: 40
@@ -419,13 +441,19 @@ components:
       - "nextSequence"
       type: "object"
     MobileScannersScreenRequestV1:
-      description: "App-only eligible pixels, never login/password/other-app/OS content.\
-        \ Total JSON maximum 368640 bytes. Base64 is bounded before decoding; decoded\
-        \ JPEG maximum 262144 bytes, width <=640, height <=1280. Image dimensions\
-        \ are checked before pixel allocation. Old sequence or excessive upload rate\
-        \ returns 409. Frames are ephemeral, latest-only and cleared on blocked capture,\
+      description: "Mode must match the current session and viewing lease. Omitted\
+        \ mode is APP_CONTENT: never login/password/other-app/OS pixels. DEVICE_SCREEN\
+        \ is optional1.2 and requires per-session operator system consent. Total JSON\
+        \ maximum368640 bytes; decoded JPEG maximum262144 bytes, width<=640, height<=1280.\
+        \ Frames are ephemeral, latest-only and cleared on blocked capture, mode change,\
         \ expired demand or session end."
       properties:
+        captureMode:
+          enum:
+          - "APP_CONTENT"
+          - "DEVICE_SCREEN"
+          maxLength: 20
+          type: "string"
         capturedAt:
           format: "date-time"
           maxLength: 40
@@ -540,7 +568,7 @@ info:
   description: "Native scanner devices, customer branding and SCANNER process widget\
     \ contract."
   title: "QQQ Middleware API extension: mobile-scanners"
-  version: "1.1.0"
+  version: "1.2.0"
 openapi: "3.0.3"
 paths:
   /qqq/v1/qbit/mobile-scanners/branding:
@@ -999,11 +1027,12 @@ paths:
   /qqq/v1/qbit/mobile-scanners/sessions/current/screen:
     post:
       description: "Requires the current approved device session, screenAvailable=true\
-        \ and an active viewer lease. JPEG decoded size at most 262144 bytes, dimensions\
-        \ at most 640x1280, JSON at most 368640 bytes. Monotonic sequence is scoped\
-        \ to leaseId. Frames are ephemeral and cleared on unavailable capture, expiry\
-        \ or session end; never upload login, password, OS or other-app pixels. A\
-        \ 409 asks the client to refresh heartbeat sequence/rate state."
+        \ and a mode-matched active viewer lease. Default APP_CONTENT excludes login/password/OS/other-app\
+        \ pixels. Optional DEVICE_SCREEN requires operator system consent for this\
+        \ session. JPEG decoded size at most 262144 bytes, dimensions at most 640x1280,\
+        \ JSON at most 368640 bytes. Sequence is scoped to leaseId. Frames are ephemeral\
+        \ and cleared on unavailable capture, mode change, expiry or session end.\
+        \ A 409 asks the client to refresh heartbeat sequence/rate state."
       operationId: "mobileScannersUploadSessionScreen"
       parameters:
       - description: "Enrolled installation UUID"

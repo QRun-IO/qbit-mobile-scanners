@@ -1,6 +1,6 @@
 # Mobile Scanners semantic UI API
 
-Mobile Scanners is an independently versioned QQQ UI API extension. `MobileScannersQBitProducer` registers the `mobile-scanners` contract, currently **1.0.0**, through `MiddlewareSpecExtensionsMetaData`. The framework generates its routes, discovery advertisement and merged OpenAPI from the same endpoint specs. There is no separate `/mobile/v1` API or legacy alias.
+Mobile Scanners is an independently versioned QQQ UI API extension. `MobileScannersQBitProducer` registers the `mobile-scanners` contract, currently **1.2.0**, through `MiddlewareSpecExtensionsMetaData`. The framework generates its routes, discovery advertisement and merged OpenAPI from the same endpoint specs. Optional operator-consented device-screen viewing is described in [DEVICE-SCREEN-VIEWING.md](DEVICE-SCREEN-VIEWING.md); app-content remains the default. There is no separate `/mobile/v1` API or legacy alias.
 
 The host must also install `MobileScannersRouteProvider` on the same server. This provider binds verified device headers to the current request; it does not register additional business routes. Keep the versioned QQQ routes enabled. The qbit registers the `android` client channel while preserving the host's existing channel policies. The demo disables legacy unversioned middleware routes.
 

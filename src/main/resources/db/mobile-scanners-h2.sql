@@ -57,6 +57,7 @@ ALTER TABLE mobileDevice ADD COLUMN IF NOT EXISTS locationReceivedAt TIMESTAMP;
 CREATE INDEX IF NOT EXISTS mobileDevice_lastSeenAt ON mobileDevice(lastSeenAt);
 ALTER TABLE mobileSession ADD COLUMN IF NOT EXISTS authCleanupStatus VARCHAR(80);
 ALTER TABLE mobileSession ADD COLUMN IF NOT EXISTS authCleanupAt TIMESTAMP;
+ALTER TABLE mobileSession ADD COLUMN IF NOT EXISTS captureMode VARCHAR(20) DEFAULT 'APP_CONTENT';
 DELETE FROM mobileDeviceCredential WHERE NOT EXISTS (SELECT 1 FROM mobileDevice WHERE mobileDevice.id = mobileDeviceCredential.id);
 
 ALTER TABLE mobileSession ALTER COLUMN startedAt TIMESTAMP;

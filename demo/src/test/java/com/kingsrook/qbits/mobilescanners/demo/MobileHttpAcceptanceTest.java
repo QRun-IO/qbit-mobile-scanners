@@ -34,6 +34,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -293,6 +294,22 @@ class MobileHttpAcceptanceTest
          var approved = request("POST", heartbeatPath, scanner, activity, true);
          assertEquals(200, approved.statusCode());
          String sessionId = new JSONObject(approved.body()).getString("sessionId");
+         assertTrue(new JSONObject(approved.body()).getJSONArray("supportedCaptureModes").toList().contains("DEVICE_SCREEN"));
+         String deviceActivity = "{\"foreground\":false,\"screenAvailable\":true,\"captureMode\":\"DEVICE_SCREEN\"}";
+         assertEquals(200, request("POST", heartbeatPath, scanner, deviceActivity, true).statusCode());
+         try(var connection = DriverManager.getConnection(database, "sa", "");
+            var query = connection.prepareStatement("SELECT captureMode, foreground, screenAvailable FROM mobileSession WHERE id=?"))
+         {
+            query.setString(1, sessionId);
+            try(var rows = query.executeQuery())
+            {
+               assertTrue(rows.next());
+               assertEquals("DEVICE_SCREEN", rows.getString(1));
+               assertEquals(false, rows.getBoolean(2));
+               assertEquals(true, rows.getBoolean(3));
+            }
+         }
+         assertEquals(400, request("POST", heartbeatPath, scanner, deviceActivity.replace("DEVICE_SCREEN", "INVALID"), true).statusCode());
          assertEquals(200, request("POST", heartbeatPath + "/", scanner, activity, true).statusCode());
          runAdmin("mobileDeviceRevoke", admin);
 
@@ -312,6 +329,7 @@ class MobileHttpAcceptanceTest
          }
          assertEquals(403, request("POST", heartbeatPath, scanner, activity.replace("approved-screen", "rejected-screen"), true).statusCode());
          assertEquals(403, request("POST", heartbeatPath + "/", scanner, activity.replace("approved-screen", "rejected-screen"), true).statusCode());
+         assertEquals(403, request("POST", heartbeatPath, scanner, deviceActivity, true).statusCode());
          try(var connection = DriverManager.getConnection(database, "sa", "");
             var statement = connection.prepareStatement("SELECT s.lastSeenAt, s.appName, d.lastSeenAt FROM mobileSession s JOIN mobileDevice d ON s.deviceId=d.id WHERE s.id=?"))
          {
@@ -509,7 +527,7 @@ class MobileHttpAcceptanceTest
          }
       }
       assertNotNull(mobile);
-      assertEquals("1.1.0", mobile.getString("version"));
+      assertEquals("1.2.0", mobile.getString("version"));
       assertEquals("/qbit/mobile-scanners", mobile.getString("pathPrefix"));
       var openApiResponse = request("GET", "/qqq/v1/openapi.json", null, null, device);
       assertEquals(200, openApiResponse.statusCode());
@@ -587,7 +605,7 @@ class MobileHttpAcceptanceTest
 
 
    /*******************************************************************************
-    ** The extension uses objects, bounded strings, numbers and booleans only.
+    ** Validate actual typed payloads, including each advertised array item.
     *******************************************************************************/
    private void assertSchemaValue(JSONObject schema, Object value)
    {
@@ -598,6 +616,18 @@ class MobileHttpAcceptanceTest
       }
       switch(schema.getString("type"))
       {
+         case "array" ->
+         {
+            assertTrue(value instanceof JSONArray);
+            JSONArray array = (JSONArray) value;
+            assertTrue(array.length() >= schema.optInt("minItems", 0));
+            assertTrue(array.length() <= schema.optInt("maxItems", Integer.MAX_VALUE));
+            JSONObject items = schema.getJSONObject("items");
+            for(Object item : array)
+            {
+               assertSchemaValue(items, item);
+            }
+         }
          case "object" ->
          {
             assertTrue(value instanceof JSONObject);
@@ -643,6 +673,23 @@ class MobileHttpAcceptanceTest
          }
          default -> throw new AssertionError("Unexpected mobile schema type");
       }
+   }
+
+
+
+   /*******************************************************************************
+    ** Array validation must reject malformed capability types and enum members.
+    *******************************************************************************/
+   @Test
+   void schemaArrayValidationChecksItemsAndBounds()
+   {
+      JSONObject schema = new JSONObject("{\"type\":\"array\",\"minItems\":1,\"maxItems\":2,\"items\":{\"type\":\"string\",\"enum\":[\"APP_CONTENT\",\"DEVICE_SCREEN\"]}}");
+      assertSchemaValue(schema, new JSONArray(List.of("APP_CONTENT", "DEVICE_SCREEN")));
+      assertThrows(AssertionError.class, () -> assertSchemaValue(schema, "DEVICE_SCREEN"));
+      assertThrows(AssertionError.class, () -> assertSchemaValue(schema, new JSONArray(List.of(1))));
+      assertThrows(AssertionError.class, () -> assertSchemaValue(schema, new JSONArray(List.of("UNKNOWN"))));
+      assertThrows(AssertionError.class, () -> assertSchemaValue(schema, new JSONArray()));
+      assertThrows(AssertionError.class, () -> assertSchemaValue(schema, new JSONArray(List.of("APP_CONTENT", "DEVICE_SCREEN", "APP_CONTENT"))));
    }
 
 

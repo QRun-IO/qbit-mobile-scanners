@@ -1,5 +1,8 @@
 # QQQ Mobile Scanners TODO
 
+- [x] Upgrade the normal local demo to qualified API1.9/mobile1.1 with fresh closed backup, original-data invariants, recovery qualification and live verification of both existing accounts and preserved devices/scans.
+- [ ] Qualify additive extension1.2 whole-device viewing with explicit Android consent, mode-bound leases, lifecycle/security tests and actual device acceptance; preserve1.1 app-content compatibility.
+
 - [x] Qualify the demo BOM import and managed JUnit engine with fresh37 server/five demo tests, exact runtime module/Guava/H2 provenance and all15 single-record/bulk browser cases; see [acceptance evidence](API19-CONSUMER-ACCEPTANCE.md). The operator runtime remains separate.
 - [x] Preserve legacy timestamp instants in the canonical supplied H2 schema with an explicit UTC migration connection; verify non-UTC file-backed upgrade, unchanged passwords/approval/scans and repeated initialization. The operator upgrade is preserved with UTC; a no-install reactor passes 37 base tests and five demo tests using the freshly built schema.
 - [x] Implement unique short names, editable names/descriptions, additive H2 migration and protected profile editing; qualify the preserving upgrade of the operator database before deployment.

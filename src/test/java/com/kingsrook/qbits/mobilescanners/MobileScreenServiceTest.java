@@ -31,6 +31,31 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class MobileScreenServiceTest
 {
    /***************************************************************************
+    ** Full-device pixels require an explicit matching lease, never legacy scope.
+    ***************************************************************************/
+   @Test
+   void captureModeIsBoundToLeaseAndChangingModeClearsPixels() throws Exception
+   {
+      MobileScreenService screens = new MobileScreenService(new MutableClock());
+      screens.view("session");
+      String appLease = (String) screens.activeLease("session").get("leaseId");
+      screens.upload("session", frame(appLease, 0));
+      assertNotNull(screens.view("session").dataUri());
+      assertNull(screens.view("session", MobileCaptureMode.DEVICE_SCREEN).dataUri());
+      String deviceLease = (String) screens.activeLease("session").get("leaseId");
+      assertEquals("DEVICE_SCREEN", screens.activeLease("session").get("captureMode"));
+      assertThrows(QException.class, () -> screens.upload("session", frame(appLease, 1)));
+      assertThrows(QException.class, () -> screens.upload("session", frame(deviceLease, 0)));
+      Map<String, Object> deviceFrame = frame(deviceLease, 0);
+      deviceFrame.put("captureMode", "DEVICE_SCREEN");
+      screens.upload("session", deviceFrame);
+      assertNotNull(screens.view("session", MobileCaptureMode.DEVICE_SCREEN).dataUri());
+      assertNull(screens.view("session").dataUri());
+      assertThrows(QException.class, () -> screens.upload("session", deviceFrame));
+      assertThrows(QException.class, () -> MobileCaptureMode.parse("UNKNOWN"));
+   }
+
+   /***************************************************************************
     ** A viewer lease is required, and closing it eventually ends capture demand.
     ***************************************************************************/
    @Test

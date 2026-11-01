@@ -40,7 +40,7 @@ public final class MobileScannersUiApi
     ***************************************************************************/
    public static MiddlewareSpecExtension extension()
    {
-      return new MiddlewareSpecExtension().withName("mobile-scanners").withSemanticVersion("1.1.0")
+      return new MiddlewareSpecExtension().withName("mobile-scanners").withSemanticVersion("1.2.0")
          .withDescription("Native scanner devices, customer branding and SCANNER process widget contract.")
          .withSpec(MobileBrandingSpec.class).withSpec(MobileStatusSpec.class)
          .withSpec(MobileEnrollSpec.class).withSpec(MobileCurrentDeviceSpec.class)

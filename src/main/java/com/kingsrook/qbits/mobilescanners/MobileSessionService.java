@@ -138,9 +138,14 @@ final class MobileSessionService
          MobileService.requireApproved(deviceId);
          QRecord session = observe(deviceId);
          boolean foreground = bool(input, "foreground");
-         boolean available = bool(input, "screenAvailable") && foreground;
+         MobileCaptureMode mode = MobileCaptureMode.parse(input.get("captureMode"));
+         boolean available = bool(input, "screenAvailable") && (foreground || mode == MobileCaptureMode.DEVICE_SCREEN);
+         if(mode != MobileCaptureMode.parse(session.getValueString("captureMode")))
+         {
+            current().screens.remove(session.getValueString("id"));
+         }
          QRecord changes = new QRecord().withValue("id", session.getValueString("id")).withValue("lastSeenAt", Instant.now())
-            .withValue("foreground", foreground).withValue("screenAvailable", available);
+            .withValue("foreground", foreground).withValue("screenAvailable", available).withValue("captureMode", mode.name());
          for(String name : List.of("appName", "processName", "processInstanceId", "stepName", "screenLabel"))
          {
             changes.setValue(name, MobileService.optional(input, name, 200));
@@ -162,6 +167,7 @@ final class MobileSessionService
          response.put("status", "ACTIVE");
          response.put("serverTime", Instant.now().toString());
          response.put("heartbeatIntervalMillis", 5000);
+         response.put("supportedCaptureModes", List.of("APP_CONTENT", "DEVICE_SCREEN"));
          if(available && "APPROVED".equals(MobileService.get(MobileScannersQBitProducer.DEVICE, deviceId).getValueString("status")))
          {
             Map<String, Object> lease = current().screens.activeLease(id);
@@ -311,7 +317,10 @@ final class MobileSessionService
          String device = currentDevice();
          MobileService.requireApproved(device);
          QRecord session = observe(device);
-         if(!Boolean.TRUE.equals(session.getValueBoolean("screenAvailable")) || !Boolean.TRUE.equals(session.getValueBoolean("foreground")))
+         MobileCaptureMode mode = MobileCaptureMode.parse(session.getValueString("captureMode"));
+         if(!Boolean.TRUE.equals(session.getValueBoolean("screenAvailable"))
+            || (mode == MobileCaptureMode.APP_CONTENT && !Boolean.TRUE.equals(session.getValueBoolean("foreground")))
+            || mode != MobileCaptureMode.parse(input.get("captureMode")))
          {
             throw new QPermissionDeniedException("Screen capture is unavailable.");
          }
@@ -354,7 +363,7 @@ final class MobileSessionService
             current().screens.remove(id);
             return new MobileScreenService.View(state, null, null);
          }
-         return current().screens.view(id);
+         return current().screens.view(id, MobileCaptureMode.parse(session.getValueString("captureMode")));
       }
    }
 

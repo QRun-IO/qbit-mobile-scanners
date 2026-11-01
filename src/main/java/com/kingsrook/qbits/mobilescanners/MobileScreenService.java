@@ -53,24 +53,37 @@ final class MobileScreenService
     ***************************************************************************/
    synchronized View view(String sessionId) throws QException
    {
+      return view(sessionId, MobileCaptureMode.APP_CONTENT);
+   }
+
+   /***************************************************************************
+    ** A change in capture scope invalidates every old pixel and lease identity.
+    ***************************************************************************/
+   synchronized View view(String sessionId, MobileCaptureMode mode) throws QException
+   {
       prune();
       Lease lease = leases.get(sessionId);
+      if(lease != null && lease.mode != mode)
+      {
+         leases.remove(sessionId);
+         lease = null;
+      }
       if(lease == null)
       {
          if(leases.size() >= MAX_LEASES)
          {
             throw new QBadRequestException("Too many active screen viewers. Close another view and retry.");
          }
-         lease = new Lease();
+         lease = new Lease(mode);
          leases.put(sessionId, lease);
       }
       lease.expiresAt = clock.instant().plusSeconds(30);
       if(lease.receivedAt == null || lease.receivedAt.plusSeconds(10).isBefore(clock.instant()))
       {
          lease.jpeg = null;
-         return new View("Waiting for a current app screen", null, null);
+         return new View(mode == MobileCaptureMode.DEVICE_SCREEN ? "Waiting for a consented device screen" : "Waiting for a current app screen", null, null);
       }
-      return new View("Live app screen", "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(lease.jpeg), lease.receivedAt);
+      return new View(mode == MobileCaptureMode.DEVICE_SCREEN ? "Live device screen — operator consent" : "Live app screen", "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(lease.jpeg), lease.receivedAt);
    }
 
    /***************************************************************************
@@ -81,7 +94,7 @@ final class MobileScreenService
       prune();
       Lease lease = leases.get(sessionId);
       return lease == null ? null : Map.of("leaseId", lease.id, "expiresAt", lease.expiresAt.toString(), "frameIntervalMillis", 1000,
-         "maxWidth", 640, "maxHeight", 1280, "maxBytes", MAX_BYTES, "nextSequence", lease.sequence + 1);
+         "maxWidth", 640, "maxHeight", 1280, "maxBytes", MAX_BYTES, "nextSequence", lease.sequence + 1, "captureMode", lease.mode.name());
    }
 
    /***************************************************************************
@@ -94,6 +107,10 @@ final class MobileScreenService
       if(lease == null || !lease.id.equals(MobileService.required(input, "leaseId", 36)))
       {
          throw new QPermissionDeniedException("No active screen viewing lease.");
+      }
+      if(MobileCaptureMode.parse(input.get("captureMode")) != lease.mode)
+      {
+         throw new QPermissionDeniedException("Frame capture mode does not match the viewing lease.");
       }
       long sequence = integer(input, "sequence", 0, 9007199254740990L);
       if(sequence <= lease.sequence || (lease.receivedAt != null && lease.receivedAt.plusMillis(750).isAfter(clock.instant())))
@@ -212,10 +229,19 @@ final class MobileScreenService
    private static final class Lease
    {
       private final String id = UUID.randomUUID().toString();
+      private final MobileCaptureMode mode;
       private Instant expiresAt;
       private Instant receivedAt;
       private long sequence = -1;
       private byte[] jpeg;
+
+      /***********************************************************************
+       ** Scope is immutable for this lease.
+       ***********************************************************************/
+      private Lease(MobileCaptureMode mode)
+      {
+         this.mode = mode;
+      }
    }
 
    /***************************************************************************

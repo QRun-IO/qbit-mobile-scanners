@@ -37,7 +37,7 @@ public class MobileSessionScreenWidget extends AbstractWidgetRenderer
       if(view.dataUri() != null)
       {
          data.withBlock(new ImageBlockData().withBlockId("screenFrame")
-            .withValues(new ImageValues().withPath(view.dataUri()).withAlt("Current QQQ Mobile app screen"))
+            .withValues(new ImageValues().withPath(view.dataUri()).withAlt(view.status()))
             .withStyles(new ImageStyles().withWidth("320px").withHeight("auto")));
       }
       return new RenderWidgetOutput(data);

@@ -27,7 +27,7 @@ public class MobileSessionScreenSpec extends MobileDeviceJsonSpec
    {
       return new BasicOperation().withHttpMethod(HttpMethod.POST).withPath(MobileScannersUiApi.PREFIX + "/sessions/current/screen")
          .withOperationId("mobileScannersUploadSessionScreen").withShortSummary("Upload an app screen for a live viewer")
-         .withLongDescription("Requires the current approved device session, screenAvailable=true and an active viewer lease. JPEG decoded size at most 262144 bytes, dimensions at most 640x1280, JSON at most 368640 bytes. Monotonic sequence is scoped to leaseId. Frames are ephemeral and cleared on unavailable capture, expiry or session end; never upload login, password, OS or other-app pixels. A 409 asks the client to refresh heartbeat sequence/rate state.");
+         .withLongDescription("Requires the current approved device session, screenAvailable=true and a mode-matched active viewer lease. Default APP_CONTENT excludes login/password/OS/other-app pixels. Optional DEVICE_SCREEN requires operator system consent for this session. JPEG decoded size at most 262144 bytes, dimensions at most 640x1280, JSON at most 368640 bytes. Sequence is scoped to leaseId. Frames are ephemeral and cleared on unavailable capture, mode change, expiry or session end. A 409 asks the client to refresh heartbeat sequence/rate state.");
    }
 
    /***************************************************************************

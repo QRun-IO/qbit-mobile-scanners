@@ -559,6 +559,38 @@ class MobileScannersTest
    }
 
    /***************************************************************************
+    ** Background eligibility is opt-in and cannot retain a former mode's lease.
+    ***************************************************************************/
+   @Test
+   void deviceScreenModeRequiresExplicitHeartbeatAndAdminDemand() throws Exception
+   {
+      String device = approvedDevice();
+      bind(device);
+      String session = (String) MobileSessionService.heartbeat(Map.of("foreground", false, "screenAvailable", true)).get("sessionId");
+      assertEquals(false, MobileService.get(MobileScannersQBitProducer.SESSION, session).getValueBoolean("screenAvailable"));
+      var deviceState = Map.<String, Object>of("foreground", false, "screenAvailable", true, "captureMode", "DEVICE_SCREEN");
+      assertEquals(false, MobileSessionService.heartbeat(deviceState).containsKey("screenMirror"));
+      assertThrows(QException.class, () -> MobileSessionService.view(session));
+      QContext.init(instance, admin);
+      assertEquals("Waiting for a consented device screen", MobileSessionService.view(session).status());
+      QContext.init(instance, scanner);
+      bind(device);
+      var heartbeat = MobileSessionService.heartbeat(deviceState);
+      assertEquals("DEVICE_SCREEN", ((Map<?, ?>) heartbeat.get("screenMirror")).get("captureMode"));
+      assertThrows(QException.class, () -> MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", true, "captureMode", "INVALID")));
+      assertEquals(false, MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", true)).containsKey("screenMirror"));
+      assertEquals("APP_CONTENT", MobileService.get(MobileScannersQBitProducer.SESSION, session).getValueString("captureMode"));
+      QContext.init(instance, admin);
+      MobileSessionService.end(session, "Test", true);
+      QContext.init(instance, scanner);
+      assertThrows(QException.class, () ->
+      {
+         bind(device);
+         MobileSessionService.heartbeat(deviceState);
+      });
+   }
+
+   /***************************************************************************
     ** Ending a reviewed record does not affect a later or replacement selection.
     ***************************************************************************/
    @Test

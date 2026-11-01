@@ -56,6 +56,7 @@ final class MobileSessionMetadata
          sessions.withField(text(field, 80));
       }
       sessions.withField(text("traceId", 100));
+      sessions.withField(text("captureMode", 20));
       for(String field : List.of("startedAt", "lastSeenAt", "endedAt", "authCleanupAt"))
       {
          sessions.withField(new QFieldMetaData(field, QFieldType.DATE_TIME));
@@ -63,13 +64,13 @@ final class MobileSessionMetadata
       sessions.withField(new QFieldMetaData("foreground", QFieldType.BOOLEAN));
       sessions.withField(new QFieldMetaData("screenAvailable", QFieldType.BOOLEAN));
       sessions.withSection(new QFieldSection("activity", "Session activity", new QIcon("devices"), Tier.T2,
-         List.of("id", "deviceId", "userId", "status", "startedAt", "lastSeenAt", "foreground", "appName", "processName", "processInstanceId", "stepName", "screenLabel", "lastAction", "errorCode", "traceId", "endedAt", "endedBy", "endReason", "screenAvailable", "captureBlockedReason", "authCleanupStatus", "authCleanupAt")));
-      sessions.withSection(new QFieldSection("screen", new QIcon("screen_share"), Tier.T2).withLabel("Live app screen")
+         List.of("id", "deviceId", "userId", "status", "startedAt", "lastSeenAt", "foreground", "appName", "processName", "processInstanceId", "stepName", "screenLabel", "lastAction", "errorCode", "traceId", "endedAt", "endedBy", "endReason", "screenAvailable", "captureMode", "captureBlockedReason", "authCleanupStatus", "authCleanupAt")));
+      sessions.withSection(new QFieldSection("screen", new QIcon("screen_share"), Tier.T2).withLabel("Live screen")
          .withWidgetName(MobileScannersQBitProducer.SESSION_SCREEN));
       instance.addTable(sessions);
       instance.addTable(table(MobileScannersQBitProducer.SESSION_BINDING, "Private Session Bindings", backend, 64)
          .withField(text("sessionId", 36).withIsHidden(true)).withField(text("coreSessionUuid", 200).withIsHidden(true).withIsSensitive(true)));
-      instance.addWidget(new QWidgetMetaData().withName(MobileScannersQBitProducer.SESSION_SCREEN).withLabel("Live app screen")
+      instance.addWidget(new QWidgetMetaData().withName(MobileScannersQBitProducer.SESSION_SCREEN).withLabel("Live screen")
          .withType("block").withCodeReference(new QCodeReference(MobileSessionScreenWidget.class))
          .withDefaultValue("refreshSeconds", 2).withPermissionRules(MobileScannersQBitProducer.rules()));
       QJoinMetaData join = new QJoinMetaData().withName("mobileDeviceSessions").withLeftTable(MobileScannersQBitProducer.DEVICE)
