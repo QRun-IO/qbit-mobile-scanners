@@ -17,6 +17,8 @@ import com.kingsrook.qqq.middleware.javalin.specs.extensions.AbstractJsonEndpoin
 import com.kingsrook.qqq.middleware.javalin.specs.v1.responses.BasicErrorResponseV1;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /*******************************************************************************
@@ -24,6 +26,14 @@ import io.javalin.http.HttpStatus;
  *******************************************************************************/
 abstract class MobileJsonSpec extends AbstractJsonEndpointSpec
 {
+   //////////////////////////////////////////////////////////////////////////////
+   // QLogger adds user identity automatically. Keep boundary diagnostics      //
+   // entirely static without changing authentication context or log settings. //
+   //////////////////////////////////////////////////////////////////////////////
+   private static final Logger LOG = LogManager.getLogger(MobileJsonSpec.class);
+
+
+
    /***************************************************************************
     ** Bound enrollment input before parsing and reject non-JSON payloads.
     ***************************************************************************/
@@ -45,6 +55,8 @@ abstract class MobileJsonSpec extends AbstractJsonEndpointSpec
       return super.buildInput(context);
    }
 
+
+
    /***************************************************************************
     ** Frame upload alone overrides the normal small JSON payload limit.
     ***************************************************************************/
@@ -52,6 +64,8 @@ abstract class MobileJsonSpec extends AbstractJsonEndpointSpec
    {
       return 4096;
    }
+
+
 
    /***************************************************************************
     ** Authentication errors must never expose credential or storage details.
@@ -78,9 +92,12 @@ abstract class MobileJsonSpec extends AbstractJsonEndpointSpec
       }
       else
       {
+         LOG.warn("{\"message\":\"Mobile request failed\",\"category\":\"unexpected-failure\",\"operation\":\"mobile-json\"}");
          QJavalinUtils.respondWithError(context, org.eclipse.jetty.http.HttpStatus.Code.INTERNAL_SERVER_ERROR, "The mobile request could not be completed.");
       }
    }
+
+
 
    /***************************************************************************
     ** All routes use the core machine-readable error envelope.

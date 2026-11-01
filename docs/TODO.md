@@ -1,5 +1,8 @@
 # QQQ Mobile Scanners TODO
 
+- [x] Apply the full scoped standards review corrections and verify server39/demo6 with Checkstyle; see [review](CODING-STANDARDS-REVIEW-2026-11-01.md).
+- [ ] Finish final hosted checks and remaining physical/provider acceptance; source compliance is not production release approval.
+
 - [x] Upgrade the normal local demo to qualified API1.9/mobile1.1 with fresh closed backup, original-data invariants, recovery qualification and live verification of both existing accounts and preserved devices/scans.
 - [x] Implement/review additive extension1.2 whole-device source with explicit Android consent, mode-bound leases and automated controls, preserving1.1 app-content compatibility.
 - [ ] Complete actual Android projection/notification/Home/Stop/lock/rotation/expiry/remote-logout acceptance; normal server remains mobile1.1.
@@ -53,3 +56,7 @@
 - [x] TC22 install and DataWedge acceptance guide written and updated with observed results.
 
 Future scope (not version one): offline queue, camera-based barcode decoding, kiosk/MDM provisioning, broader native screen coverage, fleet rollout. Optional record-photo capture is implemented; its remaining qualification is tracked above.
+
+- [ ] Complete the optional semantic API1.10 provider-logout capability and client AppAuth end-session handling; keep local cleanup reliable on provider failure, qualify real A-to-B handoff, and apply the user's pending sign-out policy. Existing prompt-only retained-SSO handoff is not accepted.
+
+- [ ] Validate native OIDC ID-token claims and original request nonce before creating the QQQ session. Review confirmed request continuity and S256 PKCE exist, but expected nonce is not currently carried to the server exchange. Add explicit semantic capability/wire compatibility and rejection tests; retain real-provider nonce acceptance as pending.

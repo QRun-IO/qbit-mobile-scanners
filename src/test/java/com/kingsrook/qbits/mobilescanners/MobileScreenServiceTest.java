@@ -55,6 +55,8 @@ class MobileScreenServiceTest
       assertThrows(QException.class, () -> MobileCaptureMode.parse("UNKNOWN"));
    }
 
+
+
    /***************************************************************************
     ** A viewer lease is required, and closing it eventually ends capture demand.
     ***************************************************************************/
@@ -77,6 +79,8 @@ class MobileScreenServiceTest
       assertNull(screens.activeLease("session"));
       assertThrows(QException.class, () -> screens.upload("session", frame((String) lease.get("leaseId"), 1)));
    }
+
+
 
    /***************************************************************************
     ** Oversize encodings and misleading image dimensions fail before retention.
@@ -101,6 +105,8 @@ class MobileScreenServiceTest
       assertNull(screens.view("session").dataUri());
    }
 
+
+
    /***************************************************************************
     ** Sequence is scoped to the lease and server limits prevent upload flooding.
     ***************************************************************************/
@@ -124,6 +130,8 @@ class MobileScreenServiceTest
       assertNull(screens.view("session").dataUri());
    }
 
+
+
    /***************************************************************************
     ** Generated non-user pixels keep test artifacts free of screen data.
     ***************************************************************************/
@@ -135,12 +143,16 @@ class MobileScreenServiceTest
          "width", 2, "height", 2, "mimeType", "image/jpeg", "imageBase64", Base64.getEncoder().encodeToString(output.toByteArray())));
    }
 
+
+
    /***************************************************************************
     ** Deterministic expiry tests without sleeping.
     ***************************************************************************/
    private static class MutableClock extends Clock
    {
       private Instant now = Instant.parse("2026-10-30T12:00:00Z");
+
+
 
       /***********************************************************************
        ** Advance only this test's clock.
@@ -149,6 +161,8 @@ class MobileScreenServiceTest
       {
          now = now.plusSeconds(seconds);
       }
+
+
 
       /***********************************************************************
        ** Server time is always UTC.
@@ -159,6 +173,8 @@ class MobileScreenServiceTest
          return ZoneOffset.UTC;
       }
 
+
+
       /***********************************************************************
        ** Zone has no effect on instant comparisons.
        ***********************************************************************/
@@ -167,6 +183,8 @@ class MobileScreenServiceTest
       {
          return this;
       }
+
+
 
       /***********************************************************************
        ** Return the explicitly controlled instant.

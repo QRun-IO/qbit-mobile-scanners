@@ -21,6 +21,8 @@ public final class MobileCaptureIdentityProvider implements CaptureIdentityProvi
 {
    public static final String PROVIDER_KEY = "qqq-mobile-scanners/v1";
 
+
+
    /***************************************************************************
     ** Attribution comes exclusively from the scanner's verified server context.
     ***************************************************************************/
@@ -30,6 +32,8 @@ public final class MobileCaptureIdentityProvider implements CaptureIdentityProvi
       return MobileDeviceAuthorization.captureCurrent().map(identity -> new CaptureIdentity(PROVIDER_KEY,
          identity.actorId(), identity.deviceId(), identity.publicSessionId()));
    }
+
+
 
    /***************************************************************************
     ** Persisted attribution cannot confer authority or select another sign-in.
@@ -43,6 +47,8 @@ public final class MobileCaptureIdentityProvider implements CaptureIdentityProvi
       }
       MobileDeviceAuthorization.revalidate(new MobileDeviceAuthorization.Identity(identity.actorId(), identity.deviceId(), identity.publicSessionId()));
    }
+
+
 
    /***************************************************************************
     ** Hold verified local authority through Record Files and attachment commits.

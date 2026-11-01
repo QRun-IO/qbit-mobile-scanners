@@ -19,12 +19,16 @@ public final class MobileScannersUiApi
 {
    public static final String PREFIX = "/qbit/mobile-scanners";
 
+
+
    /***************************************************************************
     ** Utility class.
     ***************************************************************************/
    private MobileScannersUiApi()
    {
    }
+
+
 
    /***************************************************************************
     ** Register the independently versioned contract with the host UI API.
@@ -34,6 +38,8 @@ public final class MobileScannersUiApi
       ClientChannelsMetaData.ofOrWithNew(instance).withChannel("android", "Native Android client");
       MiddlewareSpecExtensionsMetaData.ofOrWithNew(instance).withExtension(extension());
    }
+
+
 
    /***************************************************************************
     ** The same specs produce runtime routes, discovery and merged OpenAPI.

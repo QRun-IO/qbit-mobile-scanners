@@ -27,6 +27,8 @@ public class MobileStatusSpec extends MobileJsonSpec
          .withLongDescription("Public connectivity only. Client must separately show authentication and device approval status.");
    }
 
+
+
    /***************************************************************************
     ** Connectivity remains visible before login and after credentials expire.
     ***************************************************************************/
@@ -36,6 +38,8 @@ public class MobileStatusSpec extends MobileJsonSpec
       return false;
    }
 
+
+
    /***************************************************************************
     ** Typed heartbeat response.
     ***************************************************************************/
@@ -44,6 +48,8 @@ public class MobileStatusSpec extends MobileJsonSpec
    {
       return "MobileScannersStatusV1";
    }
+
+
 
    /***************************************************************************
     ** A successful response confirms this server can answer requests.

@@ -100,6 +100,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
    private String deviceId;
    private String deviceToken;
 
+
+
    /***************************************************************************
     ** Keep the file database open between HTTP requests, avoiding reopen overhead.
     ***************************************************************************/
@@ -111,6 +113,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       backend.setJdbcUrl(jdbc);
       return backend;
    }
+
+
 
    /***************************************************************************
     ** Install both independent qbits and the optional provider on actual routes.
@@ -208,6 +212,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       server.start();
    }
 
+
+
    /***************************************************************************
     ** Fixture metadata never delegates record-target inference to the client.
     ***************************************************************************/
@@ -222,6 +228,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          return new RenderWidgetOutput(new RecordFilesCaptureWidgetData("document", "1", "Document photos", "Capture or choose a photo for the first fixture document."));
       }
    }
+
+
 
    /***************************************************************************
     ** Native process values contain the actual widget before the frontend step.
@@ -241,6 +249,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          output.addValue("mobileRecordPhotos", new RecordFilesCaptureWidgetData("document", "1", "Document photos", "Capture or choose a photo for the first fixture document."));
       }
    }
+
+
 
    /***************************************************************************
     ** Fixture capture processes require the same verified device authority.
@@ -266,6 +276,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          }
       }
    }
+
+
 
    /***************************************************************************
     ** Dedicated local consumer fixture; caller must provide a private output path.
@@ -300,6 +312,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       }
    }
 
+
+
    /***************************************************************************
     ** Stop only this isolated fixture; never operate the shared demo or handheld.
     ***************************************************************************/
@@ -313,6 +327,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       client.close();
       MobilePermissions.REQUEST_DEVICE.remove();
    }
+
+
 
    /***************************************************************************
     ** Receipt, ordered association and captured identity survive fresh DB reads.
@@ -389,6 +405,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       Files.writeString(java.nio.file.Path.of("target", "mobile-upload-receipt.json"), receipt.toPrettyString());
    }
 
+
+
    /***************************************************************************
     ** Different actors, missing device proof and revocation cannot resume intake.
     ***************************************************************************/
@@ -416,6 +434,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       QContext.init(instance, authenticated(scanner));
       assertTrue(files.listForRecord("document", "1").isEmpty());
    }
+
+
 
    /***************************************************************************
     ** Approved devices still obey tenant, configured parent and current grants.
@@ -451,6 +471,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       assertTrue(files.listForRecord("document", "1").isEmpty());
       assertFalse(Files.exists(DiskAttachmentStorage.directory.resolve("canonical")), "Denied finalization must not write retained bytes.");
    }
+
+
 
    /***************************************************************************
     ** Public identity values cannot substitute for the verified private binding.
@@ -522,6 +544,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       QContext.init(instance, bound);
       assertThrows(QException.class, () -> provider.revalidate(captured));
    }
+
+
 
    /***************************************************************************
     ** Real revoke/end cannot cross owner intake, association or receipt commits.
@@ -598,12 +622,16 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       assertEquals(expectedRetained, retainedCount, "Rolled-back registration stays absent; committed originals remain retained.");
    }
 
+
+
    /***************************************************************************
     ** Actual password hashing and QQQ table session validation with fixture roles.
     ***************************************************************************/
    public static class ObservedAttachmentLifecycle extends com.kingsrook.qbits.recordfiles.lifecycle.RecordFilesAttachmentLifecycle
    {
       private static final ThreadLocal<com.kingsrook.qbits.recordfiles.audit.AuditTrail> audit = new ThreadLocal<>();
+
+
 
       /***********************************************************************
        ** Observe the actual owner registration transaction, preserving policy.
@@ -622,6 +650,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          }
       }
 
+
+
       /***********************************************************************
        ** Resolve the same installed configuration as the production lifecycle.
        ***********************************************************************/
@@ -631,12 +661,16 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       }
    }
 
+
+
    /***************************************************************************
     ** Real fixture authentication; no test identity bypass.
     ***************************************************************************/
    public static class Authentication extends TableBasedAuthenticationModule
    {
       private static volatile Set<String> deniedPermissions = Set.of();
+
+
 
       /***********************************************************************
        ** Server roles are assigned only after password/session validation.
@@ -646,6 +680,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       {
          return grant(super.createSession(instance, context));
       }
+
+
 
       /***********************************************************************
        ** Native asynchronous actions retain the same server-owned permissions.
@@ -660,6 +696,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          }
          return valid;
       }
+
+
 
       /***********************************************************************
        ** Request fields cannot supply role or tenant grants.
@@ -683,6 +721,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       }
    }
 
+
+
    /***************************************************************************
     ** Direct adapter checks use a real validated table-backed login session.
     ***************************************************************************/
@@ -690,6 +730,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
    {
       return new Authentication().createSession(instance, Map.of(TableBasedAuthenticationModule.SESSION_UUID_KEY, cookie));
    }
+
+
 
    /***************************************************************************
     ** Login uses the same versioned password endpoint as the handheld.
@@ -705,6 +747,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          .filter(cookie -> "sessionUUID".equals(cookie.getName())).findFirst().orElseThrow().getValue();
    }
 
+
+
    /***************************************************************************
     ** Device identity is created by enrollment and returned only at that boundary.
     ***************************************************************************/
@@ -718,6 +762,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       deviceToken = enrolled.path("deviceToken").asText();
    }
 
+
+
    /***************************************************************************
     ** Native process selection starts from a record and requires confirmation.
     ***************************************************************************/
@@ -728,6 +774,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       assertFalse(result.has("error"), "Approval process must succeed.");
    }
 
+
+
    /***************************************************************************
     ** Multipart native process envelope and bounded async completion polling.
     ***************************************************************************/
@@ -735,6 +783,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
    {
       return processForm(session, process, suffix, values, false);
    }
+
+
 
    /***************************************************************************
     ** Device-bound frontend widgets use the same process API as admin actions.
@@ -764,6 +814,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       return result;
    }
 
+
+
    /***************************************************************************
     ** Immutable manifest has no device, user or session identity fields.
     ***************************************************************************/
@@ -773,6 +825,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          "items", List.of(Map.of("itemId", "20000000-0000-0000-0000-000000000001", "position", 0, "fileName", "fixture.pdf", "declaredMediaType", "application/pdf",
             "sizeBytes", CONTENT.length, "sha256", UploadManifest.hash(CONTENT), "origin", "UPLOAD"))));
    }
+
+
 
    /***************************************************************************
     ** Headers alone carry authentication; no credentials enter test diagnostics.
@@ -795,6 +849,8 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
       });
       return client.send(request.method(method, bytes == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(bytes)).build(), HttpResponse.BodyHandlers.ofString());
    }
+
+
 
    /***************************************************************************
     ** Report only status on failure, never credentials or arbitrary response data.

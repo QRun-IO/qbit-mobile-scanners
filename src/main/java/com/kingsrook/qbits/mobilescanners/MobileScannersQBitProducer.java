@@ -50,6 +50,8 @@ public class MobileScannersQBitProducer implements QBitProducer
    public static final String SESSION_SCREEN = "mobileSessionScreen";
    private MobileScannersQBitConfig config;
 
+
+
    /***************************************************************************
     ** Configure the storage backend.
     ***************************************************************************/
@@ -58,6 +60,8 @@ public class MobileScannersQBitProducer implements QBitProducer
       this.config = config;
       return this;
    }
+
+
 
    /***************************************************************************
     ** Install once per QInstance; names are intentionally stable for clients.
@@ -127,6 +131,8 @@ public class MobileScannersQBitProducer implements QBitProducer
             .withTables(List.of(DEVICE, SESSION, SCAN)).withProcesses(List.of(APPROVE, REVOKE, SESSION_END))));
    }
 
+
+
    /***************************************************************************
     ** Every table action is guarded, including generic UI API mutations.
     ***************************************************************************/
@@ -135,6 +141,8 @@ public class MobileScannersQBitProducer implements QBitProducer
       return new QTableMetaData().withName(name).withLabel(label).withBackendName(config.getBackendName())
          .withPrimaryKeyField("id").withField(text("id", idLength).withIsRequired(true)).withPermissionRules(rules());
    }
+
+
 
    /***************************************************************************
     ** Common guarded metadata rules.
@@ -145,6 +153,8 @@ public class MobileScannersQBitProducer implements QBitProducer
          .withCustomPermissionChecker(new QCodeReference(MobilePermissions.class));
    }
 
+
+
    /***************************************************************************
     ** Bound all text before it reaches persistence.
     ***************************************************************************/
@@ -152,6 +162,8 @@ public class MobileScannersQBitProducer implements QBitProducer
    {
       return new QFieldMetaData(name, QFieldType.STRING).withMaxLength(length);
    }
+
+
 
    /***************************************************************************
     ** Native timestamp metadata.

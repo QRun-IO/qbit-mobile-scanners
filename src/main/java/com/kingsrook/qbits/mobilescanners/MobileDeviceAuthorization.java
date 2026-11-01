@@ -28,12 +28,16 @@ public final class MobileDeviceAuthorization
    {
    }
 
+
+
    /***************************************************************************
     ** Public identifiers only; no authentication UUID or device secret escapes.
     ***************************************************************************/
    public record Identity(String actorId, String deviceId, String publicSessionId)
    {
    }
+
+
 
    /***************************************************************************
     ** Capture only a verified request or its server-created asynchronous session.
@@ -89,6 +93,8 @@ public final class MobileDeviceAuthorization
       });
    }
 
+
+
    /***************************************************************************
     ** A persisted/public DTO must still match this authenticated private binding.
     ***************************************************************************/
@@ -96,6 +102,8 @@ public final class MobileDeviceAuthorization
    {
       executeAuthorized(identity, () -> null);
    }
+
+
 
    /***************************************************************************
     ** Keep local end/revoke and a protected operation under the same instance lock.
@@ -109,6 +117,8 @@ public final class MobileDeviceAuthorization
       }
       return executeAuthorized(Optional.of(identity), operation);
    }
+
+
 
    /***************************************************************************
     ** Empty attribution is allowed only while the authenticated session is unbound.
@@ -126,6 +136,8 @@ public final class MobileDeviceAuthorization
          return operation.run();
       });
    }
+
+
 
    /***************************************************************************
     ** Callback runs while local mobile authorization cannot be changed.

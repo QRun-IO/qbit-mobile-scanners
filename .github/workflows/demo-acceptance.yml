@@ -22,7 +22,12 @@ jobs:
         shell: pwsh
         run: |
           Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Scope CurrentUser -Force
-          Invoke-ScriptAnalyzer -Path scripts -Recurse -Settings scripts/PSScriptAnalyzerSettings.psd1 -EnableExit
+          $scriptPaths = @(Get-ChildItem -LiteralPath scripts, integrations/record-files -File -Filter '*.ps1')
+          $findings = @($scriptPaths | ForEach-Object {
+            Invoke-ScriptAnalyzer -Path $_.FullName -Settings scripts/PSScriptAnalyzerSettings.psd1
+          })
+          $findings | Format-Table -AutoSize
+          if($findings.Count -gt 0) { throw "PowerShell analysis reported $($findings.Count) findings." }
   verify:
     name: Verify demo HTTP contract
     runs-on: ubuntu-24.04

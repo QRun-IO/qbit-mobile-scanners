@@ -32,6 +32,8 @@ final class MobileScreenService
    private final Map<String, Lease> leases = new HashMap<>();
    private final Clock clock;
 
+
+
    /***************************************************************************
     ** Production clock.
     ***************************************************************************/
@@ -39,6 +41,8 @@ final class MobileScreenService
    {
       this(Clock.systemUTC());
    }
+
+
 
    /***************************************************************************
     ** Explicit clock makes expiry behavior independently testable.
@@ -48,6 +52,8 @@ final class MobileScreenService
       this.clock = clock;
    }
 
+
+
    /***************************************************************************
     ** Refreshing an authorized visible admin widget renews capture demand.
     ***************************************************************************/
@@ -55,6 +61,8 @@ final class MobileScreenService
    {
       return view(sessionId, MobileCaptureMode.APP_CONTENT);
    }
+
+
 
    /***************************************************************************
     ** A change in capture scope invalidates every old pixel and lease identity.
@@ -86,6 +94,8 @@ final class MobileScreenService
       return new View(mode == MobileCaptureMode.DEVICE_SCREEN ? "Live device screen — operator consent" : "Live app screen", "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(lease.jpeg), lease.receivedAt);
    }
 
+
+
    /***************************************************************************
     ** Return only current demand; the server clock defines lease lifetime.
     ***************************************************************************/
@@ -96,6 +106,8 @@ final class MobileScreenService
       return lease == null ? null : Map.of("leaseId", lease.id, "expiresAt", lease.expiresAt.toString(), "frameIntervalMillis", 1000,
          "maxWidth", 640, "maxHeight", 1280, "maxBytes", MAX_BYTES, "nextSequence", lease.sequence + 1, "captureMode", lease.mode.name());
    }
+
+
 
    /***************************************************************************
     ** Reject oversize encoding before decoding and dimensions before pixels.
@@ -151,6 +163,8 @@ final class MobileScreenService
       lease.receivedAt = clock.instant();
    }
 
+
+
    /***************************************************************************
     ** Image metadata is checked before allocating a bounded decoded raster.
     ***************************************************************************/
@@ -187,6 +201,8 @@ final class MobileScreenService
       }
    }
 
+
+
    /***************************************************************************
     ** Ending/revoking viewing drops all retained pixels and capture demand.
     ***************************************************************************/
@@ -195,6 +211,8 @@ final class MobileScreenService
       leases.remove(id);
    }
 
+
+
    /***************************************************************************
     ** Expiry is enforced on reads and writes, even without a cleanup scheduler.
     ***************************************************************************/
@@ -202,6 +220,8 @@ final class MobileScreenService
    {
       leases.values().removeIf(lease -> lease.expiresAt == null || !lease.expiresAt.isAfter(clock.instant()));
    }
+
+
 
    /***************************************************************************
     ** Preserve integer semantics and reject overflow/floating-point coercion.
@@ -216,12 +236,16 @@ final class MobileScreenService
       return number.longValue();
    }
 
+
+
    /***************************************************************************
     ** A safe widget payload containing only the most recent eligible image.
     ***************************************************************************/
    record View(String status, String dataUri, Instant receivedAt)
    {
    }
+
+
 
    /***************************************************************************
     ** At most one frame per active session, at most 64 sessions per instance.
@@ -235,6 +259,8 @@ final class MobileScreenService
       private long sequence = -1;
       private byte[] jpeg;
 
+
+
       /***********************************************************************
        ** Scope is immutable for this lease.
        ***********************************************************************/
@@ -243,6 +269,8 @@ final class MobileScreenService
          this.mode = mode;
       }
    }
+
+
 
    /***************************************************************************
     ** Retry after the next heartbeat sequence/rate synchronization.

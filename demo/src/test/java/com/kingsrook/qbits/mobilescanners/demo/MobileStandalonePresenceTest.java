@@ -43,6 +43,8 @@ class MobileStandalonePresenceTest
    private String deviceId;
    private String deviceToken;
 
+
+
    /***************************************************************************
     ** A non-UTC child JVM must keep receiving viewing leases after fifteen seconds.
     ***************************************************************************/
@@ -121,6 +123,8 @@ class MobileStandalonePresenceTest
       }
    }
 
+
+
    /***************************************************************************
     ** Bound startup without printing child environment variables or responses.
     ***************************************************************************/
@@ -147,6 +151,8 @@ class MobileStandalonePresenceTest
       throw new AssertionError("Standalone demo startup timed out");
    }
 
+
+
    /***************************************************************************
     ** Passwords remain exclusively in the request header and child environment.
     ***************************************************************************/
@@ -159,6 +165,8 @@ class MobileStandalonePresenceTest
       return response.headers().allValues("Set-Cookie").stream().flatMap(value -> HttpCookie.parse(value).stream())
          .filter(cookie -> "sessionUUID".equals(cookie.getName())).findFirst().orElseThrow().getValue();
    }
+
+
 
    /***************************************************************************
     ** Browser requests omit the native channel and device headers deliberately.
@@ -181,6 +189,8 @@ class MobileStandalonePresenceTest
       return builder;
    }
 
+
+
    /***************************************************************************
     ** Use the ordinary versioned API; never print credential-bearing bodies.
     ***************************************************************************/
@@ -191,6 +201,8 @@ class MobileStandalonePresenceTest
       assertTrue(response.statusCode() == 200 || response.statusCode() == 201, "Standalone JSON operation failed: " + path + " status=" + response.statusCode());
       return new JSONObject(response.body());
    }
+
+
 
    /***************************************************************************
     ** Drive the real approval process, including a bounded async job handoff.

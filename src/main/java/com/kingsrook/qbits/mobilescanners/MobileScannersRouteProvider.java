@@ -9,6 +9,8 @@ package com.kingsrook.qbits.mobilescanners;
 import java.util.Set;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QAuthenticationException;
+import com.kingsrook.qqq.backend.core.exceptions.QBadRequestException;
+import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.middleware.javalin.QJavalinRouteProviderInterface;
@@ -17,6 +19,8 @@ import com.kingsrook.qqq.middleware.javalin.executors.ExecutorSessionUtils;
 import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /*******************************************************************************
@@ -24,9 +28,17 @@ import io.javalin.http.Context;
  *******************************************************************************/
 public class MobileScannersRouteProvider implements QJavalinRouteProviderInterface
 {
+   //////////////////////////////////////////////////////////////////////////////
+   // QLogger adds user identity automatically. Keep boundary diagnostics      //
+   // entirely static without changing authentication context or log settings. //
+   //////////////////////////////////////////////////////////////////////////////
+   private static final Logger LOG = LogManager.getLogger(MobileScannersRouteProvider.class);
+
    public static final String DEVICE_HEADER = "X-QQQ-Device-Id";
    public static final String TOKEN_HEADER = "X-QQQ-Device-Token";
    private QInstance instance;
+
+
 
    /***************************************************************************
     ** Install on the same QJavalinServer that serves native QQQ routes.
@@ -36,6 +48,8 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
       this.instance = instance;
    }
 
+
+
    /***************************************************************************
     ** Support host metadata refresh.
     ***************************************************************************/
@@ -44,6 +58,8 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
    {
       this.instance = instance;
    }
+
+
 
    /***************************************************************************
     ** Native metadata, widget and process calls carry the same device headers.
@@ -57,6 +73,8 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
          ApiBuilder.after("/qqq/*", context -> MobilePermissions.REQUEST_DEVICE.remove());
       };
    }
+
+
 
    /***************************************************************************
     ** Verify credentials before native handlers; authentication remains QQQ's.
@@ -121,6 +139,10 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
       }
       catch(Exception e)
       {
+         if(!(e instanceof QPermissionDeniedException) && !(e instanceof QBadRequestException))
+         {
+            LOG.warn("{\"message\":\"Device authorization failed\",\"category\":\"unexpected-failure\",\"operation\":\"bind-device\"}");
+         }
          context.contentType("application/json");
          QJavalinUtils.respondWithError(context, org.eclipse.jetty.http.HttpStatus.Code.FORBIDDEN, "Invalid device credential.");
          context.skipRemainingHandlers();

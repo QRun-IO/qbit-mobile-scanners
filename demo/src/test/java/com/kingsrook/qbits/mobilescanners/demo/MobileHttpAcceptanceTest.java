@@ -51,6 +51,8 @@ class MobileHttpAcceptanceTest
    @TempDir
    private Path temporaryDirectory;
 
+
+
    /*******************************************************************************
     ** Each isolated server must resolve its own backend rather than a prior cache.
     *******************************************************************************/
@@ -357,6 +359,7 @@ class MobileHttpAcceptanceTest
    }
 
 
+
    /*******************************************************************************
     ** Foreground heartbeats must not starve complete Android metadata responses.
     *******************************************************************************/
@@ -420,6 +423,7 @@ class MobileHttpAcceptanceTest
          }
       }
    }
+
 
 
    /*******************************************************************************
@@ -504,6 +508,7 @@ class MobileHttpAcceptanceTest
       assertEquals(401, request("GET", "/qqq/v1/metaData", scanner, null, false).statusCode());
       return login("scanner", password);
    }
+
 
 
    /*******************************************************************************

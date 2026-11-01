@@ -25,6 +25,8 @@ public final class MobileScannersSchemas
    {
    }
 
+
+
    /***************************************************************************
     ** Shared components are also merged into the core UI API OpenAPI document.
     ***************************************************************************/
@@ -58,6 +60,8 @@ public final class MobileScannersSchemas
       return schemas;
    }
 
+
+
    /***************************************************************************
     ** Explicit object properties permit future additive fields.
     ***************************************************************************/
@@ -65,6 +69,8 @@ public final class MobileScannersSchemas
    {
       return new RequiredObjectSchema(List.of(required)).withType(Type.OBJECT).withDescription(description).withProperties(new TreeMap<>(properties));
    }
+
+
 
    /***************************************************************************
     ** Bounded strings retain their native wire type.
@@ -74,6 +80,8 @@ public final class MobileScannersSchemas
       return new Schema().withType(Type.STRING).withMaxLength(maximum);
    }
 
+
+
    /***************************************************************************
     ** Canonical installation and event identifiers.
     ***************************************************************************/
@@ -81,6 +89,8 @@ public final class MobileScannersSchemas
    {
       return text(36).withFormat("uuid");
    }
+
+
 
    /***************************************************************************
     ** Unknown future device states must be treated as unapproved by clients.
@@ -90,6 +100,8 @@ public final class MobileScannersSchemas
       return text(200).withEnumValues(List.of("PENDING", "APPROVED", "REVOKED"));
    }
 
+
+
    /***************************************************************************
     ** Link reusable versioned components.
     ***************************************************************************/
@@ -98,12 +110,16 @@ public final class MobileScannersSchemas
       return new Schema().withRefToSchema(name);
    }
 
+
+
    /***************************************************************************
     ** RC20's Schema lacks required; expose the standard OpenAPI keyword.
     ***************************************************************************/
    public static class RequiredObjectSchema extends Schema
    {
       private final List<String> required;
+
+
 
       /***********************************************************************
        ** Bind the required properties of this versioned object.
@@ -113,6 +129,8 @@ public final class MobileScannersSchemas
          this.required = required;
       }
 
+
+
       /***********************************************************************
        ** Serialized by the same Jackson mapper as the core schema fields.
        ***********************************************************************/
@@ -121,6 +139,8 @@ public final class MobileScannersSchemas
          return required;
       }
    }
+
+
 
    /***************************************************************************
     ** Standard numeric bounds missing from RC20's base Schema model.
@@ -134,6 +154,8 @@ public final class MobileScannersSchemas
       {
          return 1;
       }
+
+
 
       /***********************************************************************
        ** Never exceed the persistence and process input limit.

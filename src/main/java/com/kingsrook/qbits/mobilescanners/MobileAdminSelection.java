@@ -75,6 +75,8 @@ final class MobileAdminSelection
          new QFieldMetaData(idField, QFieldType.STRING).withLabel("Record IDs").withMaxLength(3700).withIsHidden(true).withIsRequired(false)));
    }
 
+
+
    /***************************************************************************
     ** Native select-all/first-N filters become a fixed, bounded record snapshot.
     ***************************************************************************/
@@ -101,6 +103,8 @@ final class MobileAdminSelection
       }
       return resolve(String.join(",", records.stream().map(record -> record.getValueString("id")).toList()), selectedTable);
    }
+
+
 
    /***************************************************************************
     ** Validate the entire bounded selection before any record is changed.

@@ -48,6 +48,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
    private final RecordFilesEventType eventType;
    private final boolean failBeforeCommit;
 
+
+
    /***************************************************************************
     ** Use actual administrator approval/session termination under its own context.
     ***************************************************************************/
@@ -84,6 +86,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
       }, "mobile-authorization-terminator");
    }
 
+
+
    /***************************************************************************
     ** Capture remains the production trust boundary.
     ***************************************************************************/
@@ -93,6 +97,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
       return delegate.capture();
    }
 
+
+
    /***************************************************************************
     ** Revalidation remains the production trust boundary.
     ***************************************************************************/
@@ -101,6 +107,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
    {
       delegate.revalidate(identity);
    }
+
+
 
    /***************************************************************************
     ** Inspect an independent SQL connection before the production guard returns.
@@ -138,6 +146,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
          }
       }
    }
+
+
 
    /***************************************************************************
     ** Pause after an actual transactional event insert, before its owner commit.
@@ -177,6 +187,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
       };
    }
 
+
+
    /***************************************************************************
     ** Monitor ownership proves contention without assuming an elapsed delay.
     ***************************************************************************/
@@ -197,6 +209,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
       while(System.nanoTime() < deadline && terminator.isAlive());
       throw new AssertionError("Administrator termination did not block on the active mobile authorization guard.");
    }
+
+
 
    /***************************************************************************
     ** Read committed state independently of QContext and its transaction.
@@ -219,6 +233,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
       }
    }
 
+
+
    /***************************************************************************
     ** Force committed revocation to precede any subsequent finalizer operation.
     ***************************************************************************/
@@ -236,6 +252,8 @@ final class MobileAuthorizationCommitProbe implements CaptureIdentityProvider
       assertFalse(terminator.isAlive(), "Guard release must permit administrator termination.");
       assertNull(terminationFailure.get(), "Administrator termination must commit successfully.");
    }
+
+
 
    /***************************************************************************
     ** Every parameterized case must reach the intended commit or rollback seam.

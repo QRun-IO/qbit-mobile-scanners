@@ -1,0 +1,9 @@
+# Mobile scanner server standards review
+
+Scope: all 52 maintained Java sources and associated first-party scripts/configuration. Archived acceptance evidence and generated/vendor files retain their separate provenance.
+
+Corrections add missing copyright/SPDX notices, required member spacing and script help/style, and enforce the existing PowerShell analysis policy in CI. Unexpected route/binding/provider-cleanup failures now emit fixed structured warning categories through the existing logging backend. Messages contain no exception text, credentials, user identifiers, scan values or location. Direct backend logging deliberately avoids automatic user enrichment at this sensitive boundary.
+
+The optional test attachment fixture now reads file metadata before opening its stream, preventing a resource leak if metadata lookup fails. Six PowerShell scripts pass analysis with zero findings, and the isolated-path regression passes. Fresh enabled Checkstyle, clean compilation, 39 server tests and six real HTTP demo tests pass against the qualified private API 1.10 dependencies. All 18 optional Record Files consumer cases also pass, for 63 tests with no failures, errors or skips. Evidence is retained in the private qqq-server-standards-b183343407ca426b9655fe44303c97f6 snapshot. These checks do not qualify the files owner's entire release.
+
+The review does not replace real Android projection, camera/gallery, GPS-fix, provider/logout, lifecycle/retry acceptance or deployment configuration checks. Release 1.0 remains incomplete until those gates are satisfied; production signing/distribution remains the owner's final step.

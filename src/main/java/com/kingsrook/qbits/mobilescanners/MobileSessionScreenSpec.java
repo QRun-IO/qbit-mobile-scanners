@@ -30,6 +30,8 @@ public class MobileSessionScreenSpec extends MobileDeviceJsonSpec
          .withLongDescription("Requires the current approved device session, screenAvailable=true and a mode-matched active viewer lease. Default APP_CONTENT excludes login/password/OS/other-app pixels. Optional DEVICE_SCREEN requires operator system consent for this session. JPEG decoded size at most 262144 bytes, dimensions at most 640x1280, JSON at most 368640 bytes. Sequence is scoped to leaseId. Frames are ephemeral and cleared on unavailable capture, mode change, expiry or session end. A 409 asks the client to refresh heartbeat sequence/rate state.");
    }
 
+
+
    /***************************************************************************
     ** No payload is returned on success.
     ***************************************************************************/
@@ -38,6 +40,8 @@ public class MobileSessionScreenSpec extends MobileDeviceJsonSpec
    {
       return null;
    }
+
+
 
    /***************************************************************************
     ** Typed bounded JPEG document.
@@ -48,6 +52,8 @@ public class MobileSessionScreenSpec extends MobileDeviceJsonSpec
       return new Schema().withRefToSchema("MobileScannersScreenRequestV1");
    }
 
+
+
    /***************************************************************************
     ** The sole larger JSON operation has a strict total byte limit.
     ***************************************************************************/
@@ -56,6 +62,8 @@ public class MobileSessionScreenSpec extends MobileDeviceJsonSpec
    {
       return 368640;
    }
+
+
 
    /***************************************************************************
     ** Match runtime's empty success response in the generated contract.
@@ -66,6 +74,8 @@ public class MobileSessionScreenSpec extends MobileDeviceJsonSpec
       return new BasicResponse(HttpStatus.NO_CONTENT, "Current frame accepted", null);
    }
 
+
+
    /***************************************************************************
     ** Avoid serializing image data or a fabricated JSON success body.
     ***************************************************************************/
@@ -74,6 +84,8 @@ public class MobileSessionScreenSpec extends MobileDeviceJsonSpec
    {
       context.status(HttpStatus.NO_CONTENT).result("");
    }
+
+
 
    /***************************************************************************
     ** Permission, bounds and sequence are validated before retaining a frame.

@@ -41,6 +41,8 @@ public class MobileDeviceOnline extends AbstractPostQueryCustomizer implements V
       }
    }
 
+
+
    /***************************************************************************
     ** Every read derives presence from the last authenticated server receipt.
     ***************************************************************************/
@@ -55,6 +57,8 @@ public class MobileDeviceOnline extends AbstractPostQueryCustomizer implements V
       }
       return records;
    }
+
+
 
    /***************************************************************************
     ** Database query/count selection uses exactly the same last-seen boundary.
@@ -89,6 +93,8 @@ public class MobileDeviceOnline extends AbstractPostQueryCustomizer implements V
       return new QQueryFilter().withBooleanOperator(QQueryFilter.BooleanOperator.OR)
          .withCriteria("lastSeenAt", QCriteriaOperator.LESS_THAN, cutoff).withCriteria("lastSeenAt", QCriteriaOperator.IS_BLANK);
    }
+
+
 
    /***************************************************************************
     ** Free-text search does not infer a device connectivity filter.

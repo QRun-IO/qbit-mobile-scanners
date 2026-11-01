@@ -50,6 +50,8 @@ public class MobileScannersDemo extends AbstractQQQApplication
       this.jdbcUrl = jdbcUrl;
    }
 
+
+
    /*******************************************************************************
     ** Keep H2 open between QQQ connections; normal JVM shutdown flushes the file.
     *******************************************************************************/
@@ -57,6 +59,8 @@ public class MobileScannersDemo extends AbstractQQQApplication
    {
       return "jdbc:h2:file:" + database.toAbsolutePath().normalize().toString().replace('\\', '/') + ";DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1";
    }
+
+
 
    /*******************************************************************************
     ** Configure the same public appearance for every client of this demo server.

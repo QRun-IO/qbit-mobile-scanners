@@ -30,6 +30,8 @@ public class MobileBrandingSpec extends MobileJsonSpec
          .withLongDescription("Public appearance data; ignores stale user and device credentials. Never includes private configuration.");
    }
 
+
+
    /***************************************************************************
     ** Login screens also need appearance data.
     ***************************************************************************/
@@ -38,6 +40,8 @@ public class MobileBrandingSpec extends MobileJsonSpec
    {
       return false;
    }
+
+
 
    /***************************************************************************
     ** Typed public response.
@@ -48,6 +52,8 @@ public class MobileBrandingSpec extends MobileJsonSpec
       return "MobileScannersBrandingV1";
    }
 
+
+
    /***************************************************************************
     ** Publish the complete extension vocabulary once.
     ***************************************************************************/
@@ -56,6 +62,8 @@ public class MobileBrandingSpec extends MobileJsonSpec
    {
       return MobileScannersSchemas.components();
    }
+
+
 
    /***************************************************************************
     ** Only explicitly allowlisted branding properties leave the server.

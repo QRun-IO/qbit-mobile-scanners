@@ -1,3 +1,6 @@
+-- Copyright (c) 2026 Kingsrook, LLC
+-- SPDX-License-Identifier: Apache-2.0
+
 SET TIME ZONE 'UTC';
 
 CREATE TABLE IF NOT EXISTS mobileDevice (

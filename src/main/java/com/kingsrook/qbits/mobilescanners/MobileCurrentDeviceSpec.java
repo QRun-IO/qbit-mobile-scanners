@@ -29,6 +29,8 @@ public class MobileCurrentDeviceSpec extends MobileDeviceJsonSpec
          .withLongDescription("Requires QQQ user session with mobile.scan and both device headers. PENDING and REVOKED devices may read their state but cannot run scanner processes. Headers also bind device identity on core metadata/widget/process requests; never send them to another origin or in process values.");
    }
 
+
+
    /***************************************************************************
     ** Versioned safe device response.
     ***************************************************************************/
@@ -37,6 +39,8 @@ public class MobileCurrentDeviceSpec extends MobileDeviceJsonSpec
    {
       return "MobileScannersDeviceV1";
    }
+
+
 
    /***************************************************************************
     ** Request-scoped identity is established by the credential binding filter.

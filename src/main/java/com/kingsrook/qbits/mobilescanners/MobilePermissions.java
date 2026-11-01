@@ -30,6 +30,8 @@ public class MobilePermissions implements CustomPermissionChecker
    static final ThreadLocal<String> REQUEST_DEVICE = new ThreadLocal<>();
    static final ThreadLocal<Boolean> INTERNAL = new ThreadLocal<>();
 
+
+
    /***************************************************************************
     ** Clone before attaching request identity: stored sessions may be shared.
     ***************************************************************************/
@@ -102,6 +104,8 @@ public class MobilePermissions implements CustomPermissionChecker
          }
       }
    }
+
+
 
    /***************************************************************************
     ** Explicit authenticated user and permission, even for direct backend calls.

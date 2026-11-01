@@ -1,10 +1,15 @@
+#Requires -Version 7.4
+# Copyright (c) 2026 Kingsrook, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'IsolatedBuildPaths.ps1')
 $test = Join-Path $PSScriptRoot ('target/path-regression-' + [Guid]::NewGuid().ToString('N'))
 $inputRoot = Join-Path $test 'input'
 $moduleRoot = Join-Path $test 'module-root'
-New-Item -ItemType Directory -Force -Path $inputRoot,$moduleRoot,(Join-Path $inputRoot '.mvn'),(Join-Path $inputRoot 'src'),(Join-Path $inputRoot 'checkstyle'),(Join-Path $moduleRoot 'target/isolated-m2') | Out-Null
-foreach($name in @('pom.xml','mvnw.cmd','mvnw')) { Set-Content -LiteralPath (Join-Path $inputRoot $name) -Value 'fixture' }
+New-Item -ItemType Directory -Force -Path $inputRoot, $moduleRoot, (Join-Path $inputRoot '.mvn'), (Join-Path $inputRoot 'src'), (Join-Path $inputRoot 'checkstyle'), (Join-Path $moduleRoot 'target/isolated-m2') | Out-Null
+foreach($name in @('pom.xml', 'mvnw.cmd', 'mvnw')) { Set-Content -LiteralPath (Join-Path $inputRoot $name) -Value 'fixture' }
 $removedSource = Join-Path $inputRoot 'src/Removed.java'
 Set-Content -LiteralPath $removedSource -Value 'old-source'
 New-Item -ItemType Directory -Force -Path (Join-Path $inputRoot 'src/main/resources') | Out-Null

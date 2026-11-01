@@ -31,6 +31,8 @@ public class MobileEnrollSpec extends MobileJsonSpec
          .withLongDescription("Requires a QQQ user session with mobile.scan permission. Returns a secret once; store privately and never log. Device remains PENDING until an administrator approves it. Existing installation IDs return 409 without rotating credentials.");
    }
 
+
+
    /***************************************************************************
     ** Versioned enrollment response.
     ***************************************************************************/
@@ -39,6 +41,8 @@ public class MobileEnrollSpec extends MobileJsonSpec
    {
       return "MobileScannersEnrollmentV1";
    }
+
+
 
    /***************************************************************************
     ** Versioned bounded enrollment input.
@@ -49,6 +53,8 @@ public class MobileEnrollSpec extends MobileJsonSpec
       return new Schema().withRefToSchema("MobileScannersEnrollRequestV1");
    }
 
+
+
    /***************************************************************************
     ** New enrollment creates a device.
     ***************************************************************************/
@@ -58,6 +64,8 @@ public class MobileEnrollSpec extends MobileJsonSpec
       return new BasicResponse(HttpStatus.CREATED, "Pending device and one-time credential", getResponseSchemaName());
    }
 
+
+
    /***************************************************************************
     ** Preserve the 1.0 character limit for international device descriptions.
     ***************************************************************************/
@@ -66,6 +74,8 @@ public class MobileEnrollSpec extends MobileJsonSpec
    {
       return 16384;
    }
+
+
 
    /***************************************************************************
     ** A bounded UTF-8 request must also meet the existing character contract.
@@ -81,6 +91,8 @@ public class MobileEnrollSpec extends MobileJsonSpec
       return input;
    }
 
+
+
    /***************************************************************************
     ** Runtime status matches the published contract.
     ***************************************************************************/
@@ -90,6 +102,8 @@ public class MobileEnrollSpec extends MobileJsonSpec
       context.status(HttpStatus.CREATED);
       super.handleOutput(context, output);
    }
+
+
 
    /***************************************************************************
     ** Use the existing permission-checked QQQ service and tables.

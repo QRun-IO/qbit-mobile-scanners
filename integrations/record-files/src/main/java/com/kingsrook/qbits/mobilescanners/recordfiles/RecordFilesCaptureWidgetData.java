@@ -25,6 +25,8 @@ public final class RecordFilesCaptureWidgetData extends QWidgetData
    private final String title;
    private final String instructions;
 
+
+
    /***************************************************************************
     ** Values are display/selection metadata, never proof of authorization.
     ***************************************************************************/
@@ -45,6 +47,8 @@ public final class RecordFilesCaptureWidgetData extends QWidgetData
       this.instructions = instructions;
    }
 
+
+
    /***************************************************************************
     ** Standard composite widget envelope used by native semantic clients.
     ***************************************************************************/
@@ -54,6 +58,8 @@ public final class RecordFilesCaptureWidgetData extends QWidgetData
       return "composite";
    }
 
+
+
    /***************************************************************************
     ** Standard composite block discriminator.
     ***************************************************************************/
@@ -61,6 +67,8 @@ public final class RecordFilesCaptureWidgetData extends QWidgetData
    {
       return "COMPOSITE";
    }
+
+
 
    /***************************************************************************
     ** Native capture controls require compatible extension and record capability.

@@ -36,6 +36,8 @@ class MobileTimestampMigrationTest
    @TempDir
    private Path directory;
 
+
+
    /***************************************************************************
     ** A separate non-UTC JVM avoids changing the timezone of concurrent tests.
     ***************************************************************************/
@@ -66,6 +68,8 @@ class MobileTimestampMigrationTest
       }
    }
 
+
+
    /***************************************************************************
     ** Only synthetic fixture data can appear in child assertions.
     ***************************************************************************/
@@ -81,6 +85,8 @@ class MobileTimestampMigrationTest
       }
    }
 
+
+
    /***************************************************************************
     ** Run the actual initializer twice against a closed/reopened file database.
     ***************************************************************************/
@@ -93,6 +99,8 @@ class MobileTimestampMigrationTest
       private static final List<OffsetDateTime> INSTANTS = List.of(
          OffsetDateTime.parse("2024-03-10T01:59:59.123456-06:00"),
          OffsetDateTime.parse("2024-11-03T12:30:00.654321+05:45"));
+
+
 
       /************************************************************************
        ** Use only an isolated fixture; no HTTP listener or operator credentials.
@@ -145,6 +153,8 @@ class MobileTimestampMigrationTest
          }
       }
 
+
+
       /************************************************************************
        ** Existing passwords must remain byte-for-byte identical across startup.
        ************************************************************************/
@@ -161,6 +171,8 @@ class MobileTimestampMigrationTest
          assertEquals(2, hashes.size());
          return hashes;
       }
+
+
 
       /************************************************************************
        ** Recreate legacy column types before writing explicit offset timestamps.

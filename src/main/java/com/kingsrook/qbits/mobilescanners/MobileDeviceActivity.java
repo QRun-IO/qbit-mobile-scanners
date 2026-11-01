@@ -35,6 +35,8 @@ final class MobileDeviceActivity
    {
    }
 
+
+
    /***************************************************************************
     ** Ordinary QQQ fields support native filtering and coordinate inspection.
     ***************************************************************************/
@@ -54,6 +56,8 @@ final class MobileDeviceActivity
       }
    }
 
+
+
    /***************************************************************************
     ** Presence reflects authenticated traffic independently of approval status.
     ***************************************************************************/
@@ -61,6 +65,8 @@ final class MobileDeviceActivity
    {
       update(new QRecord().withValue("id", id).withValue("lastSeenAt", Instant.now()));
    }
+
+
 
    /***************************************************************************
     ** Preserve last known coordinates with explicit availability and timestamps.
@@ -105,6 +111,8 @@ final class MobileDeviceActivity
       update(changes);
    }
 
+
+
    /***************************************************************************
     ** Reject nonnumeric, nonfinite and out-of-range coordinates before storage.
     ***************************************************************************/
@@ -117,6 +125,8 @@ final class MobileDeviceActivity
       }
       return new BigDecimal(number.toString());
    }
+
+
 
    /***************************************************************************
     ** Only trusted telemetry writes may update presence and location fields.

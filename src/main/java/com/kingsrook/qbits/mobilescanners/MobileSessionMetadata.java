@@ -41,6 +41,8 @@ final class MobileSessionMetadata
    {
    }
 
+
+
    /***************************************************************************
     ** Register public history separately from private authentication references.
     ***************************************************************************/
@@ -103,6 +105,8 @@ final class MobileSessionMetadata
             .withComponent(new QFrontendComponentMetaData().withType(QComponentType.VIEW_FORM))));
    }
 
+
+
    /***************************************************************************
     ** Guard native table reads and deny generic mutations.
     ***************************************************************************/
@@ -111,6 +115,8 @@ final class MobileSessionMetadata
       return new QTableMetaData().withName(name).withLabel(label).withBackendName(backend).withPrimaryKeyField("id")
          .withField(text("id", idLength).withIsRequired(true)).withPermissionRules(MobileScannersQBitProducer.rules());
    }
+
+
 
    /***************************************************************************
     ** Bounded semantic text fields.

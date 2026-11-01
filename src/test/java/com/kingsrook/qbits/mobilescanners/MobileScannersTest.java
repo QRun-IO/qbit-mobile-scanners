@@ -62,6 +62,8 @@ class MobileScannersTest
    private QSession admin;
    private String jdbcUrl;
 
+
+
    /***************************************************************************
     ** Each test receives an isolated database using the shipped schema.
     ***************************************************************************/
@@ -98,6 +100,8 @@ class MobileScannersTest
       QContext.init(instance, scanner);
    }
 
+
+
    /***************************************************************************
     ** No request device or QQQ thread state survives test boundaries.
     ***************************************************************************/
@@ -107,6 +111,8 @@ class MobileScannersTest
       MobilePermissions.REQUEST_DEVICE.remove();
       QContext.clear();
    }
+
+
 
    /***************************************************************************
     ** Pending, revoked and invalid credentials cannot grant scanning access.
@@ -133,6 +139,8 @@ class MobileScannersTest
       QContext.init(instance, bound);
       assertThrows(QException.class, () -> MobileService.capture(scan()));
    }
+
+
 
    /***************************************************************************
     ** Identical transport retry inserts once; physical rescans get distinct IDs.
@@ -164,6 +172,8 @@ class MobileScannersTest
       }
    }
 
+
+
    /***************************************************************************
     ** Client values cannot fabricate a trusted device session.
     ***************************************************************************/
@@ -184,6 +194,8 @@ class MobileScannersTest
       assertThrows(QException.class, () -> MobileService.capture(scan()));
       assertThrows(MobileService.EnrollmentConflictException.class, () -> MobileService.enroll(Map.of("installationId", id)));
    }
+
+
 
    /***************************************************************************
     ** QQQ's capture/handoff keeps trusted identity without leaking to sessions.
@@ -216,6 +228,8 @@ class MobileScannersTest
       QContext.init(instance, scanner);
       assertThrows(QException.class, () -> MobileService.capture(scan()));
    }
+
+
 
    /***************************************************************************
     ** Separate worker requests contend on the durable primary key, not a JVM lock.
@@ -260,6 +274,8 @@ class MobileScannersTest
       }
    }
 
+
+
    /***************************************************************************
     ** Retry acknowledgment is scoped to the original authenticated user/device.
     ***************************************************************************/
@@ -280,6 +296,8 @@ class MobileScannersTest
       assertFalse(scanner instanceof VerifiedDeviceSession);
    }
 
+
+
    /***************************************************************************
     ** A credential-only interrupted enrollment has an explicit recovery response.
     ***************************************************************************/
@@ -297,6 +315,8 @@ class MobileScannersTest
       assertThrows(MobileService.EnrollmentConflictException.class, () -> MobileService.enroll(Map.of("installationId", id)));
    }
 
+
+
    /***************************************************************************
     ** A realistic installation, with no hardware identifier requirement.
     ***************************************************************************/
@@ -304,6 +324,8 @@ class MobileScannersTest
    {
       return MobileService.enroll(Map.of("installationId", UUID.randomUUID().toString(), "displayName", "Test TC22", "manufacturer", "Zebra", "model", "TC22"));
    }
+
+
 
    /***************************************************************************
     ** Record-screen launches prefill the selected device without applying early.
@@ -323,6 +345,8 @@ class MobileScannersTest
       new RunProcessAction().execute(confirmed);
       assertEquals("APPROVED", deviceStatus(id));
    }
+
+
 
    /***************************************************************************
     ** Bulk selection updates all reviewed devices and reports a visible result.
@@ -352,6 +376,8 @@ class MobileScannersTest
       }
    }
 
+
+
    /***************************************************************************
     ** Scanner users cannot launch or resume an administrative selection.
     ***************************************************************************/
@@ -371,6 +397,8 @@ class MobileScannersTest
          assertEquals("PENDING", deviceStatus(id));
       }
    }
+
+
 
    /***************************************************************************
     ** Invalid bulk targets fail before changing any otherwise valid device.
@@ -393,6 +421,8 @@ class MobileScannersTest
       assertEquals("PENDING", deviceStatus(id));
    }
 
+
+
    /***************************************************************************
     ** Standalone administration retains manual device ID entry.
     ***************************************************************************/
@@ -408,6 +438,8 @@ class MobileScannersTest
       assertEquals("1 device approved.", applied.getValue("result"));
    }
 
+
+
    /***************************************************************************
     ** Resume the real process state at the normal confirmation boundary.
     ***************************************************************************/
@@ -417,6 +449,8 @@ class MobileScannersTest
       input.getValues().putAll(launch.getValues());
       return new RunProcessAction().execute(input);
    }
+
+
 
    /***************************************************************************
     ** Select-all snapshots are stable when records or submitted values change.
@@ -439,6 +473,8 @@ class MobileScannersTest
       assertEquals("PENDING", deviceStatus(later));
    }
 
+
+
    /***************************************************************************
     ** First-N limits are preserved and an empty selection never becomes manual.
     ***************************************************************************/
@@ -459,6 +495,8 @@ class MobileScannersTest
       }
    }
 
+
+
    /***************************************************************************
     ** Oversized select-all requests fail explicitly rather than truncate work.
     ***************************************************************************/
@@ -476,6 +514,8 @@ class MobileScannersTest
       assertEquals("PENDING", deviceStatus(first));
    }
 
+
+
    /***************************************************************************
     ** Read persisted status independently of process output.
     ***************************************************************************/
@@ -491,6 +531,8 @@ class MobileScannersTest
       }
    }
 
+
+
    /***************************************************************************
     ** Approve using an administrative user, then restore the scanner user.
     ***************************************************************************/
@@ -503,6 +545,8 @@ class MobileScannersTest
       return id;
    }
 
+
+
    /***************************************************************************
     ** Simulate the already-verified HTTP header identity at the permission gate.
     ***************************************************************************/
@@ -511,6 +555,8 @@ class MobileScannersTest
       MobilePermissions.REQUEST_DEVICE.set(id);
       PermissionsHelper.checkProcessPermissionThrowing(new RunProcessInput().withProcessName(MobileScannersQBitProducer.CAPTURE), MobileScannersQBitProducer.CAPTURE);
    }
+
+
 
    /***************************************************************************
     ** Server binding ignores forged identity and ending survives async handoff.
@@ -537,6 +583,8 @@ class MobileScannersTest
       assertThrows(QException.class, () -> MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", true)));
    }
 
+
+
    /***************************************************************************
     ** A cookie cannot move to another device and private bindings stay unreadable.
     ***************************************************************************/
@@ -557,6 +605,8 @@ class MobileScannersTest
       assertThrows(QException.class, () -> new GetAction().execute(read));
       assertEquals("Screen unavailable: Capture is unavailable", MobileSessionService.view(sessionId).status());
    }
+
+
 
    /***************************************************************************
     ** Background eligibility is opt-in and cannot retain a former mode's lease.
@@ -590,6 +640,8 @@ class MobileScannersTest
       });
    }
 
+
+
    /***************************************************************************
     ** Ending a reviewed record does not affect a later or replacement selection.
     ***************************************************************************/
@@ -616,6 +668,8 @@ class MobileScannersTest
       assertEquals("ACTIVE", MobileService.get(MobileScannersQBitProducer.SESSION, second).getValueString("status"));
    }
 
+
+
    /***************************************************************************
     ** Failed second writes roll back credentials and earlier bulk approvals.
     ***************************************************************************/
@@ -632,6 +686,8 @@ class MobileScannersTest
       assertThrows(QException.class, () -> MobileService.setApproval(java.util.List.of(first, UUID.randomUUID().toString()), true));
       assertEquals("PENDING", deviceStatus(first));
    }
+
+
 
    /***************************************************************************
     ** Native edits cannot smuggle approval, identity or telemetry changes.
@@ -657,6 +713,8 @@ class MobileScannersTest
       assertFalse(duplicate.getRecords().getFirst().getErrors().isEmpty());
       assertEquals("PENDING", deviceStatus(first));
    }
+
+
 
    /***************************************************************************
     ** Location is optional and online filtering expires before backend queries.
@@ -688,6 +746,8 @@ class MobileScannersTest
       assertEquals(0, new QueryAction().execute(query).getRecords().size());
    }
 
+
+
    /***************************************************************************
     ** Device possession does not grant scanning/session permissions to a user.
     ***************************************************************************/
@@ -703,6 +763,8 @@ class MobileScannersTest
       assertThrows(QException.class, () -> MobileSessionService.upload(Map.of()));
       assertThrows(QException.class, () -> MobileSessionService.heartbeat(Map.of("foreground", true, "screenAvailable", false)));
    }
+
+
 
    /***************************************************************************
     ** Captured administrator identity cannot mutate approvals after termination.
@@ -720,6 +782,8 @@ class MobileScannersTest
       assertThrows(QException.class, () -> MobileSessionService.endAll(java.util.List.of(adminSession), "Again"));
       assertEquals("APPROVED", deviceStatus(device));
    }
+
+
 
    /***************************************************************************
     ** Reapplying the migration repairs old failed enrollments without token reset.
@@ -745,6 +809,8 @@ class MobileScannersTest
       assertNotNull(MobileService.authenticateDevice((String) valid.get("deviceId"), (String) valid.get("deviceToken")));
       assertNotNull(MobileService.enroll(Map.of("installationId", orphan)).get("deviceToken"));
    }
+
+
 
    /***************************************************************************
     ** Shared UUID prefixes and partially applied migrations preserve identities.
@@ -781,6 +847,8 @@ class MobileScannersTest
       assertNotNull(MobileService.authenticateDevice(secondId, (String) second.get("deviceToken")));
    }
 
+
+
    /***************************************************************************
     ** QQQ binds UTC wall-clock timestamps, independent of the host timezone.
     ***************************************************************************/
@@ -811,6 +879,8 @@ class MobileScannersTest
          java.util.TimeZone.setDefault(previous);
       }
    }
+
+
 
    /***************************************************************************
     ** Distinct event ID for each physical scan.

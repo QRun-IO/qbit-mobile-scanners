@@ -53,6 +53,8 @@ class MobileBrandingTest
       assertEquals("#AABBCC", config.withPrimaryColor("#aabbcc").getPrimaryColor());
    }
 
+
+
    /***************************************************************************
     ** Defaults remain available with no session and stale device credentials.
     ***************************************************************************/

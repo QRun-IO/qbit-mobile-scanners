@@ -43,12 +43,16 @@ public final class MobileService
 {
    static final ThreadLocal<QBackendTransaction> TRANSACTION = new ThreadLocal<>();
 
+
+
    /***************************************************************************
     ** No service instances or global mutable storage.
     ***************************************************************************/
    private MobileService()
    {
    }
+
+
 
    /***************************************************************************
     ** Register once; a guessed installation ID never rotates an approved token.
@@ -102,6 +106,8 @@ public final class MobileService
          "displayName", Objects.toString(device.getValueString("displayName"), ""), "description", Objects.toString(device.getValueString("description"), ""));
    }
 
+
+
    /***************************************************************************
     ** Retry only generated-name collisions after the failed transaction rolls back.
     ***************************************************************************/
@@ -111,6 +117,8 @@ public final class MobileService
          .withFilter(new QQueryFilter(new QFilterCriteria("shortName", QCriteriaOperator.EQUALS, name)).withLimit(1)))
          .getRecords().isEmpty());
    }
+
+
 
    /***************************************************************************
     ** Compare a token digest in constant time; return no credential material.
@@ -135,6 +143,8 @@ public final class MobileService
       return device;
    }
 
+
+
    /***************************************************************************
     ** Re-read status for every operation, including resumed asynchronous steps.
     ***************************************************************************/
@@ -148,6 +158,8 @@ public final class MobileService
       return device;
    }
 
+
+
    /***************************************************************************
     ** Only admin processes may change device approval.
     ***************************************************************************/
@@ -159,6 +171,8 @@ public final class MobileService
          return null;
       });
    }
+
+
 
    /***************************************************************************
     ** Approval writes execute inside the active-session authorization boundary.
@@ -180,6 +194,8 @@ public final class MobileService
       });
    }
 
+
+
    /***************************************************************************
     ** A failed bulk approval rolls back the entire confirmed selection.
     ***************************************************************************/
@@ -194,6 +210,8 @@ public final class MobileService
          return null;
       }));
    }
+
+
 
    /***************************************************************************
     ** Related writes require a real backend transaction, never the no-op base.
@@ -229,6 +247,8 @@ public final class MobileService
       }
    }
 
+
+
    /***************************************************************************
     ** A deterministic primary key deduplicates request retries across servers.
     ***************************************************************************/
@@ -236,6 +256,8 @@ public final class MobileService
    {
       return MobileSessionService.withActiveSession(() -> captureApproved(input));
    }
+
+
 
    /***************************************************************************
     ** Serialize the local authorization check and write with session ending.
@@ -287,6 +309,8 @@ public final class MobileService
       }
    }
 
+
+
    /***************************************************************************
     ** Reusing a request ID for another scan is an error, not a silent overwrite.
     ***************************************************************************/
@@ -301,6 +325,8 @@ public final class MobileService
       }
       return existing;
    }
+
+
 
    /***************************************************************************
     ** Read only through QQQ and the narrowly scoped internal permission grant.
@@ -317,6 +343,8 @@ public final class MobileService
          return new GetAction().execute(input).getRecord();
       });
    }
+
+
 
    /***************************************************************************
     ** Row-level errors must be checked before acknowledging a scan.
@@ -336,6 +364,8 @@ public final class MobileService
       });
    }
 
+
+
    /***************************************************************************
     ** Never expose persistence details or credentials in a client error.
     ***************************************************************************/
@@ -346,6 +376,8 @@ public final class MobileService
          throw new QException("The record could not be saved.");
       }
    }
+
+
 
    /***************************************************************************
     ** Restore the permission scope even when a backend throws.
@@ -371,6 +403,8 @@ public final class MobileService
       }
    }
 
+
+
    /***************************************************************************
     ** QQQ operation with checked failure.
     ***************************************************************************/
@@ -382,6 +416,8 @@ public final class MobileService
       T run() throws QException;
    }
 
+
+
    /***************************************************************************
     ** Server-authenticated identity only.
     ***************************************************************************/
@@ -389,6 +425,8 @@ public final class MobileService
    {
       return QContext.getQSession().getUser().getIdReference();
    }
+
+
 
    /***************************************************************************
     ** Required bounded strings preserve leading zeroes in barcodes.
@@ -402,6 +440,8 @@ public final class MobileService
       }
       return value;
    }
+
+
 
    /***************************************************************************
     ** Reject non-string and oversized metadata.
@@ -419,6 +459,8 @@ public final class MobileService
       }
       return text;
    }
+
+
 
    /***************************************************************************
     ** Enforce canonical UUIDs before using them as identifiers.
@@ -440,6 +482,8 @@ public final class MobileService
       }
    }
 
+
+
    /***************************************************************************
     ** SHA-256 of high-entropy tokens, never plaintext storage.
     ***************************************************************************/
@@ -454,6 +498,8 @@ public final class MobileService
          throw new IllegalStateException(e);
       }
    }
+
+
 
    /***************************************************************************
     ** Explicit conflict so callers can restart enrollment with a new identity.

@@ -25,6 +25,8 @@ public class MobileDeviceProfileCustomizer extends AbstractPreUpdateCustomizer
 {
    private static final Set<String> EDITABLE = Set.of("shortName", "displayName", "description");
 
+
+
    /***************************************************************************
     ** Both permission entry and persistence lifecycle apply this same allowlist.
     ***************************************************************************/
@@ -65,6 +67,8 @@ public class MobileDeviceProfileCustomizer extends AbstractPreUpdateCustomizer
       }
    }
 
+
+
    /***************************************************************************
     ** Canonical values have a database unique index, including concurrent edits.
     ***************************************************************************/
@@ -77,6 +81,8 @@ public class MobileDeviceProfileCustomizer extends AbstractPreUpdateCustomizer
       }
       return canonical;
    }
+
+
 
    /***************************************************************************
     ** Internal approval and heartbeat writes remain distinct from generic edits.

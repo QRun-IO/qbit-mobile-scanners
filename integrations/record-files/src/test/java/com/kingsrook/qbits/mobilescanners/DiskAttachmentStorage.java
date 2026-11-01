@@ -29,6 +29,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
    static Path directory;
    private static final ObjectMapper JSON = new ObjectMapper();
 
+
+
    /***************************************************************************
     ** Hash trusted owner keys into isolated files; never resolve a supplied path.
     ***************************************************************************/
@@ -38,6 +40,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
          .resolve(UploadManifest.hash((name + "/" + key).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
    }
 
+
+
    /***************************************************************************
     ** Match the fixture's small immutable limits.
     ***************************************************************************/
@@ -46,6 +50,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
    {
       return 20 * 1024 * 1024;
    }
+
+
 
    /***************************************************************************
     ** Standard attachment owner calls conditional creation for retained originals.
@@ -67,6 +73,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
       }
    }
 
+
+
    /***************************************************************************
     ** Reopen actual persisted bytes across fresh storage adapter instances.
     ***************************************************************************/
@@ -77,14 +85,18 @@ public class DiskAttachmentStorage extends AttachmentStorage
       {
          Path file = path(name, key);
          java.util.Map<String, String> metadata = JSON.readValue(Path.of(file + ".json").toFile(), new com.fasterxml.jackson.core.type.TypeReference<>() {});
-         return new ObjectStream(Files.newInputStream(file), Files.size(file), "application/octet-stream", null, Instant.now(),
-            new ObjectHeaders().withUserMetadata(metadata));
+         long size = Files.size(file);
+         ObjectHeaders headers = new ObjectHeaders().withUserMetadata(metadata);
+         Instant openedAt = Instant.now();
+         return new ObjectStream(Files.newInputStream(file), size, "application/octet-stream", null, openedAt, headers);
       }
       catch(Exception failure)
       {
          throw new IllegalStateException("Fixture object read failed.", failure);
       }
    }
+
+
 
    /***************************************************************************
     ** Owner idempotent recovery observes persisted object existence.
@@ -102,6 +114,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
          throw new IllegalStateException("Fixture object head failed.", failure);
       }
    }
+
+
 
    /***************************************************************************
     ** Remove only a known fixture object and its metadata sidecar.
@@ -121,12 +135,16 @@ public class DiskAttachmentStorage extends AttachmentStorage
       }
    }
 
+
+
    /***************************************************************************
     ** Staging uses a separate owner namespace in the same isolated file fixture.
     ***************************************************************************/
    static class Staging extends UploadChunkStorage
    {
       private final DiskAttachmentStorage storage = new DiskAttachmentStorage();
+
+
 
       /***********************************************************************
        ** Dedicated staging alias cannot address canonical originals.
@@ -135,6 +153,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
       {
          super("mobile-fixture-staging");
       }
+
+
 
       /***********************************************************************
        ** Persist immutable staged chunks.
@@ -145,6 +165,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
          storage.put("staging", request);
       }
 
+
+
       /***********************************************************************
        ** Recovery sees previously persisted staged bytes.
        ***********************************************************************/
@@ -154,6 +176,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
          return storage.head("staging", key);
       }
 
+
+
       /***********************************************************************
        ** Reopen chunks for digest verification.
        ***********************************************************************/
@@ -162,6 +186,8 @@ public class DiskAttachmentStorage extends AttachmentStorage
       {
          return storage.open("staging", key);
       }
+
+
 
       /***********************************************************************
        ** Terminal cleanup never addresses canonical objects.

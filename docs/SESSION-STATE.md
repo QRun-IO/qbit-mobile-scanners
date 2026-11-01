@@ -1,12 +1,29 @@
 # QQQ Mobile Scanners session state
 
+## November 1 standards implementation and API 1.10 qualification
+
+Copyright/SPDX, member layout and optional PowerShell tooling fixes are applied. Unexpected server failures now produce fixed structured diagnostics without private values. The attachment test fixture closes its metadata-before-stream ownership gap. Fresh Checkstyle/compilation, 39 root tests and six real HTTP tests pass against the qualified private API1.10 cohort; optional integration verification is tracked in the standards review. These are source gates, not a normal-server deployment.
+
+Core native API1.10 is signed and published as e1e45b29f in draft PR1369. Its real Authentik fixture is upgraded and actual retained-browser account switching is under test. Android1127 is published; the installed normal APK is the diagnostics/location3fee build, preserving sign-in and data. Prior installed1c Code128, leading-zero QR and menu/reopen were physically confirmed. Default-on location, existing fine/coarse grants and system location are verified; an actual GPS fix remains open. Historical entries below retain their original scope. See [standards review](CODING-STANDARDS-REVIEW-2026-11-01.md).
+
+
+## November 1 provider logout implementation in progress
+
+Core32 passes all ten hosted checks, including corrected1000-test sample acceptance; Android8d8 passes all eleven checks. The final coherent core32/scanner1a3 cohort passes39 scanner/six demo/18 Record Files/15 browser cases and is recorded in the published qualification document.
+
+Real Authentik now passes a desktop-browser PKCE callback through the native-session exchange contract, principal A, QQQ logout and old-cookie rejection. This does not establish Android external-browser acceptance. A subsequent login with provider SSO retained silently reused A despite prompt=login. The pinned provider also ignores max_age=0. This is an open operator-handoff issue, not a passed two-operator test. Optional standard RP-initiated logout is being implemented in core branch feature/mobile-native-provider-logout (based on core32) and the Android client, with explicit API1.10 capability, encrypted session-bound hint storage, local logout independent of provider failures, and a separately correlated AppAuth end-session attempt. The user policy choice (automatic company sign-out versus retained SSO with account confirmation/Switch account) remains pending; default sign-out behavior has not changed.
+
+The optional Android provider-logout working patch passes148 JVM tests, lint and debug build; native cases compile but have not run. The first isolated core package failed at an UpdateOutput API mismatch before tests. Independent review also found the optional hint gate must reject alternate in-process/code-state authentication sources; corrections and an HTTP regression are in progress. Initial failed candidate evidence is preserved.
+
+The isolated localhost-CA E2E APK built from signed Android8d8 passes63 unit cases/zero lint errors and packaged CA/callback/signature inspection. It is not installed; no device trust changed. Normal TC22 remains portrait C891 and its API1.9/mobile1.1 server remains untouched. Current QR, camera/gallery, projection, GPS and failure/navigation operator acceptance remain open. Files-owner immutable handoff/default adoption and final signing/distribution remain separate.
+
 Updated: 2026-11-01
 
 ## November 1 release reconciliation
 
 Published server1041693 retains its qualified source-pinned API1.9/mobile1.2 server/demo/browser/provenance evidence. Android portrait-default7de passes all eleven hosted checks; QR documentation2e0fd962 does not establish physical QR acceptance. The normal runtime remains coreecf/serverb14 API1.9/mobile1.1 on57832, with normal portrait-default C891 development APK installed preserving signer/data. Trusted EMDK Code128 evidence comprises eight priorF3AF events and oneC891 event; QR, lifecycle/ownership and failure/retry/leave operator paths remain pending. Whole-device1.2 is qualified source, not installed normal-server behavior.
 
-Filesystem portability passes142 discovered/138 passed/four existing skips; its metadata symlink-parent finding is independently closed. The separate RF HTTP consumer now passes18 cases on a transitional custom-filesystem tuple, not default/immutable adoption. Actual Authentik flow remains pending; strict proxy TLS now works, while provider configuration returned a validation error under diagnosis; physical projection, camera/gallery and GPS acceptance remain open. Signing/distribution stays owner-deferred until the final step. [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md) is the current matrix; older entries below retain historical scope and are superseded where their then-open state has changed.
+Filesystem portability passes142 discovered/138 passed/four existing skips, including the corrected invalid-reference exception contract; its metadata symlink-parent and NUL-reference findings are independently closed. The final coherent core32/scanner1a3 cohort passes78 consumer cases, including18 Record Files cases, with no separate filesystem override. Matching files-owner immutable/default adoption remains open. Actual Authentik flow remains pending; strict proxy TLS now works, while provider configuration returned a validation error under diagnosis; physical projection, camera/gallery and GPS acceptance remain open. Signing/distribution stays owner-deferred until the final step. [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md) is the current matrix; older entries below retain historical scope and are superseded where their then-open state has changed.
 
 Cross-chat coordination uses `R:\agent-comms\README.md` and the mobile master's owned `R:\agent-comms\qqq-mobile-scanner.md`, explicitly requested by the user. Record Files and Printing acknowledged the directory. Read the current summary at the top of each owner's mailbox before changing shared contracts.
 
@@ -134,3 +151,8 @@ Active plan: publish the companion Android checkpoint pinned to verified server 
 - Only a current unacknowledged scan is retained in memory for explicit retry. Closing/resetting the app is not an offline queue.
 - The H2 schema is supplied; migrations for other databases and deployment authentication remain host-owned.
 - Pending physical acceptance is tracked in TODO. GitHub bootstrap and hosted checks are separate from artifact release or production deployment; use `CI-CD.md` for the repository settings and release enablement policy.
+
+## Native authentication review follow-up
+The first optional provider-logout compile failure and alternate authentication-source hint gate are corrected in a new frozen source candidate; its isolated focused build is running. Independently, native login does not currently carry/validate the original request nonce against the provider ID token. PKCE code binding is present; no account-takeover exploit is claimed. Explicit provider-bound claim/nonce validation and real-provider acceptance remain required before production authentication closure.
+
+Android nonce/logout working source now passes151 JVM tests, zero lint errors/warnings and APK/native-test compilation. Independent26-file diff review is completed/sealed as c358cde3-b51d-4451-b07d-8d1afe6c4485 with no findings; this is source-scoped and does not establish native/browser/provider execution. Core combined nonce/test corrections remain in progress; initial diagnostic failures stay failed.

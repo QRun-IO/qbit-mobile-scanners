@@ -17,6 +17,8 @@ final class VerifiedDeviceSession extends QSession
 {
    private final String deviceId;
 
+
+
    /***************************************************************************
     ** Preserve all user restrictions while isolating mutable session state.
     ***************************************************************************/
@@ -35,6 +37,8 @@ final class VerifiedDeviceSession extends QSession
       setClientChannel(copy.getClientChannel());
       setCredentialScope(copy.getCredentialScope());
    }
+
+
 
    /***************************************************************************
     ** Identity verified from the HTTP credential, never process input.

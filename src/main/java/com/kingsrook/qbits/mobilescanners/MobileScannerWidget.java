@@ -30,6 +30,8 @@ public class MobileScannerWidget extends AbstractWidgetRenderer
       return new RenderWidgetOutput(new ScannerWidgetData());
    }
 
+
+
    /***************************************************************************
     ** Native widget wire shape. RC20's closed WidgetBlock enum predates SCANNER,
     ** so this extension supplies its wire fields directly as QWidgetData.
@@ -45,6 +47,8 @@ public class MobileScannerWidget extends AbstractWidgetRenderer
          return "composite";
       }
 
+
+
       /***********************************************************************
        ** Android's native DataWedge-enabled renderer.
        ***********************************************************************/
@@ -52,6 +56,8 @@ public class MobileScannerWidget extends AbstractWidgetRenderer
       {
          return "COMPOSITE";
       }
+
+
 
       /***********************************************************************
        ** One scanner component; the surrounding process owns its actions.

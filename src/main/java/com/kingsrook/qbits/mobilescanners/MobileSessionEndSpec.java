@@ -27,6 +27,8 @@ public class MobileSessionEndSpec extends MobileDeviceJsonSpec
          .withLongDescription("Ends the authenticated device session and invalidates its QQQ login. No target session ID is accepted. An already ended/expired login may return 401; the client must still clear local authentication. Device approval is unchanged.");
    }
 
+
+
    /***************************************************************************
     ** Safe public session result.
     ***************************************************************************/
@@ -36,6 +38,8 @@ public class MobileSessionEndSpec extends MobileDeviceJsonSpec
       return "MobileScannersSessionEndedV1";
    }
 
+
+
    /***************************************************************************
     ** Explicit operator reason, not a free-form secret-bearing message.
     ***************************************************************************/
@@ -44,6 +48,8 @@ public class MobileSessionEndSpec extends MobileDeviceJsonSpec
    {
       return new Schema().withRefToSchema("MobileScannersEndSessionRequestV1");
    }
+
+
 
    /***************************************************************************
     ** Durable tombstone plus existing QQQ authentication logout.

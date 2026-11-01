@@ -33,6 +33,8 @@ import com.kingsrook.qqq.backend.core.realtime.RealtimeMessage;
 import com.kingsrook.qqq.middleware.javalin.executors.LogoutExecutor;
 import com.kingsrook.qqq.middleware.javalin.executors.io.LogoutInput;
 import com.kingsrook.qqq.middleware.javalin.specs.v1.responses.LogoutResponseV1;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /*******************************************************************************
@@ -40,8 +42,16 @@ import com.kingsrook.qqq.middleware.javalin.specs.v1.responses.LogoutResponseV1;
  *******************************************************************************/
 final class MobileSessionService
 {
+   //////////////////////////////////////////////////////////////////////////////
+   // QLogger adds user identity automatically. Keep boundary diagnostics      //
+   // entirely static without changing authentication context or log settings. //
+   //////////////////////////////////////////////////////////////////////////////
+   private static final Logger LOG = LogManager.getLogger(MobileSessionService.class);
+
    private static final Map<QInstance, MobileSessionService> INSTANCES = new WeakHashMap<>();
    private final MobileScreenService screens = new MobileScreenService();
+
+
 
    /***************************************************************************
     ** One lock and bounded transient screen cache per server instance.
@@ -50,6 +60,8 @@ final class MobileSessionService
    {
       return INSTANCES.computeIfAbsent(QContext.getQInstance(), key -> new MobileSessionService());
    }
+
+
 
    /***************************************************************************
     ** A session ended on this server cannot race a local scan persistence write.
@@ -62,6 +74,8 @@ final class MobileSessionService
          return operation.run();
       }
    }
+
+
 
    /***************************************************************************
     ** Apply the durable tombstone even when device headers are omitted.
@@ -79,6 +93,8 @@ final class MobileSessionService
          }
       }
    }
+
+
 
    /***************************************************************************
     ** Observe old clients too; binding never accepts a client-supplied user/UUID.
@@ -125,6 +141,8 @@ final class MobileSessionService
          return session;
       }
    }
+
+
 
    /***************************************************************************
     ** Safe activity is display metadata, never authorization or process input.
@@ -180,6 +198,8 @@ final class MobileSessionService
       }
    }
 
+
+
    /***************************************************************************
     ** An operator can end only the session bound to their current credentials.
     ***************************************************************************/
@@ -195,6 +215,8 @@ final class MobileSessionService
       return Map.of("sessionId", session.getValueString("id"), "status", "ENDED", "endedAt", endedAt.toString());
    }
 
+
+
    /***************************************************************************
     ** Standard logout remains usable by clients that predate session telemetry.
     ***************************************************************************/
@@ -206,6 +228,8 @@ final class MobileSessionService
          end(binding.getValueString("sessionId"), "SIGN_OUT", false);
       }
    }
+
+
 
    /***************************************************************************
     ** Persist the tombstone before calling provider cleanup; never trust a no-op.
@@ -249,6 +273,8 @@ final class MobileSessionService
       }
    }
 
+
+
    /***************************************************************************
     ** Provider cleanup is retried by an idempotent end; the tombstone is final.
     ***************************************************************************/
@@ -264,9 +290,12 @@ final class MobileSessionService
       }
       catch(QException failure)
       {
+         LOG.warn("{\"message\":\"Mobile authentication cleanup requires retry\",\"category\":\"provider-cleanup-failure\",\"operation\":\"cleanup-authentication\"}");
          update(new QRecord().withValue("id", id).withValue("authCleanupStatus", "RETRY_NEEDED"));
       }
    }
+
+
 
    /***************************************************************************
     ** Commit every selected tombstone before any external authentication cleanup.
@@ -299,12 +328,16 @@ final class MobileSessionService
       }
    }
 
+
+
    /***************************************************************************
     ** Server-only cleanup snapshot, never serialized into process/API values.
     ***************************************************************************/
    private record CleanupTarget(String id, String coreUuid)
    {
    }
+
+
 
    /***************************************************************************
     ** Frame validation and storage occur only for the authenticated bound owner.
@@ -327,6 +360,8 @@ final class MobileSessionService
          current().screens.upload(session.getValueString("id"), input);
       }
    }
+
+
 
    /***************************************************************************
     ** Admin view refresh grants short-lived demand, not persistent recording.
@@ -367,6 +402,8 @@ final class MobileSessionService
       }
    }
 
+
+
    /***************************************************************************
     ** Private core session IDs are never queried through the public table API.
     ***************************************************************************/
@@ -376,6 +413,8 @@ final class MobileSessionService
          .withTransaction(MobileService.TRANSACTION.get()).withShouldOmitHiddenFields(false).withFilter(new QQueryFilter(new QFilterCriteria("sessionId", QCriteriaOperator.EQUALS, id)).withLimit(1)))
          .getRecords().stream().findFirst().orElse(null));
    }
+
+
 
    /***************************************************************************
     ** Changes use QQQ actions and publish safe invalidation hints only.
@@ -397,6 +436,8 @@ final class MobileSessionService
          .withEvent("table.changed").withData(Map.of("table", MobileScannersQBitProducer.SESSION)));
    }
 
+
+
    /***************************************************************************
     ** No request body can manufacture a trusted device identity.
     ***************************************************************************/
@@ -410,6 +451,8 @@ final class MobileSessionService
       return id;
    }
 
+
+
    /***************************************************************************
     ** Only QQQ's verified session supplies the private authentication UUID.
     ***************************************************************************/
@@ -422,6 +465,8 @@ final class MobileSessionService
       }
       return session.getUuid();
    }
+
+
 
    /***************************************************************************
     ** Do not coerce text into safety-critical capture state.

@@ -69,6 +69,8 @@ class MobileScannersApiContractTest
       assertTrue(generated.contains("acknowledgedEventId"));
    }
 
+
+
    /***************************************************************************
     ** Re-registering replaces the same extension, never adds duplicate routes.
     ***************************************************************************/

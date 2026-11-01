@@ -16,6 +16,8 @@ enum MobileCaptureMode
 {
    APP_CONTENT, DEVICE_SCREEN;
 
+
+
    /***************************************************************************
     ** Unknown modes cannot broaden a client's capture permission.
     ***************************************************************************/

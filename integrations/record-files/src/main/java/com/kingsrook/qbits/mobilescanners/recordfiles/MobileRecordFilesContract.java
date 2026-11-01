@@ -28,6 +28,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
 {
    public static final String VERSION = "1.0.0";
 
+
+
    /***************************************************************************
     ** Host opt-in advertises the native block and contributes its typed schemas.
     ***************************************************************************/
@@ -38,6 +40,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
          .withDescription("Native RECORD_FILES_CAPTURE widget vocabulary; record-files independently authorizes ingestion.")
          .withSpec(MobileRecordFilesContract.class));
    }
+
+
 
    /***************************************************************************
     ** Native clients verify this static descriptor before enabling capture UI.
@@ -50,6 +54,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
          .withLongDescription("Public static vocabulary only. No parent reference or upload authority is disclosed. Clients must separately verify record-files capabilities for the widget's server-selected parent.");
    }
 
+
+
    /***************************************************************************
     ** Static semantics disclose neither records nor authenticated identity.
     ***************************************************************************/
@@ -58,6 +64,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
    {
       return false;
    }
+
+
 
    /***************************************************************************
     ** A versioned, typed descriptor rather than inferred widget/process names.
@@ -68,6 +76,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
       return "MobileRecordFilesContractV1";
    }
 
+
+
    /***************************************************************************
     ** These values describe rendering only and cannot authorize an upload.
     ***************************************************************************/
@@ -76,6 +86,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
    {
       return Map.of("version", VERSION, "blockType", "RECORD_FILES_CAPTURE", "widgetType", "composite");
    }
+
+
 
    /***************************************************************************
     ** Ordinary native widget responses reference these additive block schemas.
@@ -98,6 +110,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
       return schemas;
    }
 
+
+
    /***************************************************************************
     ** Known fields are typed; additive future fields remain compatible.
     ***************************************************************************/
@@ -105,6 +119,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
    {
       return new MobileScannersSchemas.RequiredObjectSchema(List.of(required)).withType(Type.OBJECT).withProperties(new TreeMap<>(properties));
    }
+
+
 
    /***************************************************************************
     ** Fixed wire discriminator, never a localized label or process name.
@@ -114,6 +130,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
       return new Schema().withType(Type.STRING).withEnumValues(List.of(value));
    }
 
+
+
    /***************************************************************************
     ** Reuse typed parent and values components.
     ***************************************************************************/
@@ -121,6 +139,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
    {
       return new Schema().withRefToSchema(name);
    }
+
+
 
    /***************************************************************************
     ** Standard JSON Schema keywords absent from the frozen core Schema model.
@@ -134,6 +154,8 @@ public class MobileRecordFilesContract extends AbstractJsonEndpointSpec
       {
          return 1;
       }
+
+
 
       /***********************************************************************
        ** Require a non-whitespace character without altering opaque IDs.

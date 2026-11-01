@@ -27,6 +27,8 @@ public class MobileSessionHeartbeatSpec extends MobileDeviceJsonSpec
          .withLongDescription("Binds the current QQQ sign-in to the verified device. Nullable display metadata never grants permissions. Ended sign-ins return 401 and cannot start another mobile session. screenAvailable=false immediately removes the retained frame. Lease duration is expiresAt minus serverTime, not the device clock.");
    }
 
+
+
    /***************************************************************************
     ** Additive 1.1 response.
     ***************************************************************************/
@@ -36,6 +38,8 @@ public class MobileSessionHeartbeatSpec extends MobileDeviceJsonSpec
       return "MobileScannersHeartbeatV1";
    }
 
+
+
    /***************************************************************************
     ** Small, bounded activity document.
     ***************************************************************************/
@@ -44,6 +48,8 @@ public class MobileSessionHeartbeatSpec extends MobileDeviceJsonSpec
    {
       return new Schema().withRefToSchema("MobileScannersHeartbeatRequestV1");
    }
+
+
 
    /***************************************************************************
     ** Server owns session and user/device identity.

@@ -58,6 +58,8 @@ public class MobileDeviceStatusWidget extends AbstractWidgetRenderer
       return new RenderWidgetOutput(data);
    }
 
+
+
    /***************************************************************************
     ** Server receipt age remains meaningful despite device clock skew.
     ***************************************************************************/
@@ -65,6 +67,8 @@ public class MobileDeviceStatusWidget extends AbstractWidgetRenderer
    {
       return timestamp == null ? "Never" : Math.max(0, Duration.between(timestamp, now).getSeconds()) + " seconds ago";
    }
+
+
 
    /***************************************************************************
     ** Standard typed TEXT blocks avoid generated HTML and custom wire objects.

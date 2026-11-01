@@ -29,6 +29,8 @@ final class MobileSessionSchemas
    {
    }
 
+
+
    /***************************************************************************
     ** Core auth identifiers and device tokens never appear in these shapes.
     ***************************************************************************/
@@ -72,6 +74,8 @@ final class MobileSessionSchemas
       return schemas;
    }
 
+
+
    /***************************************************************************
     ** Additive 1.2 scope; absent legacy values always mean app content.
     ***************************************************************************/
@@ -79,6 +83,8 @@ final class MobileSessionSchemas
    {
       return text(20).withEnumValues(List.of("APP_CONTENT", "DEVICE_SCREEN"));
    }
+
+
 
    /***************************************************************************
     ** Nullable activity fields explicitly clear older display state.
@@ -88,6 +94,8 @@ final class MobileSessionSchemas
       return text(maximum).withNullable(true);
    }
 
+
+
    /***************************************************************************
     ** UTC instant representation.
     ***************************************************************************/
@@ -95,6 +103,8 @@ final class MobileSessionSchemas
    {
       return text(40).withFormat("date-time");
    }
+
+
 
    /***************************************************************************
     ** RC20 extensions expose numeric schema limits through normal serialization.
@@ -104,6 +114,8 @@ final class MobileSessionSchemas
       return new BoundedIntegerSchema(minimum, maximum).withType(Type.INTEGER);
    }
 
+
+
    /***************************************************************************
     ** Standard JSON integer bounds.
     ***************************************************************************/
@@ -111,6 +123,8 @@ final class MobileSessionSchemas
    {
       private final long minimum;
       private final long maximum;
+
+
 
       /***********************************************************************
        ** Capture declared limits once.
@@ -121,6 +135,8 @@ final class MobileSessionSchemas
          this.maximum = maximum;
       }
 
+
+
       /***********************************************************************
        ** Inclusive minimum.
        ***********************************************************************/
@@ -128,6 +144,8 @@ final class MobileSessionSchemas
       {
          return minimum;
       }
+
+
 
       /***********************************************************************
        ** Inclusive maximum.

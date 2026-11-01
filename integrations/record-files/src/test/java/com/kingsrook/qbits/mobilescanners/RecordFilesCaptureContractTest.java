@@ -24,6 +24,8 @@ class RecordFilesCaptureContractTest
 {
    private static final ObjectMapper JSON = new ObjectMapper();
 
+
+
    /***************************************************************************
     ** Opaque record IDs survive serialization, without name-based inference.
     ***************************************************************************/
@@ -44,6 +46,8 @@ class RecordFilesCaptureContractTest
       }
    }
 
+
+
    /***************************************************************************
     ** Server renderers cannot publish invalid or oversized parent coordinates.
     ***************************************************************************/
@@ -57,6 +61,8 @@ class RecordFilesCaptureContractTest
          assertThrows(IllegalArgumentException.class, () -> new RecordFilesCaptureWidgetData(invalid, "1", null, null));
       }
    }
+
+
 
    /***************************************************************************
     ** Validate the contract keywords actually published by this small vocabulary.
