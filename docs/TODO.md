@@ -1,6 +1,6 @@
 # QQQ Mobile Scanners TODO
 
-- [ ] Qualify the demo BOM import and BOM-managed JUnit engine with fresh base37/demo5, exact runtime module/Guava/H2 provenance and browser15 single-record/bulk acceptance. Source corrections are implemented; prior mixed-version/demo discovery failures do not qualify the new core runtime.
+- [x] Qualify the demo BOM import and managed JUnit engine with fresh37 server/five demo tests, exact runtime module/Guava/H2 provenance and all15 single-record/bulk browser cases; see [acceptance evidence](API19-CONSUMER-ACCEPTANCE.md). The operator runtime remains separate.
 - [x] Preserve legacy timestamp instants in the canonical supplied H2 schema with an explicit UTC migration connection; verify non-UTC file-backed upgrade, unchanged passwords/approval/scans and repeated initialization. The operator upgrade is preserved with UTC; a no-install reactor passes 37 base tests and five demo tests using the freshly built schema.
 - [x] Implement unique short names, editable names/descriptions, additive H2 migration and protected profile editing; qualify the preserving upgrade of the operator database before deployment.
 - [x] Implement separate approval/presence states, online-only fleet query and foreground location with accuracy/age and permission-denied behavior; actual GPS-fix acceptance remains in the release gates.
