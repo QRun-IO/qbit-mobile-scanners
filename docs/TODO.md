@@ -2,6 +2,7 @@
 
 Current demo path (November2; supersedes historical runtime/pairing notes below):
 
+- [x] Render the actual published 4x1 document through the real renderer and independently decode its Code128 and leading-zero QR pixels; both preserve exact value/symbology and fit the configured stock. See [evidence and test images](../examples/echo/demo/docs/ECHO-RENDERER-ACCEPTANCE.md). Physical printing remains unverified.
 - [x] Correct the five inert test-token secret-scan findings using generated fixtures and exact historical fingerprints; local historical/staged scans and all 27 demo tests pass. Current primary CI remains an open gate.
 - [x] Run all real scanner/Echo, files, document and printing qbits in the single local server57832; original accounts work; full demo27 and live forwarded-host checks pass.
 - [x] Connect the existing installed print client to57832 and approve its available ZPL printer through the native QQQ process; no job/default changes.

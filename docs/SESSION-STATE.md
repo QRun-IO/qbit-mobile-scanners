@@ -1,5 +1,7 @@
 ## November 2 — current checkpoint
 
+The real trusted-local renderer has produced Code128 `QQQ-TEST-123456` and QR `001234567890` from the actual published 4x1 revision. Independent ZXing pixel decoding and stock/margin/fit checks pass; a fresh native read confirms the same published revision and stock. See [rendering evidence and test images](../examples/echo/demo/docs/ECHO-RENDERER-ACCEPTANCE.md). No printer job was submitted, and physical acceptance remains open.
+
 The primary CI secret-scan failure was reproduced locally as five findings in inert test-token literals. The fixtures now generate tokens at runtime; `.gitleaksignore` names only the five exact historical commit/file/rule/line fingerprints. There are no rule or path exclusions and no production validation changes. Historical and staged Gitleaks scans pass, and all 27 composed demo tests pass with zero failures, errors or skips and zero Checkstyle violations. Current hosted CI still needs verification after publication.
 
 Completed and verified:

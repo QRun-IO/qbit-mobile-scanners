@@ -1,0 +1,117 @@
+{
+  "scope": "Two fixture renderings only; no physical scan or print and no production sandbox qualification",
+  "render": {
+    "renderer": "TRUSTED_LOCAL_DEVELOPMENT_UNQUALIFIED",
+    "imageId": "sha256:c124af0d890f1bb206422e97a1f997d863ea6a8b2225cecf32be726a252c9ee4",
+    "revisionId": 1,
+    "templateId": 1,
+    "sourceTable": "echoScan",
+    "stock": {
+      "dpi": 300,
+      "heightMicrons": 25400,
+      "leftMicrons": 3000,
+      "topMicrons": 3000,
+      "widthMicrons": 101600,
+      "rightMicrons": 3000,
+      "bottomMicrons": 3000
+    },
+    "cases": [
+      {
+        "file": "code128.zpl",
+        "inputType": "code128",
+        "inputValue": "QQQ-TEST-123456",
+        "byteCount": 27064,
+        "sha256": "e4ac771712fab2e8e14f71325e7053fdbdaa934f12513685836cb57f9b7ced73",
+        "durationMillis": 3345,
+        "zplEnvelopeStartsXaEndsXz": true
+      },
+      {
+        "file": "qr.zpl",
+        "inputType": "qr",
+        "inputValue": "001234567890",
+        "byteCount": 10722,
+        "sha256": "25cfac096f54b7b4baf21db2e7f2abcd68285f27775fad15fa594d10983734d0",
+        "durationMillis": 3481,
+        "zplEnvelopeStartsXaEndsXz": true
+      }
+    ],
+    "physicalScannerQualified": false,
+    "physicalPrintingQualified": false
+  },
+  "decode": {
+    "decoder": "ZXing MultiFormatReader over reconstructed ZPL ^GFA pixels",
+    "publishedRevisionId": 1,
+    "stockChecks": {
+      "stockIs4x1At300dpi": true,
+      "receiptRevisionMatchesPublished": true,
+      "widthDotsExact": true,
+      "heightDotsExact": true
+    },
+    "cases": [
+      {
+        "file": "code128.zpl",
+        "artifactSha256": "e4ac771712fab2e8e14f71325e7053fdbdaa934f12513685836cb57f9b7ced73",
+        "artifactBytes": 27064,
+        "decodedFormat": "CODE_128",
+        "decodedText": "QQQ-TEST-123456",
+        "labelWidthDots": 1200,
+        "labelHeightDots": 300,
+        "graphicWidthDots": 600,
+        "graphicHeightDots": 180,
+        "originXDots": 48,
+        "originYDots": 48,
+        "checks": {
+          "sha256MatchesRenderReceipt": true,
+          "exactEnvelopeSingleFoSingleUncompressedGfa": true,
+          "printWidthAndLabelLengthMatchStock": true,
+          "totalEqualsDataBytes": true,
+          "bytesPerRowPositiveAndDividesTotal": true,
+          "hexLengthIsTwiceDataBytes": true,
+          "graphicWithinLabel": true,
+          "originMatchesPublishedScene": true,
+          "withinPrintableLeftTop": true,
+          "withinPrintableRightBottom": true,
+          "withinRequestedFit": true,
+          "decodedFormatMatches": true,
+          "decodedTextStringExact": true
+        }
+      },
+      {
+        "file": "qr.zpl",
+        "artifactSha256": "25cfac096f54b7b4baf21db2e7f2abcd68285f27775fad15fa594d10983734d0",
+        "artifactBytes": 10722,
+        "decodedFormat": "QR_CODE",
+        "decodedText": "001234567890",
+        "labelWidthDots": 1200,
+        "labelHeightDots": 300,
+        "graphicWidthDots": 208,
+        "graphicHeightDots": 205,
+        "originXDots": 48,
+        "originYDots": 48,
+        "checks": {
+          "sha256MatchesRenderReceipt": true,
+          "exactEnvelopeSingleFoSingleUncompressedGfa": true,
+          "printWidthAndLabelLengthMatchStock": true,
+          "totalEqualsDataBytes": true,
+          "bytesPerRowPositiveAndDividesTotal": true,
+          "hexLengthIsTwiceDataBytes": true,
+          "graphicWithinLabel": true,
+          "originMatchesPublishedScene": true,
+          "withinPrintableLeftTop": true,
+          "withinPrintableRightBottom": true,
+          "withinRequestedFit": true,
+          "decodedFormatMatches": true,
+          "decodedTextStringExact": true
+        }
+      }
+    ],
+    "physicalScannerQualified": false,
+    "physicalPrintingQualified": false
+  },
+  "liveRevisionCheck": {
+    "checkedUtc": "2026-11-02T14:52:40.9062446Z",
+    "publishedPointerMatches": true,
+    "immutableRevisionFieldsMatch": true,
+    "printJobCount": 0
+  }
+}

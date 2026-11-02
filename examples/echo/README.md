@@ -8,6 +8,8 @@ The source implements ordinary QQQ metadata and processes; no Echo-specific Andr
 
 The composed demo has also run as one local server with a real Printing client, printer and 4x1 media, and a published Echo barcode document. A TC22 completed setup against it (printer, media and document, then Next) and Cancel then Leave. The earlier full native run used the simulated-printing fixture. **No physical Echo print or rescan has been proven yet.** This is not published to a Maven repository, not production-ready and not a claim that any label has printed.
 
+The actual renderer's Code128 and leading-zero QR outputs now pass independent pixel decoding and 4x1 stock/fit checks. See the [rendering evidence and scannable test images](demo/docs/ECHO-RENDERER-ACCEPTANCE.md). This no-print check does not replace physical acceptance.
+
 ## Host composition
 
 1. Install/configure the existing Mobile Scanners, Document Generation and retained-source Printing integration under their owner-qualified dependency tuple. Use the same backend/data source for Echo metadata and its state schema. Apply [`echo-h2.sql`](src/main/resources/db/echo-h2.sql) through host migrations; registration performs no DDL.
