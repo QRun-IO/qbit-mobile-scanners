@@ -1,6 +1,8 @@
 # QQQ Mobile Scanners TODO
 
-- [x] Verify real composed Echo native HTTP pipeline:33example/22demo, retained files, accepted jobs, retry identity and Leave closure; simulated printer/controlled renderer only.
+- [x] Publish reviewed Echo retry/receipt fixes as signed Gitea commit912040d;38 library/22 demo tests pass. Native printer pairing remains at Windows administrator approval; physical output and public CI/artifacts are still open.
+
+- [x] Verify real composed Echo native HTTP pipeline:38example/22demo, retained files, accepted jobs, retry identity and Leave closure; simulated printer/controlled renderer only.
 - [ ] Complete native printer connection and physical TC22 scan/print/rescan on current loaded stock, then qualify published dependencies and primary CI.
 
 - [x] Verify effective security-key set comparison and early Collaboration authentication initialization: scanner50/native Record Files18, Checkstyle0 on private coherent cohort.
