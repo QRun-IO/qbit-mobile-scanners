@@ -1,0 +1,38 @@
+{
+  "checkedUtc": "2026-11-02T15:57:49.4437968Z",
+  "scope": "Explicitly synthetic native HTTP acceptance; real renderer, retained files, installed print agent and printer spooler",
+  "source": "synthetic-http-acceptance",
+  "testValue": "ECHO-HTTP-TEST-001",
+  "symbology": "LABEL-TYPE-CODE128",
+  "format": "ZPL",
+  "scanRows": 1,
+  "jobRows": 1,
+  "jobStatus": "SPOOLED",
+  "spoolerAssigned": true,
+  "processClosed": true,
+  "physicalTriggerConfirmed": false,
+  "paperOutputConfirmed": false,
+  "printedLabelRescanConfirmed": false,
+  "stock": {
+    "heightMicrons": 25400,
+    "dpi": 300,
+    "widthMicrons": 101600
+  },
+  "configurationFix": {
+    "beforeGenerationMaximumBytes": 20971520,
+    "generationMaximumBytes": 1048576,
+    "greenFailures": 0,
+    "greenSkips": 0,
+    "redFailures": 3,
+    "configuredRendererMaximumBytes": 1048576,
+    "greenErrors": 0,
+    "greenTests": 74,
+    "redTests": 4
+  },
+  "failedPriorEvent": {
+    "printJobCreated": false,
+    "retried": false,
+    "state": "ATTENTION",
+    "cancelSucceeded": true
+  }
+}

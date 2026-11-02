@@ -27,4 +27,6 @@ Open [the full-size QR image](barcodes/qr-preview.png) when testing leading-zero
 
 ## Remaining acceptance
 
+The later [delivery check](echo-delivery-acceptance.json) uses a different, explicitly synthetic HTTP event (`ECHO-HTTP-TEST-001`). It traverses the real Echo process, renderer, retained output and installed Printing agent. Exactly one matching job reached `SPOOLED`, with a Windows spooler job assigned; native Cancel then closed Echo. It also exposed and verified the fix for the Generation/renderer byte-limit mismatch. This additional evidence does not turn either fixture into a physical handheld scan or confirm paper output.
+
 These two decoded artifacts prove these rendering cases. They do not prove physical trigger capture, printer delivery, printed-label readability, other inputs or symbologies, or production release readiness. Complete the TC22 scan → server print → printed-label rescan, deliberate repeated scans and Leave/error recovery. Keep the remaining device/provider, barcode-fidelity, dependency-publication and primary CI gates open.

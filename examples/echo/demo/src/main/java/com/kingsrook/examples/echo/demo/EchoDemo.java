@@ -69,6 +69,7 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
 
    private final EchoDemoSettings settings;
    private final GenerationPorts.IsolatedRenderer renderer;
+   private final Integer maximumOutputBytes;
    private final DataSource dataSource;
    private final PrintingService printing;
    private PrintingRealtimeRoutes realtime;
@@ -83,19 +84,32 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
     ***************************************************************************/
    public EchoDemo(EchoDemoSettings settings)
    {
-      this(settings, bridge(settings));
+      this(settings, bridge(settings), settings.renderer().maximumBytes());
    }
 
 
 
    /***************************************************************************
     ** Boundary tests may supply a refusing renderer; no other part is replaceable.
+    ** Generation keeps the owner's default output cap.
     ***************************************************************************/
    EchoDemo(EchoDemoSettings settings, GenerationPorts.IsolatedRenderer renderer)
+   {
+      this(settings, renderer, null);
+   }
+
+
+
+   /***************************************************************************
+    ** The renderer's own configured output cap is the cap Generation requests, so
+    ** Echo never asks for a larger allowance than the configured renderer cap.
+    ***************************************************************************/
+   EchoDemo(EchoDemoSettings settings, GenerationPorts.IsolatedRenderer renderer, Integer maximumOutputBytes)
    {
       super(jdbcUrl(settings));
       this.settings = settings;
       this.renderer = java.util.Objects.requireNonNull(renderer);
+      this.maximumOutputBytes = maximumOutputBytes;
       JdbcDataSource source = new JdbcDataSource();
       source.setURL(jdbcUrl(settings));
       source.setUser("sa");
@@ -204,7 +218,7 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
       new CollaborationQBitProducer().withQBitConfig(collaboration).produce(instance);
       // Documents are the operator's published, Echo-compatible templates, discovered per run; the legacy
       // ECHO_TEMPLATE_* host pin no longer selects one.
-      EchoHost.install(instance, new EchoHost.Deployment(BACKEND, BACKEND, BACKEND, dataSource, printing, renderer));
+      EchoHost.install(instance, new EchoHost.Deployment(BACKEND, BACKEND, BACKEND, dataSource, printing, renderer, maximumOutputBytes));
       RecordFilesQBitConfig recordFiles = new RecordFilesQBitConfig().withBackendName(BACKEND).withParentTables(List.of(EchoQBitProducer.SCAN_TABLE))
          .withQuarantineGeneratedFiles(settings.releaseGeneratedFiles() ? Boolean.FALSE : null);
       new RecordFilesQBitProducer().withQBitConfig(recordFiles).produce(instance);

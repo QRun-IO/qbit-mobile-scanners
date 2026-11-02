@@ -67,6 +67,8 @@ class EchoDemoAcceptanceTest
    private static final String MEDIA = "echo-4x6-300";
    private static final String REVISION = "c".repeat(64);
    private static final String QUEUE = "EchoAcceptanceQueue";
+   /** A nondefault renderer cap: Generation's own default (20 MiB) is larger, so a host that leaves it unset is refused. */
+   private static final int RENDERER_CAP = 262144;
    private static final String CODE_VALUE = "001234567890";
    private static final String QR_VALUE = "QR-VALUE-0099";
    private static final Set<Integer> PROTECTED = Set.of(57832, 51631, 18081, 18086, 18443, 19443, 18447, 18448, 18547, 18549, 18593);
@@ -83,12 +85,24 @@ class EchoDemoAcceptanceTest
 
    /***************************************************************************
     ** Fixed synthetic output, derived only from the exact context the real
-    ** Generation service hands the renderer. It records every call.
+    ** Generation service hands the renderer. It records every call and, like the
+    ** owner bridge, refuses a request whose maximum exceeds its own configured cap.
     ***************************************************************************/
    private static final class ControlledRenderer implements GenerationPorts.IsolatedRenderer
    {
       private final List<GenerationPorts.RenderRequest> renders = new CopyOnWriteArrayList<>();
       private final AtomicInteger validations = new AtomicInteger();
+      private final int cap;
+
+
+
+      /***********************************************************************
+       ** The renderer's configured maximum output bytes.
+       ***********************************************************************/
+      private ControlledRenderer(int cap)
+      {
+         this.cap = cap;
+      }
 
 
 
@@ -120,9 +134,57 @@ class EchoDemoAcceptanceTest
       @Override
       public GenerationPorts.Content render(GenerationPorts.RenderRequest request) throws QException
       {
+         // like the owner bridge, an absent maximum means the renderer's own configured cap
+         int requestedMaximum = request.maximumBytes() == null ? cap : request.maximumBytes();
+         if(requestedMaximum < 1 || requestedMaximum > cap)
+         {
+            throw new QException("Isolated renderer rejected or could not complete the request.");
+         }
          renders.add(request);
-         return new GenerationPorts.Content(zpl((Map<?, ?>) request.context().get("record")).getBytes(StandardCharsets.US_ASCII));
+         byte[] output = zpl((Map<?, ?>) request.context().get("record")).getBytes(StandardCharsets.US_ASCII);
+         if(output.length > requestedMaximum)
+         {
+            throw new QException("Isolated renderer rejected or could not complete the request.");
+         }
+         return new GenerationPorts.Content(output);
       }
+   }
+
+
+   /***************************************************************************
+    ** Generation requests exactly the renderer's configured cap: an explicit
+    ** nondefault value is propagated, and a host given no cap keeps the owner
+    ** default, which the bounded renderer would refuse (the live failure).
+    ***************************************************************************/
+   @Test
+   void generationRequestsTheConfiguredRendererCap() throws Exception
+   {
+      EchoDemoSettings settings = new EchoDemoSettings(root, freePort(), TENANT, TOKEN, true, null, null);
+      try(EchoDemo demo = new EchoDemo(settings, new ControlledRenderer(RENDERER_CAP), RENDERER_CAP))
+      {
+         demo.initializeDatabase(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+         assertEquals(RENDERER_CAP, generationConfig(demo.defineQInstance()).getMaximumOutputBytes());
+      }
+      com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager.resetConnectionProviders();
+      Path other = Files.createDirectory(root.resolve("owner-default"));
+      EchoDemoSettings unconfigured = new EchoDemoSettings(other, freePort(), TENANT, TOKEN, true, null, null);
+      try(EchoDemo demo = new EchoDemo(unconfigured, new ControlledRenderer(RENDERER_CAP)))
+      {
+         demo.initializeDatabase(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+         Integer requested = generationConfig(demo.defineQInstance()).getMaximumOutputBytes();
+         assertTrue(requested > RENDERER_CAP, "The owner default exceeds the nondefault cap, so an unset host is refused.");
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** The Generation configuration the host installed in the instance.
+    ***************************************************************************/
+   private static DocumentGenerationQBitConfig generationConfig(QInstance instance)
+   {
+      return instance.getQBits().values().stream().map(bit -> bit.getConfig()).filter(DocumentGenerationQBitConfig.class::isInstance)
+         .map(DocumentGenerationQBitConfig.class::cast).findFirst().orElseThrow();
    }
 
 
@@ -157,7 +219,7 @@ class EchoDemoAcceptanceTest
    @Test
    void approvedScannerScansBecomeRetainedOriginalsAndPrintingJobs() throws Exception
    {
-      ControlledRenderer renderer = new ControlledRenderer();
+      ControlledRenderer renderer = new ControlledRenderer(RENDERER_CAP);
       int setupPort = freePort();
       int port = freePort();
       EchoDemoSettings setup = new EchoDemoSettings(root, setupPort, TENANT, TOKEN, true, null, null);
@@ -167,7 +229,7 @@ class EchoDemoAcceptanceTest
       Integer templateA;
       Integer templateB;
       Integer templateOther;
-      try(EchoDemo demo = new EchoDemo(setup, renderer))
+      try(EchoDemo demo = new EchoDemo(setup, renderer, RENDERER_CAP))
       {
          demo.initializeDatabase(scannerPassword, adminPassword);
          printerRowId = enrollPrinter(demo, setup);
@@ -183,9 +245,10 @@ class EchoDemoAcceptanceTest
 
       EchoDemoSettings settings = new EchoDemoSettings(root, port, TENANT, TOKEN, true, null, null);
       origin = "http://127.0.0.1:" + port;
-      try(EchoDemo demo = new EchoDemo(settings, renderer))
+      try(EchoDemo demo = new EchoDemo(settings, renderer, RENDERER_CAP))
       {
          assertNotNull(TableFeaturePermissionsMetaData.of(demo.defineQInstance()), "Host enrichment must register record-feature permissions.");
+         assertEquals(RENDERER_CAP, generationConfig(demo.defineQInstance()).getMaximumOutputBytes(), "Generation must request the renderer's configured cap.");
          demo.start(port);
          String scanner = login("scanner", scannerPassword);
          String admin = login("admin", adminPassword);
@@ -320,7 +383,7 @@ class EchoDemoAcceptanceTest
       String scannerPassword = UUID.randomUUID().toString();
       String adminPassword = UUID.randomUUID().toString();
       origin = "http://127.0.0.1:" + port;
-      try(EchoDemo demo = new EchoDemo(settings, new ControlledRenderer()))
+      try(EchoDemo demo = new EchoDemo(settings, new ControlledRenderer(RENDERER_CAP), RENDERER_CAP))
       {
          demo.initializeDatabase(scannerPassword, adminPassword);
          String code = demo.printing().createEnrollment("default", "Printer agent").getString("enrollmentCode");
@@ -392,13 +455,13 @@ class EchoDemoAcceptanceTest
    @Test
    void republishedDocumentFailsVisiblyWithoutReplacementAndLeaveStillWorks() throws Exception
    {
-      ControlledRenderer renderer = new ControlledRenderer();
+      ControlledRenderer renderer = new ControlledRenderer(RENDERER_CAP);
       int port = freePort();
       EchoDemoSettings settings = new EchoDemoSettings(root, port, TENANT, TOKEN, true, null, null);
       String scannerPassword = UUID.randomUUID().toString();
       String adminPassword = UUID.randomUUID().toString();
       origin = "http://127.0.0.1:" + port;
-      try(EchoDemo demo = new EchoDemo(settings, renderer))
+      try(EchoDemo demo = new EchoDemo(settings, renderer, RENDERER_CAP))
       {
          demo.initializeDatabase(scannerPassword, adminPassword);
          String printerRowId = enrollPrinter(demo, settings);

@@ -46,17 +46,42 @@ public final class EchoHost
     ** Deployment-owned parts. printingBackend and generationBackend name backends
     ** registered in the instance; echoState shares the Echo state schema's database.
     ** Media enforcement comes only from the owner's explicit adoption factory.
+    ** maximumOutputBytes must be the renderer's own configured output cap, which
+    ** Generation sends with every render request; the owner bridge refuses a larger
+    ** request before it renders. Null keeps the owner's default and is only correct
+    ** when the renderer accepts that default.
     ***************************************************************************/
    public record Deployment(String printingBackend, String generationBackend, String echoBackend, DataSource echoState, PrintingService printing,
-      GenerationPorts.IsolatedRenderer renderer)
+      GenerationPorts.IsolatedRenderer renderer, Integer maximumOutputBytes)
    {
+      /** The owner's inclusive bounds for a configured output cap. */
+      static final int MAXIMUM_OUTPUT_BYTES_LIMIT = 100 * 1024 * 1024;
+
+
+
       /***********************************************************************
-       ** Refuse an absent deployment-owned part before any composition.
+       ** Refuse an absent deployment-owned part or an out-of-range output cap
+       ** before any composition.
        ***********************************************************************/
       public Deployment
       {
+         if(maximumOutputBytes != null && (maximumOutputBytes < 1 || maximumOutputBytes > MAXIMUM_OUTPUT_BYTES_LIMIT))
+         {
+            throw new IllegalArgumentException("maximumOutputBytes must be between 1 and " + MAXIMUM_OUTPUT_BYTES_LIMIT + ".");
+         }
          Objects.requireNonNull(printing);
          Objects.requireNonNull(renderer);
+      }
+
+
+
+      /***********************************************************************
+       ** Owner default output cap, for a renderer that accepts it.
+       ***********************************************************************/
+      public Deployment(String printingBackend, String generationBackend, String echoBackend, DataSource echoState, PrintingService printing,
+         GenerationPorts.IsolatedRenderer renderer)
+      {
+         this(printingBackend, generationBackend, echoBackend, echoState, printing, renderer, null);
       }
    }
 
@@ -74,6 +99,10 @@ public final class EchoHost
       DocumentGenerationQBitConfig generation = new DocumentGenerationQBitConfig().withBackendName(deployment.generationBackend())
          .withSourceTables(List.of(EchoQBitProducer.SCAN_TABLE)).withRenderer(deployment.renderer()).withIntake(intake).withRetainedAccess(intake)
          .withPrinting(dispatch).withAudit(new GenerationAudit());
+      if(deployment.maximumOutputBytes() != null)
+      {
+         generation.withMaximumOutputBytes(deployment.maximumOutputBytes());
+      }
       new PrintingQBitProducer().withConfig(new PrintingQBitConfig().withBackendName(deployment.printingBackend()).withService(deployment.printing())
          .withRetainedSourceAuthority(source)).produce(instance, "printing");
       EchoConfig config = EchoOwnerAdapters.config(instance, deployment.echoBackend(), deployment.echoState(), new DocumentGenerationService(generation),

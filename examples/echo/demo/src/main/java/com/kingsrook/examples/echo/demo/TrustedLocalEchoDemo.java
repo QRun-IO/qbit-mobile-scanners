@@ -92,6 +92,6 @@ public final class TrustedLocalEchoDemo
       Map<String, String> environment = System.getenv();
       EchoDemoSettings.LocalRenderer local = EchoDemoSettings.LocalRenderer.fromEnvironment(environment);
       EchoDemoSettings settings = EchoDemoSettings.fromLocalEnvironment(environment, args.length == 0 ? null : args[0]);
-      EchoDemo.launch(new EchoDemo(settings, renderer(local, settings.root())), settings, "trusted-local-development");
+      EchoDemo.launch(new EchoDemo(settings, renderer(local, settings.root()), local.maximumBytes()), settings, "trusted-local-development");
    }
 }

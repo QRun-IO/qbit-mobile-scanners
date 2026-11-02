@@ -257,6 +257,11 @@ class EchoOwnerAdaptersTest
    void absentDeploymentPartsAreRefused()
    {
       assertThrows(NullPointerException.class, () -> new EchoHost.Deployment("p", "g", "e", null, null, null));
+      // the renderer's output cap must be inside the owner's 1 byte to 100 MiB bounds
+      for(int invalid : new int[] { 0, -1, 100 * 1024 * 1024 + 1 })
+      {
+         assertThrows(IllegalArgumentException.class, () -> new EchoHost.Deployment("p", "g", "e", null, null, null, invalid));
+      }
       assertTrue(!com.kingsrook.qbits.documentgeneration.printing.PrintingDispatch.MediaCapability.UNSUPPORTED.enforcesSelectedProfile());
    }
 

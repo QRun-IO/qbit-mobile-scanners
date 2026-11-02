@@ -137,6 +137,27 @@ class TrustedLocalRendererSettingsTest
 
 
    /***************************************************************************
+    ** The renderer's output cap, the value the launcher hands Generation, is the
+    ** documented default or the explicit nondefault setting, and stays bounded.
+    ***************************************************************************/
+   @Test
+   void outputCapIsTheConfiguredRendererMaximum()
+   {
+      assertEquals(1048576, EchoDemoSettings.LocalRenderer.fromEnvironment(local()).maximumBytes());
+      Map<String, String> configured = local();
+      configured.put("ECHO_RENDERER_MAXIMUM_BYTES", "262144");
+      assertEquals(262144, EchoDemoSettings.LocalRenderer.fromEnvironment(configured).maximumBytes());
+      for(String invalid : new String[] { "0", "-1", "104857601" })
+      {
+         Map<String, String> environment = local();
+         environment.put("ECHO_RENDERER_MAXIMUM_BYTES", invalid);
+         assertThrows(IllegalArgumentException.class, () -> EchoDemoSettings.LocalRenderer.fromEnvironment(environment));
+      }
+   }
+
+
+
+   /***************************************************************************
     ** Absent, wrong or case-changed opt-in never selects the local renderer.
     ***************************************************************************/
    @Test

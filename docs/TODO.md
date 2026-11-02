@@ -2,13 +2,14 @@
 
 Current demo path (November2; supersedes historical runtime/pairing notes below):
 
+- [x] Fix and adopt the Generation/renderer byte-limit mismatch in both demo launchers; three failures with old wiring, 74 passing library/demo tests with the fix. One clearly synthetic native HTTP event now reaches the actual Windows printer spooler through Echo, with process cancellation verified after failure and acceptance. Paper output, TC22 trigger capture and rescan remain separate open checks.
 - [x] Render the actual published 4x1 document through the real renderer and independently decode its Code128 and leading-zero QR pixels; both preserve exact value/symbology and fit the configured stock. See [evidence and test images](../examples/echo/demo/docs/ECHO-RENDERER-ACCEPTANCE.md). Physical printing remains unverified.
 - [x] Correct the five inert test-token secret-scan findings using generated fixtures and exact historical fingerprints; local historical/staged scans and all 27 demo tests pass. Current primary CI remains an open gate.
 - [x] Run all real scanner/Echo, files, document and printing qbits in the single local server57832; original accounts work; full demo27 and live forwarded-host checks pass.
 - [x] Connect the existing installed print client to57832 and approve its available ZPL printer through the native QQQ process; no job/default changes.
 - [x] Verify the Android same-origin header (Android `fb3cc5d`, 174 JVM tests) and TC22 sign-in, heartbeat, printer/media/document selection and Cancel/Leave against the strict local host, preserving data.
 - [x] Resolve the earlier 4x6 media report versus loaded 4x1 stock with the Printing owner (101600 x 25400 microns, 300 dpi) and publish the real Echo 4x1 barcode document with its matching immutable revision 1.
-- [ ] Complete one physical Code128 (QQQ-TEST-123456) scan, print and rescan on the TC22, then leading-zero QR. No physical Echo print or rescan is proven yet (print jobs 0, latest read 0).
+- [ ] Complete one physical Code128 (QQQ-TEST-123456) scan, print and rescan on the TC22, then leading-zero QR. One synthetic HTTP test job reached `SPOOLED`; physical paper output and handheld acceptance are not yet proven.
 - [ ] Finish the existing production-readiness matrix and publication gates; local demo acceptance alone does not complete 1.0. Public coherent artifacts, primary Gitea CI and final signing remain open, with signing last by user decision.
 
 - [x] Implement explicit required INTEGER Document choice with printer/media dependency, server-pinned revision and recoverable errors:45 library/24 composed tests and real TC22 seven-stage/112-request semantic acceptance pass (simulated printing).
