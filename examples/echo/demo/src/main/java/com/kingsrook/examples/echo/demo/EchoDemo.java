@@ -134,6 +134,11 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
     ***************************************************************************/
    static String jdbcUrl(EchoDemoSettings settings)
    {
+      if(settings.existingDatabase() != null)
+      {
+         // explicit existing-local-server mode: open that exact file, never create it, same session settings
+         return "jdbc:h2:file:" + settings.existingDatabaseBase() + ";IFEXISTS=TRUE;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=5000;WRITE_DELAY=0";
+      }
       return "jdbc:h2:file:" + settings.root().resolve("db").resolve("echo").toAbsolutePath().normalize().toString().replace('\\', '/')
          + ";DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=5000;WRITE_DELAY=0";
    }
@@ -218,8 +223,16 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
    @Override
    public void initializeDatabase(String scannerPassword, String adminPassword) throws Exception
    {
-      Files.createDirectories(settings.root().resolve("db"));
-      super.initializeDatabase(scannerPassword, adminPassword);
+      if(settings.existingDatabase() == null)
+      {
+         Files.createDirectories(settings.root().resolve("db"));
+         super.initializeDatabase(scannerPassword, adminPassword);
+      }
+      else
+      {
+         // adopting existing data: add only missing schema; accounts, hashes, devices and scans are never seeded or changed
+         super.initializeDatabase(null, null);
+      }
       QInstance instance = defineQInstance();
       printing.initialize();
       try(Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement())
@@ -386,27 +399,60 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
     ***************************************************************************/
    static void guardOrigin(Context context)
    {
-      String host = context.header("Host");
-      int port = context.req().getLocalPort();
-      if(host == null || !Set.of("localhost:" + port, "127.0.0.1:" + port).contains(host.toLowerCase(Locale.ROOT)))
+      String refusal = refusal(context.header("Host"), context.header("Origin"), context.header("Sec-Fetch-Site"), context.method().name(),
+         context.cookie("sessionUUID") != null || context.cookie("sessionId") != null);
+      if(refusal != null)
       {
-         throw new ForbiddenResponse("The Echo demo accepts only loopback host names");
+         throw new ForbiddenResponse(refusal);
       }
-      String origin = context.header("Origin");
+   }
+
+
+
+   /***************************************************************************
+    ** The guard decision, null when the request is allowed. The Host must be the
+    ** literal name localhost or 127.0.0.1 with an explicit port from 1 to 65535.
+    ** That port need not equal the listening port: the native client reaches this
+    ** loopback-only server through USB forwarding (adb reverse tcp:8080 ->
+    ** tcp:57832) and sends the device-side Host 127.0.0.1:8080. A DNS-rebinding
+    ** request carries an attacker's host name, never a literal loopback name, so
+    ** the literal-name check, not the port, is what stops it. Userinfo, paths,
+    ** queries, other names, IPv6 and malformed ports are all refused. No
+    ** forwarding headers are consulted. Origin must be exactly http://<Host>.
+    ***************************************************************************/
+   static String refusal(String host, String origin, String fetchSite, String method, boolean cookie)
+   {
+      if(!isLoopbackAuthority(host))
+      {
+         return "The Echo demo accepts only loopback host names";
+      }
       if(origin != null && !origin.equals("http://" + host))
       {
-         throw new ForbiddenResponse("Cross-origin access to the Echo demo is not allowed");
+         return "Cross-origin access to the Echo demo is not allowed";
       }
-      if("cross-site".equalsIgnoreCase(context.header("Sec-Fetch-Site")))
+      if("cross-site".equalsIgnoreCase(fetchSite))
       {
-         throw new ForbiddenResponse("Cross-site access to the Echo demo is not allowed");
+         return "Cross-site access to the Echo demo is not allowed";
       }
-      boolean unsafe = !Set.of("GET", "HEAD", "OPTIONS").contains(context.method().name());
-      boolean cookie = context.cookie("sessionUUID") != null || context.cookie("sessionId") != null;
-      if(unsafe && cookie && origin == null)
+      if(!Set.of("GET", "HEAD", "OPTIONS").contains(method) && cookie && origin == null)
       {
-         throw new ForbiddenResponse("Cookie-authenticated changes require a same-origin request");
+         return "Cookie-authenticated changes require a same-origin request";
       }
+      return null;
+   }
+
+
+
+   /***************************************************************************
+    ** Literal loopback name and an explicit port with no leading zero.
+    ***************************************************************************/
+   static boolean isLoopbackAuthority(String host)
+   {
+      if(host == null || !host.toLowerCase(Locale.ROOT).matches("(localhost|127\\.0\\.0\\.1):[1-9][0-9]{0,4}"))
+      {
+         return false;
+      }
+      return Integer.parseInt(host.substring(host.indexOf(':') + 1)) <= 65535;
    }
 
 

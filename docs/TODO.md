@@ -1,9 +1,17 @@
 # QQQ Mobile Scanners TODO
 
-- [x] Implement explicit required INTEGER Document choice with printer/media dependency, server-pinned revision and recoverable errors:45 library/24 composed tests and real TC22 seven-stage/112-request semantic acceptance pass (simulated printing).
-- [ ] Roll out document-selection server feature and complete current Windows-authorized printer pairing, real4x1 publication and physical scan/print/rescan.
+Current demo path (November2; supersedes historical runtime/pairing notes below):
 
-- [ ] Root Maven gate for the per-extension device-header scope fix (base verify + Echo demo composed regression), then redo native printer pairing.
+- [x] Run all real scanner/Echo, files, document and printing qbits in the single local server57832; original accounts work; full demo27 and live forwarded-host checks pass.
+- [x] Connect the existing installed print client to57832 and approve its available ZPL printer through the native QQQ process; no job/default changes.
+- [ ] Finish Android same-origin request header verification/install and prove TC22 sign-in, heartbeat and Echo setup against the strict local host.
+- [ ] Resolve the reported4x6 media versus accepted physical4x1 stock with the printing owner, publish a compatible document, and complete physical scan/print/rescan.
+- [ ] Finish the existing production-readiness matrix and publication gates; local demo acceptance alone does not complete1.0.
+
+- [x] Implement explicit required INTEGER Document choice with printer/media dependency, server-pinned revision and recoverable errors:45 library/24 composed tests and real TC22 seven-stage/112-request semantic acceptance pass (simulated printing).
+- [x] Roll out the document-selection feature and connect the installed print client to the canonical local server. Real4x1 publication and physical scan/print/rescan remain tracked above.
+
+- [x] Verify the per-extension device-header scope fix (50 base,7 base-demo and composed HTTP regressions), then complete actual native printer enrollment/binding on the local server.
 
 - [x] Publish reviewed Echo retry/receipt fixes as signed Gitea commit912040d;38 library/22 demo tests pass. Native printer pairing remains at Windows administrator approval; physical output and public CI/artifacts are still open.
 

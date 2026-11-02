@@ -20,11 +20,26 @@ import com.kingsrook.qbits.documentgeneration.renderer.RendererConfiguration;
  ** printer, renderer, tenant or account. Messages name a variable, never a value.
  *******************************************************************************/
 public record EchoDemoSettings(Path root, int port, String tenant, String adminToken, boolean releaseGeneratedFiles, TemplatePin template,
-   RendererConfiguration renderer)
+   RendererConfiguration renderer, Path existingDatabase)
 {
    /** Local runtimes that must never be bound or shadowed by a demo. */
    private static final Set<Integer> PROTECTED_PORTS = Set.of(57832, 51631, 18081, 18086, 18443, 19443, 18447, 18448, 18547, 18549, 18593);
+   /** The one canonical local test server port, permitted only when adopting that server's existing database. */
+   static final int NORMAL_LOCAL_SERVER_PORT = 57832;
+   static final String DATABASE_SUFFIX = ".mv.db";
    private static final String LABEL = "[A-Za-z0-9._:-]{1,128}";
+
+
+
+   /***************************************************************************
+    ** Fresh private demo: its database lives under the demo root and the
+    ** canonical local server port stays protected.
+    ***************************************************************************/
+   public EchoDemoSettings(Path root, int port, String tenant, String adminToken, boolean releaseGeneratedFiles, TemplatePin template,
+      RendererConfiguration renderer)
+   {
+      this(root, port, tenant, adminToken, releaseGeneratedFiles, template, renderer, null);
+   }
 
 
 
@@ -57,7 +72,12 @@ public record EchoDemoSettings(Path root, int port, String tenant, String adminT
       {
          throw new IllegalArgumentException("ECHO_DEMO_ROOT must be an existing absolute directory that is not a symbolic link");
       }
-      if(port < 1024 || port > 65535 || PROTECTED_PORTS.contains(port))
+      if(existingDatabase != null)
+      {
+         requireExistingDatabase(existingDatabase);
+      }
+      boolean adoptingNormalServer = existingDatabase != null && port == NORMAL_LOCAL_SERVER_PORT;
+      if(port < 1024 || port > 65535 || (PROTECTED_PORTS.contains(port) && !adoptingNormalServer))
       {
          throw new IllegalArgumentException("The Echo demo port must be a fresh unprotected port from 1024 to 65535");
       }
@@ -69,6 +89,46 @@ public record EchoDemoSettings(Path root, int port, String tenant, String adminT
       {
          throw new IllegalArgumentException("ECHO_PRINTING_ADMIN_TOKEN is required and must be 32 to 1024 characters");
       }
+   }
+
+
+
+   /***************************************************************************
+    ** The explicit existing-local-server mode: an absolute, existing H2 file
+    ** named *.mv.db that is a regular file, not a link or reparse point. The
+    ** reason names the variable, never the path.
+    ***************************************************************************/
+   private static void requireExistingDatabase(Path database)
+   {
+      try
+      {
+         var attributes = Files.readAttributes(database, java.nio.file.attribute.BasicFileAttributes.class, java.nio.file.LinkOption.NOFOLLOW_LINKS);
+         if(!database.isAbsolute() || !database.getFileName().toString().endsWith(DATABASE_SUFFIX) || database.getFileName().toString().length() == DATABASE_SUFFIX.length()
+            || !attributes.isRegularFile() || attributes.isSymbolicLink() || attributes.isOther())
+         {
+            throw new IllegalArgumentException();
+         }
+      }
+      catch(java.io.IOException | RuntimeException failure)
+      {
+         throw new IllegalArgumentException("ECHO_EXISTING_DATABASE must be an existing absolute H2 " + DATABASE_SUFFIX + " file that is not a link");
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** The H2 file base (the path without the suffix) of the existing database;
+    ** null for a fresh private demo.
+    ***************************************************************************/
+   String existingDatabaseBase()
+   {
+      if(existingDatabase == null)
+      {
+         return null;
+      }
+      String path = existingDatabase.toString().replace('\\', '/');
+      return path.substring(0, path.length() - DATABASE_SUFFIX.length());
    }
 
 
@@ -109,7 +169,8 @@ public record EchoDemoSettings(Path root, int port, String tenant, String adminT
       }
       return new EchoDemoSettings(Path.of(required(environment, "ECHO_DEMO_ROOT")), integer(port, "ECHO_DEMO_PORT"),
          required(environment, "ECHO_PRINTING_TENANT"), required(environment, "ECHO_PRINTING_ADMIN_TOKEN"),
-         "true".equals(environment.get("ECHO_RELEASE_GENERATED_FILES")), pin, renderer);
+         "true".equals(environment.get("ECHO_RELEASE_GENERATED_FILES")), pin, renderer,
+         environment.get("ECHO_EXISTING_DATABASE") == null ? null : Path.of(required(environment, "ECHO_EXISTING_DATABASE")));
    }
 
 

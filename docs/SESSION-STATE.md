@@ -1,3 +1,13 @@
+## November 2 — one local QQQ server and installed print client connected
+
+The canonical local server on57832 now runs Mobile Scanners/Echo, Collaboration/Record Files, Document Generation and Printing together, using the existing development database. Both original accounts authenticated. Live discovery advertises API1.10/mobile1.4/printing2.3; authenticated administration metadata exposes the composed modules. This is greenfield local development: no backup, cutover or cross-server bridge is required.
+
+The full demo gate passes27 tests with zero failures/errors/skips and zero Checkstyle violations. It includes file-backed existing-data acceptance and the USB-forwarded loopback Host regression. Actual running HTTP checks accept Host127.0.0.1:8080 through57832 and reject foreign hosts/origins. The TC22 retains its original app data, approved device and8080 USB connection; no emulator runs.
+
+The existing RC4 print client is now natively signed in, enrolled and connected to57832. It reports five printers/two exposed. The sole available ZPL printer was approved through the ordinary printingEnablePrinter process; the persisted native query confirms enabled/available. No physical job was sent and printer defaults were unchanged.
+
+Immediate remaining demo work: Android cookie requests need a same-origin header (Claude patch is under JVM/lint/APK verification); the printer reports only its4x6 Windows-default profile despite the user's accepted4x1 loaded stock (precise handoff sent to Printing owner); then publish a compatible document and perform TC22 scan/print/rescan. Full production release and original provider/device/public-dependency gates remain open. Earlier separate53118 pairing and Windows-prompt status below are historical.
+
 ## November 1 — corrected setup verified on TC22 and published
 
 Server source8da274e and Android test-only source47a923a are signed/pushed; Android's actual Gitea PR10 review topic was advanced to47a923a via SSH AGit (the source feature branch alone does not advance an AGit review ref). Required printer/media/INTEGER Document selection, dependency clearing, two accepted synthetic scans with the same selections, recreation and Apps/Leave all passed on real TC22:7 stages,112/112 published semantic requests,15 operations. Normal app/data preserved; emulator off; printing/scanner qualification flags remain false. Server45/library24/demo and Android99focused/host tests+8Nodeguards/lint0errors0warnings pass. Live private server53118 is still101efc8/EchoRetry pending document-choice rollout, and actual printer pairing awaits the current Windows consent in existing session73437. No root physical print has occurred. Normal57832 stays unchanged.
