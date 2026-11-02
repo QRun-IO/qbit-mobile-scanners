@@ -4,24 +4,25 @@ Current demo path (November2; supersedes historical runtime/pairing notes below)
 
 - [x] Run all real scanner/Echo, files, document and printing qbits in the single local server57832; original accounts work; full demo27 and live forwarded-host checks pass.
 - [x] Connect the existing installed print client to57832 and approve its available ZPL printer through the native QQQ process; no job/default changes.
-- [ ] Finish Android same-origin request header verification/install and prove TC22 sign-in, heartbeat and Echo setup against the strict local host.
-- [ ] Resolve the reported4x6 media versus accepted physical4x1 stock with the printing owner, publish a compatible document, and complete physical scan/print/rescan.
-- [ ] Finish the existing production-readiness matrix and publication gates; local demo acceptance alone does not complete1.0.
+- [x] Verify the Android same-origin header (Android `fb3cc5d`, 174 JVM tests) and TC22 sign-in, heartbeat, printer/media/document selection and Cancel/Leave against the strict local host, preserving data.
+- [x] Resolve the earlier 4x6 media report versus loaded 4x1 stock with the Printing owner (101600 x 25400 microns, 300 dpi) and publish the real Echo 4x1 barcode document with its matching immutable revision 1.
+- [ ] Complete one physical Code128 (QQQ-TEST-123456) scan, print and rescan on the TC22, then leading-zero QR. No physical Echo print or rescan is proven yet (print jobs 0, latest read 0).
+- [ ] Finish the existing production-readiness matrix and publication gates; local demo acceptance alone does not complete 1.0. Public coherent artifacts, primary Gitea CI and final signing remain open, with signing last by user decision.
 
 - [x] Implement explicit required INTEGER Document choice with printer/media dependency, server-pinned revision and recoverable errors:45 library/24 composed tests and real TC22 seven-stage/112-request semantic acceptance pass (simulated printing).
 - [x] Roll out the document-selection feature and connect the installed print client to the canonical local server. Real4x1 publication and physical scan/print/rescan remain tracked above.
 
 - [x] Verify the per-extension device-header scope fix (50 base,7 base-demo and composed HTTP regressions), then complete actual native printer enrollment/binding on the local server.
 
-- [x] Publish reviewed Echo retry/receipt fixes as signed Gitea commit912040d;38 library/22 demo tests pass. Native printer pairing remains at Windows administrator approval; physical output and public CI/artifacts are still open.
+- [x] Publish reviewed Echo retry/receipt fixes as signed Gitea commit912040d;38 library/22 demo tests pass. (Historical: the then-pending Windows approval of printer pairing is superseded; the print client is now connected to the single local server.) Physical output and public CI/artifacts are still open.
 
 - [x] Verify real composed Echo native HTTP pipeline:38example/22demo, retained files, accepted jobs, retry identity and Leave closure; simulated printer/controlled renderer only.
-- [ ] Complete native printer connection and physical TC22 scan/print/rescan on current loaded stock, then qualify published dependencies and primary CI.
+- [x] Complete native printer connection on the current loaded stock (done on the single local server). Physical scan/print/rescan is tracked above; published dependencies and primary CI remain open.
 
 - [x] Verify effective security-key set comparison and early Collaboration authentication initialization: scanner50/native Record Files18, Checkstyle0 on private coherent cohort.
-- [ ] Complete live Echo renderer/printer composition and physical TC22 print/rescan; startup smoke and simulated printing do not close this gate.
+- [x] Compose the live Echo renderer, Printing and document publication in the single local server. Physical TC22 print/rescan is tracked above; startup smoke and simulated printing do not close that gate.
 
-- [ ] Deliver Echo example: choose authorized printer and media once, then one scan/render/accepted-print job at a time until leave; reproduce exact value and symbology with worker-owned integer-module fitting and quiet zones.
+- [ ] Deliver Echo example: choose an authorized printer, media and Document (all three required) once, then one scan/render/accepted-print job at a time until leave; reproduce exact value and symbology with worker-owned integer-module fitting and quiet zones. Source, composition, Document choice and native setup are done. Still open: the physical print and rescan above, and full-fidelity work beyond the six admitted printable-ASCII types (EAN/UPC, GS1, AIM identifier and raw payloads), tracked in `examples/echo/README.md`.
 - [ ] Coordinate qualified renderer fit, authorized printer/media discovery, least-privilege submit and retained-print adapter contracts with their owners via shared communications.
 - [x] Verify scanContext 1.3 with root44/demo7/optional18 and Checkstyle: following-step QR/Code 128 branching, legacy omission isolation, trusted attribution and exact retry binding; physical scanner acceptance remains separate.
 

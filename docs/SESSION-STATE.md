@@ -1,3 +1,22 @@
+## November 2 — current checkpoint
+
+Completed and verified:
+
+- Server source `ca6e4dd` is signed and published as Gitea PR 7. The composed demo passes 27 tests with zero Checkstyle violations. Host forwarding accepts `localhost` and `127.0.0.1` with a valid explicit port, and foreign Host and Origin values are denied.
+- One local QQQ demo server on host port 57832 runs Mobile Scanners/Echo, Collaboration/Record Files, Document Generation and Printing (API 1.10.0, mobile 1.4.0, printing 2.3.0). On this workstation, device port 8080 forwards to host port 57832. The original accounts, enrollment and approval are retained.
+- Android `fb3cc5d` (Gitea PR 10) adds the native same-origin fix. The normal TC22 was updated without clearing data, and existing login and approval, heartbeat, real printer, media and document selection, and Cancel then Leave were verified. The emulator is off because it stalls this workstation.
+- The installed print client (RC4) is signed in, enrolled and connected to this server, and its native-approved ZPL printer is available. The Printing owner has aligned the loaded 4x1 stock (101600 x 25400 microns at 300 dpi) and updated the real media revision. No UAC prompt or printer setup is pending.
+- A real Echo 4x1 barcode document is published through native authoring, with a matching immutable revision 1. The TC22 selected the actual printer, the fresh 4x1 media and that document. Next succeeded and the device shows Scanner ready and Connected.
+
+Not yet done:
+
+- No physical Echo print or rescan has been proven. Baseline print jobs were 0 and the latest read was 0. One physical scan of QQQ-TEST-123456 has been requested from the user.
+- The earlier native end-to-end run (7 stages, 112 semantic requests) used simulated printing and inputs. It is not physical evidence.
+- Still open for 1.0: physical Code128 and leading-zero QR scan, print and rescan; the full original provider, camera, GPS, projection and device qualification; public coherent artifacts; primary Gitea CI; and final signing and distribution. Signing is deliberately last, by the user's decision. A working first demo does not collapse these requirements, and nothing here claims release readiness.
+- Core native API merge continuation PR 1337 (a42f9e5) was reviewed with no actionable conflict regression, and its 57 focused tests were verified. Normal CI and publication are not established, and default dependencies are not repinned.
+
+The entries below are historical. Where they describe same-origin login, printer connection, media, document publication or server composition as pending, this checkpoint supersedes them.
+
 ## November 2 — one local QQQ server and installed print client connected
 
 The canonical local server on57832 now runs Mobile Scanners/Echo, Collaboration/Record Files, Document Generation and Printing together, using the existing development database. Both original accounts authenticated. Live discovery advertises API1.10/mobile1.4/printing2.3; authenticated administration metadata exposes the composed modules. This is greenfield local development: no backup, cutover or cross-server bridge is required.
@@ -6,7 +25,7 @@ The full demo gate passes27 tests with zero failures/errors/skips and zero Check
 
 The existing RC4 print client is now natively signed in, enrolled and connected to57832. It reports five printers/two exposed. The sole available ZPL printer was approved through the ordinary printingEnablePrinter process; the persisted native query confirms enabled/available. No physical job was sent and printer defaults were unchanged.
 
-Immediate remaining demo work: Android cookie requests need a same-origin header (Claude patch is under JVM/lint/APK verification); the printer reports only its4x6 Windows-default profile despite the user's accepted4x1 loaded stock (precise handoff sent to Printing owner); then publish a compatible document and perform TC22 scan/print/rescan. Full production release and original provider/device/public-dependency gates remain open. Earlier separate53118 pairing and Windows-prompt status below are historical.
+(Superseded by the current checkpoint above: the same-origin header, 4x1 media report and document publication are done. Only the physical TC22 scan, print and rescan remains for the demo, and the full production release gates remain open. Earlier separate 53118 pairing and Windows-prompt status below are historical.)
 
 ## November 1 — corrected setup verified on TC22 and published
 
