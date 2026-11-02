@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2026 Kingsrook, LLC. SPDX-License-Identifier: Apache-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>com.kingsrook.examples</groupId>
+   <artifactId>qqq-echo</artifactId>
+   <version>0.1.0-SNAPSHOT</version>
+   <name>QQQ Echo scanner example</name>
+   <licenses>
+      <license>
+         <name>Apache License, Version 2.0</name>
+         <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+         <distribution>repo</distribution>
+      </license>
+   </licenses>
+   <properties>
+      <maven.compiler.release>21</maven.compiler.release>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <qqq.version>4.1.0-RC.20</qqq.version>
+      <mobile.version>0.1.0-SNAPSHOT</mobile.version>
+      <generation.version>0.1.0-SNAPSHOT</generation.version>
+      <printing.version>0.4.0-SNAPSHOT</printing.version>
+   </properties>
+   <dependencyManagement><dependencies>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-bom-pom</artifactId><version>${qqq.version}</version><type>pom</type><scope>import</scope></dependency>
+   </dependencies></dependencyManagement>
+   <dependencies>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-mobile-scanners</artifactId><version>${mobile.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-document-generation</artifactId><version>${generation.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-printing</artifactId><version>${printing.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-document-generation-printing</artifactId><version>${generation.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-document-generation-record-files</artifactId><version>${generation.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-backend-module-rdbms</artifactId></dependency>
+      <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><version>2.2.224</version><scope>test</scope></dependency>
+      <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-api</artifactId><version>6.0.2</version><scope>test</scope></dependency>
+      <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-engine</artifactId><version>6.0.2</version><scope>test</scope></dependency>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-frontend-next</artifactId><version>1.0.0-RC.35</version><scope>test</scope></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-mobile-scanners-demo</artifactId><version>${mobile.version}</version><scope>test</scope></dependency>
+   </dependencies>
+   <build><resources><resource><directory>src/main/resources</directory><filtering>false</filtering></resource><resource><directory>${project.basedir}/../..</directory><filtering>false</filtering><includes><include>LICENSE</include><include>NOTICE</include></includes><targetPath>META-INF/qqq-echo</targetPath></resource></resources><plugins>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version><configuration><showWarnings>true</showWarnings><failOnWarning>true</failOnWarning><proc>none</proc><compilerArgs><arg>-Xlint:deprecation</arg><arg>-Xlint:unchecked</arg><arg>-Werror</arg></compilerArgs></configuration></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.2</version></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-checkstyle-plugin</artifactId><version>3.6.0</version><dependencies><dependency><groupId>com.puppycrawl.tools</groupId><artifactId>checkstyle</artifactId><version>14.3.0</version></dependency></dependencies><configuration><configLocation>${project.basedir}/../../checkstyle/checkstyle.xml</configLocation><includeTestSourceDirectory>true</includeTestSourceDirectory><failOnViolation>true</failOnViolation><violationSeverity>warning</violationSeverity></configuration><executions><execution><phase>validate</phase><goals><goal>check</goal></goals></execution></executions></plugin>
+   </plugins></build>
+</project>

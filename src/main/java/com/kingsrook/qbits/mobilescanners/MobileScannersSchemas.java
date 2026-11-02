@@ -45,8 +45,10 @@ public final class MobileScannersSchemas
          "deviceId", uuid(), "deviceToken", text(128), "status", status(), "shortName", text(32), "displayName", text(200), "description", text(2000)), "deviceId", "deviceToken", "status"));
       schemas.put("MobileScannersDeviceV1", object("All properties present. No credential material is returned.", Map.of(
          "deviceId", uuid(), "displayName", text(200), "status", status(), "shortName", text(32), "description", text(2000)), "deviceId", "displayName", "status"));
-      schemas.put("MobileScannersScannerValuesV1", object("SCANNER presentation values. Optional manualLabel defaults to Manual barcode; submitLabel defaults to Submit barcode; maxLength defaults to 4096. Unknown additive properties may be ignored.", Map.of(
+      schemas.put("MobileScannersScannerValuesV1", object("SCANNER presentation values. Optional manualLabel defaults to Manual barcode; submitLabel defaults to Submit barcode; maxLength defaults to 4096. Extension 1.4 adds acknowledgmentLabel (default Saved scan) and manualEntryEnabled (default true). Presentation never changes acknowledgment requirements. Unknown additive properties may be ignored.", Map.of(
          "title", text(200), "instructions", text(2000), "manualLabel", text(200), "submitLabel", text(200),
+         "acknowledgmentLabel", text(80).withDescription("Trimmed nonempty single-line plain text, without controls, formatting characters or markup. For example Print queued; this does not mean physical output completed."),
+         "manualEntryEnabled", new Schema().withType(Type.BOOLEAN).withDescription("Whether to show manual entry controls. False does not disable hardware scanning or relax backend validation."),
          "maxLength", new ScannerMaximumSchema().withType(Type.INTEGER).withDescription("Inclusive supported range 1..4096; reject invalid server values.")), "title", "instructions"));
       schemas.put("MobileScannersScannerBlockV1", object("SCANNER child block of a core COMPOSITE widget, returned by core process/widget operations. Requires mobile-scanners extension major 1. All properties present; do not infer this contract from process or widget names.", Map.of(
          "blockId", text(200), "blockType", text(7).withEnumValues(List.of("SCANNER")),

@@ -435,11 +435,23 @@ components:
     MobileScannersScannerValuesV1:
       description: "SCANNER presentation values. Optional manualLabel defaults to\
         \ Manual barcode; submitLabel defaults to Submit barcode; maxLength defaults\
-        \ to 4096. Unknown additive properties may be ignored."
+        \ to 4096. Extension 1.4 adds acknowledgmentLabel (default Saved scan) and\
+        \ manualEntryEnabled (default true). Presentation never changes acknowledgment\
+        \ requirements. Unknown additive properties may be ignored."
       properties:
+        acknowledgmentLabel:
+          description: "Trimmed nonempty single-line plain text, without controls,\
+            \ formatting characters or markup. For example Print queued; this does\
+            \ not mean physical output completed."
+          maxLength: 80
+          type: "string"
         instructions:
           maxLength: 2000
           type: "string"
+        manualEntryEnabled:
+          description: "Whether to show manual entry controls. False does not disable\
+            \ hardware scanning or relax backend validation."
+          type: "boolean"
         manualLabel:
           maxLength: 200
           type: "string"
@@ -634,7 +646,7 @@ info:
   description: "Native scanner devices, customer branding and SCANNER process widget\
     \ contract."
   title: "QQQ Middleware API extension: mobile-scanners"
-  version: "1.3.0"
+  version: "1.4.0"
 openapi: "3.0.3"
 paths:
   /qqq/v1/qbit/mobile-scanners/branding:

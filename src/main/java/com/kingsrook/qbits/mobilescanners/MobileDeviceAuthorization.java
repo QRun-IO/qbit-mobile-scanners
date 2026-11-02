@@ -6,6 +6,7 @@
 package com.kingsrook.qbits.mobilescanners;
 
 
+import java.io.Serializable;
 import java.util.Optional;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QAuthenticationException;
@@ -53,6 +54,8 @@ public final class MobileDeviceAuthorization
          {
             throw new QAuthenticationException("Sign in to continue.");
          }
+         Serializable expected = authentication instanceof VerifiedDeviceSession checked ? checked.checkedAuthority() : VerifiedDeviceSession.authorityOf(authentication);
+         requireCurrent(authentication, expected);
          QRecord binding = MobileService.get(MobileScannersQBitProducer.SESSION_BINDING, MobileService.hash(authentication.getUuid()));
          String device = MobilePermissions.REQUEST_DEVICE.get();
          if(authentication instanceof VerifiedDeviceSession verified)
@@ -81,16 +84,34 @@ public final class MobileDeviceAuthorization
          {
             throw new QPermissionDeniedException("Device session binding could not be verified.");
          }
-         try
+         requireCurrent(authentication, expected);
+         if(!(authentication instanceof VerifiedDeviceSession))
          {
-            QContext.setQSession(new VerifiedDeviceSession(authentication, device));
-         }
-         catch(CloneNotSupportedException failure)
-         {
-            throw new QException("Device context could not be retained.", failure);
+            try
+            {
+               QContext.setQSession(new VerifiedDeviceSession(authentication, device));
+            }
+            catch(CloneNotSupportedException failure)
+            {
+               throw new QException("Device context could not be retained.", failure);
+            }
          }
          return Optional.of(new Identity(MobileService.userId(), device, session.getValueString("id")));
       });
+   }
+
+
+
+   /***************************************************************************
+    ** Approval, observation and host hooks may refresh or replace the session;
+    ** only the same session with identical authority may be retained or used.
+    ***************************************************************************/
+   private static void requireCurrent(QSession authentication, Serializable expected) throws QPermissionDeniedException
+   {
+      if(QContext.getQSession() != authentication || !expected.equals(VerifiedDeviceSession.authorityOf(authentication)))
+      {
+         throw new QPermissionDeniedException("Device authorization changed; sign in again.");
+      }
    }
 
 

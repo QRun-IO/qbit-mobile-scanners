@@ -1,5 +1,18 @@
 # QQQ Mobile Scanners TODO
 
+- [x] Implement explicit required INTEGER Document choice with printer/media dependency, server-pinned revision and recoverable errors:45 library/24 composed tests and real TC22 seven-stage/112-request semantic acceptance pass (simulated printing).
+- [ ] Roll out document-selection server feature and complete current Windows-authorized printer pairing, real4x1 publication and physical scan/print/rescan.
+
+- [ ] Root Maven gate for the per-extension device-header scope fix (base verify + Echo demo composed regression), then redo native printer pairing.
+
+- [x] Publish reviewed Echo retry/receipt fixes as signed Gitea commit912040d;38 library/22 demo tests pass. Native printer pairing remains at Windows administrator approval; physical output and public CI/artifacts are still open.
+
+- [x] Verify real composed Echo native HTTP pipeline:38example/22demo, retained files, accepted jobs, retry identity and Leave closure; simulated printer/controlled renderer only.
+- [ ] Complete native printer connection and physical TC22 scan/print/rescan on current loaded stock, then qualify published dependencies and primary CI.
+
+- [x] Verify effective security-key set comparison and early Collaboration authentication initialization: scanner50/native Record Files18, Checkstyle0 on private coherent cohort.
+- [ ] Complete live Echo renderer/printer composition and physical TC22 print/rescan; startup smoke and simulated printing do not close this gate.
+
 - [ ] Deliver Echo example: choose authorized printer and media once, then one scan/render/accepted-print job at a time until leave; reproduce exact value and symbology with worker-owned integer-module fitting and quiet zones.
 - [ ] Coordinate qualified renderer fit, authorized printer/media discovery, least-privilege submit and retained-print adapter contracts with their owners via shared communications.
 - [x] Verify scanContext 1.3 with root44/demo7/optional18 and Checkstyle: following-step QR/Code 128 branching, legacy omission isolation, trusted attribution and exact retry binding; physical scanner acceptance remains separate.
@@ -64,3 +77,6 @@ Future scope (not version one): offline queue, camera-based barcode decoding, ki
 - [ ] Complete the optional semantic API1.10 provider-logout capability and client AppAuth end-session handling; keep local cleanup reliable on provider failure, qualify real A-to-B handoff, and apply the user's pending sign-out policy. Existing prompt-only retained-SSO handoff is not accepted.
 
 - [ ] Validate native OIDC ID-token claims and original request nonce before creating the QQQ session. Review confirmed request continuity and S256 PKCE exist, but expected nonce is not currently carried to the server exchange. Add explicit semantic capability/wire compatibility and rejection tests; retain real-provider nonce acceptance as pending.
+
+- [x] Retain unchanged verified capture session identity with explicit current authority/reference checks;49root+7demo tests andCheckstylepass.
+- [ ] Qualify exact ownerRF18 upload/finalize using the frozen identity patch before final coherent host adoption.
