@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *******************************************************************************/
 class TrustedLocalRendererSettingsTest
 {
-   private static final String TOKEN = "0123456789abcdef0123456789abcdef-secret";
+   private static final String TOKEN = UUID.randomUUID() + "-" + UUID.randomUUID();
    private static final String IMAGE = "sha256:" + "a".repeat(64);
 
    @TempDir

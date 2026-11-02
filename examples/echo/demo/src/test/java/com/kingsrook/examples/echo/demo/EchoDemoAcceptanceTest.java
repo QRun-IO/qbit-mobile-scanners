@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *******************************************************************************/
 class EchoDemoAcceptanceTest
 {
-   private static final String TOKEN = "0123456789abcdef0123456789abcdef-secret";
+   private static final String TOKEN = UUID.randomUUID() + "-" + UUID.randomUUID();
    private static final String TENANT = "echo-accept";
    private static final String MEDIA = "echo-4x6-300";
    private static final String REVISION = "c".repeat(64);

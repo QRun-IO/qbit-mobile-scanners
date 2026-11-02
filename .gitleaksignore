@@ -1,0 +1,13 @@
+# Exact Gitleaks fingerprints (commit:file:rule:line) for historical commits only.
+# Each is an inert, patterned placeholder used as a test-only administrator token
+# fixture in the Echo demo tests. It is not a credential for any system. Current
+# sources generate the token at runtime, so nothing here covers new findings.
+
+# EchoDemoAdoptionTest
+ca6e4dd20c8d111f641f35faad5cc64828fe600d:examples/echo/demo/src/test/java/com/kingsrook/examples/echo/demo/EchoDemoAdoptionTest.java:generic-api-key:59
+
+# EchoDemoAcceptanceTest, EchoDemoSettingsTest, TrustedLocalRendererSettingsTest, EchoDemoStartupTest
+4bc88a404a0a39b82fcf36f7c9d038984be0d060:examples/echo/demo/src/test/java/com/kingsrook/examples/echo/demo/EchoDemoAcceptanceTest.java:generic-api-key:65
+4bc88a404a0a39b82fcf36f7c9d038984be0d060:examples/echo/demo/src/test/java/com/kingsrook/examples/echo/demo/EchoDemoSettingsTest.java:generic-api-key:26
+4bc88a404a0a39b82fcf36f7c9d038984be0d060:examples/echo/demo/src/test/java/com/kingsrook/examples/echo/demo/TrustedLocalRendererSettingsTest.java:generic-api-key:31
+4bc88a404a0a39b82fcf36f7c9d038984be0d060:examples/echo/demo/src/test/java/com/kingsrook/examples/echo/demo/EchoDemoStartupTest.java:generic-api-key:47

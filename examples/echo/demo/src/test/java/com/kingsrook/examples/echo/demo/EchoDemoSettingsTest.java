@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *******************************************************************************/
 class EchoDemoSettingsTest
 {
-   private static final String TOKEN = "0123456789abcdef0123456789abcdef-secret";
+   private static final String TOKEN = UUID.randomUUID() + "-" + UUID.randomUUID();
 
    @TempDir
    Path root;

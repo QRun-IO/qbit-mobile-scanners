@@ -2,6 +2,7 @@
 
 Current demo path (November2; supersedes historical runtime/pairing notes below):
 
+- [x] Correct the five inert test-token secret-scan findings using generated fixtures and exact historical fingerprints; local historical/staged scans and all 27 demo tests pass. Current primary CI remains an open gate.
 - [x] Run all real scanner/Echo, files, document and printing qbits in the single local server57832; original accounts work; full demo27 and live forwarded-host checks pass.
 - [x] Connect the existing installed print client to57832 and approve its available ZPL printer through the native QQQ process; no job/default changes.
 - [x] Verify the Android same-origin header (Android `fb3cc5d`, 174 JVM tests) and TC22 sign-in, heartbeat, printer/media/document selection and Cancel/Leave against the strict local host, preserving data.

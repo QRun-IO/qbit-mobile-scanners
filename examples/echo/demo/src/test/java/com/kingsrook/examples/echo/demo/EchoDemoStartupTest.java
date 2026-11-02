@@ -18,6 +18,7 @@ import java.sql.DriverManager;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.kingsrook.qbits.documentgeneration.GenerationPorts;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
@@ -44,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *******************************************************************************/
 class EchoDemoStartupTest
 {
-   private static final String TOKEN = "0123456789abcdef0123456789abcdef-secret";
+   private static final String TOKEN = UUID.randomUUID() + "-" + UUID.randomUUID();
    private static final String SCANNER_PASSWORD = "scanner-test-password-1";
    private static final String ADMIN_PASSWORD = "admin-test-password-1";
    private static final Set<Integer> PROTECTED = Set.of(57832, 51631, 18081, 18086, 18443, 19443, 18447, 18448, 18547, 18549, 18593);

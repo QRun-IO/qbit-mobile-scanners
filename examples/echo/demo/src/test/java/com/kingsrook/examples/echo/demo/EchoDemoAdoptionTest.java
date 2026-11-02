@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *******************************************************************************/
 class EchoDemoAdoptionTest
 {
-   private static final String TOKEN = "0123456789abcdef0123456789abcdef-secret";
+   private static final String TOKEN = UUID.randomUUID() + "-" + UUID.randomUUID();
    private static final List<String> TABLES = List.of("demoUser", "mobileDevice", "mobileDeviceCredential", "mobileScan");
 
    @TempDir

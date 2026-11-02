@@ -1,5 +1,7 @@
 ## November 2 — current checkpoint
 
+The primary CI secret-scan failure was reproduced locally as five findings in inert test-token literals. The fixtures now generate tokens at runtime; `.gitleaksignore` names only the five exact historical commit/file/rule/line fingerprints. There are no rule or path exclusions and no production validation changes. Historical and staged Gitleaks scans pass, and all 27 composed demo tests pass with zero failures, errors or skips and zero Checkstyle violations. Current hosted CI still needs verification after publication.
+
 Completed and verified:
 
 - Server source `ca6e4dd` is signed and published as Gitea PR 7. The composed demo passes 27 tests with zero Checkstyle violations. Host forwarding accepts `localhost` and `127.0.0.1` with a valid explicit port, and foreign Host and Origin values are denied.
