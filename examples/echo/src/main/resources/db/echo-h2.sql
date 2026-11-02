@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS echo_run (
    dpiX INT NOT NULL DEFAULT 0, dpiY INT NOT NULL DEFAULT 0,
    state VARCHAR(30) NOT NULL, pendingEventId VARCHAR(36)
 );
+-- Preserving migration: the document chosen once at setup. Existing rows keep NULL and are never cleared.
+ALTER TABLE echo_run ADD COLUMN IF NOT EXISTS templateId INT;
+ALTER TABLE echo_run ADD COLUMN IF NOT EXISTS templateRevisionId INT;
 CREATE TABLE IF NOT EXISTS echo_scan (
    id VARCHAR(64) PRIMARY KEY, runId VARCHAR(36) NOT NULL REFERENCES echo_run(id),
    eventId VARCHAR(36) NOT NULL, actorId VARCHAR(200) NOT NULL, deviceId VARCHAR(36) NOT NULL, mobileScanId VARCHAR(64) NOT NULL,

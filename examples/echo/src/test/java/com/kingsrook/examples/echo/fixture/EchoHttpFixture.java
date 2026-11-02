@@ -52,6 +52,8 @@ public final class EchoHttpFixture implements AutoCloseable
    public static final String RUN_TABLE = "echoFixtureRun";
    public static final String PRINTER = "fixture-printer";
    public static final String MEDIA = "fixture-4x6";
+   public static final int DOCUMENT_A = 7;
+   public static final int DOCUMENT_B = 8;
    private final MobileScannersDemo application;
    private QApplicationJavalinServer server;
 
@@ -87,6 +89,8 @@ public final class EchoHttpFixture implements AutoCloseable
       {
          run.withField(new QFieldMetaData(name, QFieldType.STRING).withMaxLength(200).withIsEditable(false));
       }
+      run.withField(new QFieldMetaData("templateId", QFieldType.INTEGER).withIsEditable(false));
+      run.withField(new QFieldMetaData("templateRevisionId", QFieldType.INTEGER).withIsEditable(false));
       instance.addTable(run);
       try(var connection = dataSource.getConnection(); var resource = EchoHttpFixture.class.getResourceAsStream("/db/echo-h2.sql"))
       {
@@ -248,9 +252,35 @@ public final class EchoHttpFixture implements AutoCloseable
        ** This fixture exercises orchestration, not actual fitting or rendering.
        ***********************************************************************/
       @Override
-      public Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, EchoService.Scan scan)
+      public Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, Document document, EchoService.Scan scan) throws QException
       {
-         return new Plan(1, 1, new GenerationPorts.Stock(101600, 152400, 5000, 5000, 5000, 5000, 300), GenerationPorts.Format.PDF);
+         if(!authorizeDocument(identity, destination, document.templateId()).equals(document))
+         {
+            throw new QException("The chosen simulated document changed.");
+         }
+         return new Plan(document.templateId(), document.templateRevisionId(), new GenerationPorts.Stock(101600, 152400, 5000, 5000, 5000, 5000, 300), GenerationPorts.Format.PDF);
+      }
+
+      /***********************************************************************
+       ** Two simulated published documents, selected by operator choice.
+       ***********************************************************************/
+      @Override
+      public Document authorizeDocument(MobileDeviceAuthorization.Identity identity, Destination destination, Integer templateId) throws QException
+      {
+         if(!List.of(DOCUMENT_A, DOCUMENT_B).contains(templateId))
+         {
+            throw new QException("Choose a simulated document in this test fixture.");
+         }
+         return new Document(templateId, 1);
+      }
+
+      /***********************************************************************
+       ** Simulated choices for the dependent Document field.
+       ***********************************************************************/
+      @Override
+      public List<DocumentChoice> documents(String printer, String media) throws QException
+      {
+         return PRINTER.equals(printer) && MEDIA.equals(media) ? List.of(new DocumentChoice(DOCUMENT_A, "Simulated label A"), new DocumentChoice(DOCUMENT_B, "Simulated label B")) : List.of();
       }
    }
 

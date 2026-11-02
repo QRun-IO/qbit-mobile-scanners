@@ -223,13 +223,40 @@ class EchoOwnerAdaptersTest
 
 
    /***************************************************************************
+    ** Only a scene that draws the scanned value with the scanned type, allowing
+    ** every admitted symbology, is an eligible document - never a static one.
+    ***************************************************************************/
+   @Test
+   void onlyDynamicSameSymbologyScenesAreEligibleDocuments() throws Exception
+   {
+      assertTrue(EchoPrintingDestinations.reproducesScannedSymbology(EchoTemplatePublisher.zplScene(DESTINATION)));
+      org.json.JSONObject scene = new org.json.JSONObject(EchoTemplatePublisher.zplScene(DESTINATION));
+      org.json.JSONObject element = scene.getJSONArray("elements").getJSONObject(0);
+      org.json.JSONObject fixedType = new org.json.JSONObject(scene.toString());
+      fixedType.getJSONArray("elements").getJSONObject(0).remove("symbologyPath");
+      fixedType.getJSONArray("elements").getJSONObject(0).put("symbology", "code128");
+      assertTrue(!EchoPrintingDestinations.reproducesScannedSymbology(fixedType.toString()));
+      org.json.JSONObject fixedValue = new org.json.JSONObject(scene.toString());
+      fixedValue.getJSONArray("elements").getJSONObject(0).put("valuePath", "/record/other");
+      assertTrue(!EchoPrintingDestinations.reproducesScannedSymbology(fixedValue.toString()));
+      org.json.JSONObject narrow = new org.json.JSONObject(scene.toString());
+      narrow.getJSONArray("elements").getJSONObject(0).put("allowedSymbologies", new org.json.JSONArray(List.of("code128")));
+      assertTrue(!EchoPrintingDestinations.reproducesScannedSymbology(narrow.toString()));
+      assertTrue(!EchoPrintingDestinations.reproducesScannedSymbology("not json"));
+      assertTrue(!EchoPrintingDestinations.reproducesScannedSymbology("{\"schema\":\"other\",\"elements\":[]}"));
+      assertEquals("barcode", element.getString("type"));
+   }
+
+
+
+   /***************************************************************************
     ** Absent deployment-owned printing, renderer or templates are refused, and
     ** the owner's plain dispatch constructor still denies selected profiles.
     ***************************************************************************/
    @Test
    void absentDeploymentPartsAreRefused()
    {
-      assertThrows(NullPointerException.class, () -> new EchoHost.Deployment("p", "g", "e", null, null, null, null));
+      assertThrows(NullPointerException.class, () -> new EchoHost.Deployment("p", "g", "e", null, null, null));
       assertTrue(!com.kingsrook.qbits.documentgeneration.printing.PrintingDispatch.MediaCapability.UNSUPPORTED.enforcesSelectedProfile());
    }
 

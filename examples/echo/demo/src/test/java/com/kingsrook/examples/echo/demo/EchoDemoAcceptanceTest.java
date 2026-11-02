@@ -164,18 +164,24 @@ class EchoDemoAcceptanceTest
       String scannerPassword = UUID.randomUUID().toString();
       String adminPassword = UUID.randomUUID().toString();
       String printerRowId;
-      Integer templateId;
+      Integer templateA;
+      Integer templateB;
+      Integer templateOther;
       try(EchoDemo demo = new EchoDemo(setup, renderer))
       {
          demo.initializeDatabase(scannerPassword, adminPassword);
          printerRowId = enrollPrinter(demo, setup);
          demo.start(setupPort);
          origin = "http://127.0.0.1:" + setupPort;
-         templateId = publishTemplate(demo, printerRowId, login("admin", adminPassword));
+         String adminSession = login("admin", adminPassword);
+         // two compatible published documents for the one reported size, and one for a different size
+         templateA = publishTemplate(demo, printerRowId, adminSession, "Echo label A", MEDIA, REVISION, 101600, 152400, 300);
+         templateB = publishTemplate(demo, printerRowId, adminSession, "Echo label B", MEDIA, REVISION, 101600, 152400, 300);
+         templateOther = publishTemplate(demo, printerRowId, adminSession, "Echo other size", "echo-2x1", "d".repeat(64), 50800, 25400, 203);
       }
       assertTrue(renderer.validations.get() > 0, "Publishing must validate the exact template in the renderer.");
 
-      EchoDemoSettings settings = new EchoDemoSettings(root, port, TENANT, TOKEN, true, new EchoDemoSettings.TemplatePin(MEDIA, REVISION, templateId), null);
+      EchoDemoSettings settings = new EchoDemoSettings(root, port, TENANT, TOKEN, true, null, null);
       origin = "http://127.0.0.1:" + port;
       try(EchoDemo demo = new EchoDemo(settings, renderer))
       {
@@ -185,12 +191,43 @@ class EchoDemoAcceptanceTest
          String admin = login("admin", adminPassword);
          enrollAndApproveDevice(scanner, admin);
 
+         // the Document choice is real native possible values, dependent on the chosen printer and size
+         Set<Integer> offered = new HashSet<>();
+         for(Object option : documentChoices(scanner, new JSONObject().put("printerId", printerRowId).put("mediaId", MEDIA)))
+         {
+            Object id = ((JSONObject) option).get("id");
+            assertTrue(id instanceof Integer || id instanceof Long, "Document ids are JSON integers.");
+            offered.add(((Number) id).intValue());
+         }
+         assertEquals(Set.of(templateA, templateB), offered, "Exactly the compatible published documents for this printer and size are offered.");
+         assertEquals(0, documentChoices(scanner, new JSONObject().put("printerId", printerRowId)).length());
+
+         // missing, unknown, malformed and wrong-size documents never start a run
+         for(Object invalid : new Object[] { null, 999999, "abc", templateOther })
+         {
+            JSONObject attempt = echo(form("/qqq/v1/processes/echoPrint/init", scanner, new JSONObject(), true), scanner);
+            JSONObject values = new JSONObject().put("printerId", printerRowId).put("mediaId", MEDIA);
+            if(invalid != null)
+            {
+               values.put("templateId", invalid);
+            }
+            assertTrue(rejected(form("/qqq/v1/processes/echoPrint/" + attempt.getString("processUUID") + "/step/setup", scanner, values, true), scanner),
+               "An invalid document choice must be refused.");
+            // the refusal does not trap the operator: Leave still closes that attempt
+            assertEquals(200, form("/qqq/v1/processes/echoPrint/" + attempt.getString("processUUID") + "/cancel", scanner, new JSONObject(), true).statusCode(),
+               "Leave must work after an invalid setup choice.");
+         }
+         assertEquals(0, renderer.renders.size());
+
          JSONObject launched = echo(form("/qqq/v1/processes/echoPrint/init", scanner, new JSONObject(), true), scanner);
          assertEquals("setup", launched.getString("nextStep"));
          String process = launched.getString("processUUID");
          JSONObject selected = echo(form("/qqq/v1/processes/echoPrint/" + process + "/step/setup", scanner,
-            new JSONObject().put("printerId", printerRowId).put("mediaId", MEDIA), true), scanner);
+            new JSONObject().put("printerId", printerRowId).put("mediaId", MEDIA).put("templateId", templateB), true), scanner);
          assertEquals("scan", selected.getString("nextStep"));
+         assertTrue(rejected(form("/qqq/v1/processes/echoPrint/" + process + "/step/setup", scanner,
+            new JSONObject().put("printerId", printerRowId).put("mediaId", MEDIA).put("templateId", templateA), true), scanner),
+            "Setup cannot be replayed to retarget the document.");
 
          JSONObject firstEvent = event("LABEL-TYPE-CODE128", CODE_VALUE);
          JSONObject first = echo(form("/qqq/v1/processes/echoPrint/" + process + "/step/scan", scanner, firstEvent, true), scanner).getJSONObject("values");
@@ -199,7 +236,9 @@ class EchoDemoAcceptanceTest
          assertFalse(firstJob.isBlank());
          JSONObject retry = echo(form("/qqq/v1/processes/echoPrint/" + process + "/step/scan", scanner, firstEvent, true), scanner).getJSONObject("values");
          assertEquals(firstJob, retry.getString("printJobId"));
-         JSONObject secondResult = echo(form("/qqq/v1/processes/echoPrint/" + process + "/step/scan", scanner, event("QRCODE", QR_VALUE), true), scanner);
+         // a forged document value on a later scan cannot retarget the run's chosen document
+         JSONObject secondResult = echo(form("/qqq/v1/processes/echoPrint/" + process + "/step/scan", scanner,
+            event("QRCODE", QR_VALUE).put("templateId", templateA), true), scanner);
          assertEquals("scan", secondResult.getString("nextStep"));
          String secondJob = secondResult.getJSONObject("values").getString("printJobId");
          assertFalse(secondJob.isBlank());
@@ -212,7 +251,7 @@ class EchoDemoAcceptanceTest
          {
             assertEquals(GenerationPorts.Format.ZPL, render.format());
             assertEquals(EchoQBitProducer.SCAN_TABLE, render.source().tableName());
-            assertEquals(templateId, render.revision().templateId());
+            assertEquals(templateB, render.revision().templateId(), "Every scan uses the document chosen at setup.");
          }
          Map<?, ?> firstRecord = (Map<?, ?>) renderer.renders.get(0).context().get("record");
          Map<?, ?> secondRecord = (Map<?, ?>) renderer.renders.get(1).context().get("record");
@@ -258,8 +297,10 @@ class EchoDemoAcceptanceTest
          assertEquals(Set.of(firstZpl, secondZpl), retained, "Record Files retained exactly the two generated originals.");
 
          assertEquals(200, form("/qqq/v1/processes/echoPrint/" + process + "/cancel", scanner, new JSONObject(), true).statusCode());
-         List<List<String>> runs = sql(setup, "SELECT state, printerRecordId, mediaId FROM echo_run", 3);
-         assertEquals(List.of(List.of("CLOSED", printerRowId, MEDIA)), runs);
+         // the successful run is the only one with a selected printer; the four refused setups never selected one
+         assertEquals(List.of(List.of("CLOSED", printerRowId, MEDIA)), sql(setup, "SELECT state, printerRecordId, mediaId FROM echo_run WHERE printerRecordId <> ''", 3));
+         assertEquals(List.of(List.of("CLOSED"), List.of("CLOSED"), List.of("CLOSED"), List.of("CLOSED")), sql(setup, "SELECT state FROM echo_run WHERE printerRecordId = ''", 1));
+         assertEquals(List.of(), sql(setup, "SELECT id FROM echo_run WHERE state IN ('OPEN','SETUP')", 1), "No run is left open after explicit Leave.");
       }
    }
 
@@ -343,6 +384,124 @@ class EchoDemoAcceptanceTest
 
 
    /***************************************************************************
+    ** A document republished by its owner after setup is a different revision
+    ** from the one the run pinned: the next scan fails visibly, nothing is
+    ** generated or printed and no other document is substituted, Leave still
+    ** works, and a fresh run can choose the republished document again.
+    ***************************************************************************/
+   @Test
+   void republishedDocumentFailsVisiblyWithoutReplacementAndLeaveStillWorks() throws Exception
+   {
+      ControlledRenderer renderer = new ControlledRenderer();
+      int port = freePort();
+      EchoDemoSettings settings = new EchoDemoSettings(root, port, TENANT, TOKEN, true, null, null);
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      origin = "http://127.0.0.1:" + port;
+      try(EchoDemo demo = new EchoDemo(settings, renderer))
+      {
+         demo.initializeDatabase(scannerPassword, adminPassword);
+         String printerRowId = enrollPrinter(demo, settings);
+         demo.start(port);
+         String scanner = login("scanner", scannerPassword);
+         String admin = login("admin", adminPassword);
+         Integer templateA = publishTemplate(demo, printerRowId, admin, "Echo label A", MEDIA, REVISION, 101600, 152400, 300);
+         Integer templateB = publishTemplate(demo, printerRowId, admin, "Echo label B", MEDIA, REVISION, 101600, 152400, 300);
+         enrollAndApproveDevice(scanner, admin);
+
+         JSONObject launched = echo(form("/qqq/v1/processes/echoPrint/init", scanner, new JSONObject(), true), scanner);
+         String process = launched.getString("processUUID");
+         echo(form("/qqq/v1/processes/echoPrint/" + process + "/step/setup", scanner,
+            new JSONObject().put("printerId", printerRowId).put("mediaId", MEDIA).put("templateId", templateA), true), scanner);
+         echo(form("/qqq/v1/processes/echoPrint/" + process + "/step/scan", scanner, event("LABEL-TYPE-CODE128", CODE_VALUE), true), scanner);
+         assertEquals(1, renderer.renders.size());
+
+         republishTemplate(demo, admin, templateA);
+
+         JSONObject changed = event("QRCODE", QR_VALUE);
+         assertTrue(rejected(form("/qqq/v1/processes/echoPrint/" + process + "/step/scan", scanner, changed, true), scanner),
+            "A republished document must fail visibly on the next scan.");
+         assertTrue(rejected(form("/qqq/v1/processes/echoPrint/" + process + "/step/scan", scanner, changed, true), scanner),
+            "Retrying the same scan must not silently use the new revision or another document.");
+         assertEquals(1, renderer.renders.size(), "No replacement document may be generated.");
+         assertEquals(1, sql(settings, "SELECT id FROM printing_job", 1).size(), "No replacement print job may be accepted.");
+         assertEquals(templateA, renderer.renders.get(0).revision().templateId());
+         assertEquals(200, form("/qqq/v1/processes/echoPrint/" + process + "/cancel", scanner, new JSONObject(), true).statusCode(), "Leave must still work.");
+         assertEquals(List.of(List.of("CLOSED")), sql(settings, "SELECT state FROM echo_run", 1));
+
+         // a new run offers the republished document again and pins its new revision
+         assertEquals(Set.of(templateA, templateB), documentIds(scanner, printerRowId));
+         JSONObject again = echo(form("/qqq/v1/processes/echoPrint/init", scanner, new JSONObject(), true), scanner);
+         echo(form("/qqq/v1/processes/echoPrint/" + again.getString("processUUID") + "/step/setup", scanner,
+            new JSONObject().put("printerId", printerRowId).put("mediaId", MEDIA).put("templateId", templateA), true), scanner);
+         echo(form("/qqq/v1/processes/echoPrint/" + again.getString("processUUID") + "/step/scan", scanner, event("QRCODE", QR_VALUE), true), scanner);
+         assertEquals(2, renderer.renders.size());
+         assertEquals(templateA, renderer.renders.get(1).revision().templateId());
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** The published searchProcessPossibleValues contract, as the native client
+    ** sends it: POST JSON {values, processValues, useCase}.
+    ***************************************************************************/
+   private JSONArray documentChoices(String session, JSONObject values) throws Exception
+   {
+      HttpResponse<String> response = request("POST", "/qqq/v1/processes/echoPrint/possibleValues/templateId", session,
+         new JSONObject().put("values", values).put("processValues", new JSONObject()).put("useCase", "form").toString(), true);
+      assertEquals(200, response.statusCode(), "Document possible-value search failed.");
+      // the semantic API may omit optional empty options
+      JSONArray options = new JSONObject(response.body()).optJSONArray("options");
+      return options == null ? new JSONArray() : options;
+   }
+
+
+
+   /***************************************************************************
+    ** The integer ids currently offered for the fixture printer and size.
+    ***************************************************************************/
+   private Set<Integer> documentIds(String session, String printerRowId) throws Exception
+   {
+      Set<Integer> ids = new HashSet<>();
+      for(Object option : documentChoices(session, new JSONObject().put("printerId", printerRowId).put("mediaId", MEDIA)))
+      {
+         ids.add(((JSONObject) option).getInt("id"));
+      }
+      return ids;
+   }
+
+
+
+   /***************************************************************************
+    ** Republish through the owner's definition service as the admin: a changed
+    ** (still compatible) draft becomes a new published revision of the template.
+    ***************************************************************************/
+   private void republishTemplate(EchoDemo demo, String adminSessionId, Integer templateId) throws Exception
+   {
+      QInstance instance = demo.defineQInstance();
+      DocumentGenerationQBitConfig config = instance.getQBits().values().stream().map(bit -> bit.getConfig())
+         .filter(DocumentGenerationQBitConfig.class::isInstance).map(DocumentGenerationQBitConfig.class::cast).findFirst().orElseThrow();
+      QContext.init(instance, null);
+      try
+      {
+         QContext.init(instance, new EchoDemoAuthentication().createSession(instance, Map.of("sessionUUID", adminSessionId, "sessionId", adminSessionId)));
+         DocumentDefinitionService definitions = new DocumentDefinitionService(config);
+         var draft = definitions.loadDraft(templateId);
+         JSONObject scene = new JSONObject(draft.draft().zplSource());
+         scene.getJSONArray("elements").getJSONObject(0).put("quiet", 11);
+         definitions.saveSources(templateId, draft.stockId(), null, scene.toString(), draft.fingerprint());
+         definitions.publish(templateId, definitions.loadDraft(templateId).fingerprint());
+      }
+      finally
+      {
+         QContext.clear();
+      }
+   }
+
+
+
+   /***************************************************************************
     ** A real Printing device and one ready ZPL queue with one reported media
     ** profile, enabled, through the owner's public service. Returns the row id.
     ***************************************************************************/
@@ -368,7 +527,8 @@ class EchoDemoAcceptanceTest
     ** native login (not a fabricated user), so core session validation and the
     ** admin's real grants apply. The renderer validates the template.
     ***************************************************************************/
-   private Integer publishTemplate(EchoDemo demo, String printerRowId, String adminSessionId) throws Exception
+   private Integer publishTemplate(EchoDemo demo, String printerRowId, String adminSessionId, String name, String mediaId, String mediaRevision,
+      int widthMicrons, int heightMicrons, int dpi) throws Exception
    {
       QInstance instance = demo.defineQInstance();
       DocumentGenerationQBitConfig config = instance.getQBits().values().stream().map(bit -> bit.getConfig())
@@ -381,7 +541,7 @@ class EchoDemoAcceptanceTest
          QSession admin = new EchoDemoAuthentication().createSession(instance, Map.of("sessionUUID", adminSessionId, "sessionId", adminSessionId));
          QContext.init(instance, admin);
          return EchoTemplatePublisher.publish(new DocumentDefinitionService(config),
-            new EchoDestinations.Destination(printerRowId, MEDIA, REVISION, 101600, 152400, 300, 300));
+            new EchoDestinations.Destination(printerRowId, mediaId, mediaRevision, widthMicrons, heightMicrons, dpi, dpi), name);
       }
       finally
       {
@@ -489,6 +649,36 @@ class EchoDemoAcceptanceTest
    private JSONObject echo(HttpResponse<String> response, String session) throws Exception
    {
       return complete(response, EchoQBitProducer.PROCESS, session, true);
+   }
+
+
+
+   /***************************************************************************
+    ** Poll an async setup step: true when the server refuses it (a non-200
+    ** status, an error body, or no advance to the scan step).
+    ***************************************************************************/
+   private boolean rejected(HttpResponse<String> response, String session) throws Exception
+   {
+      if(response.statusCode() != 200)
+      {
+         return true;
+      }
+      JSONObject body = new JSONObject(response.body());
+      String processId = body.optString("processUUID");
+      String jobId = body.optString("jobUUID");
+      long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+      while("JOB_STARTED".equals(body.optString("type")) || "RUNNING".equals(body.optString("type")))
+      {
+         assertTrue(System.nanoTime() < deadline, "Native process timed out.");
+         Thread.sleep(25);
+         response = request("GET", "/qqq/v1/processes/" + EchoQBitProducer.PROCESS + "/" + processId + "/status/" + jobId, session, null, true);
+         if(response.statusCode() != 200)
+         {
+            return true;
+         }
+         body = new JSONObject(response.body());
+      }
+      return body.has("error") || !"scan".equals(body.optString("nextStep"));
    }
 
 

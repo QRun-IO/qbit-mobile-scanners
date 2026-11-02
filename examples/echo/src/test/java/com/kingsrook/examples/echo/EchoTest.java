@@ -65,6 +65,9 @@ class EchoTest
    private Runnable planHook;
    private Runnable afterAccept;
    private Runnable afterLookup;
+   private boolean documentWithdrawn;
+   private int documentRevisionShift;
+   private final List<Integer> plannedDocuments = new java.util.concurrent.CopyOnWriteArrayList<>();
 
 
 
@@ -99,6 +102,9 @@ class EchoTest
       planHook = null;
       afterAccept = null;
       afterLookup = null;
+      documentWithdrawn = false;
+      documentRevisionShift = 0;
+      plannedDocuments.clear();
       EchoDestinations destinations = new EchoDestinations()
       {
          /*******************************************************************
@@ -119,8 +125,39 @@ class EchoTest
           ** Fixed qualified-fixture plan is not a production fitting algorithm.
           *******************************************************************/
          @Override
-         public Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, EchoService.Scan scan)
+         public Document authorizeDocument(MobileDeviceAuthorization.Identity identity, Destination destination, Integer templateId) throws QException
          {
+            if(documentWithdrawn || !List.of(7, 8).contains(templateId))
+            {
+               throw new QException("The chosen document is not available.");
+            }
+            return new Document(templateId, templateId * 10 + documentRevisionShift);
+         }
+
+         /*******************************************************************
+          ** Two compatible published documents for the one fixture printer/size.
+          *******************************************************************/
+         @Override
+         public List<DocumentChoice> documents(String printer, String media) throws QException
+         {
+            if(!"printer".equals(printer) || !"4x6".equals(media))
+            {
+               throw new QException("The printer/media choice is unavailable.");
+            }
+            return documentWithdrawn ? List.of() : List.of(new DocumentChoice(7, "Label A"), new DocumentChoice(8, "Label B"));
+         }
+
+         /*******************************************************************
+          ** The pinned document must still be the current published revision.
+          *******************************************************************/
+         @Override
+         public Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, Document document, EchoService.Scan scan) throws QException
+         {
+            plannedDocuments.add(document.templateId());
+            if(!authorizeDocument(identity, destination, document.templateId()).equals(document))
+            {
+               throw new QException("The chosen document changed or was withdrawn.");
+            }
             if(planHook != null)
             {
                planHook.run();
@@ -136,7 +173,7 @@ class EchoTest
                   throw new IllegalStateException("Fixture plan gate failed.", failure);
                }
             }
-            return tooSmall ? null : new Plan(1, 1, new GenerationPorts.Stock(101600, 152400, 5000, 5000, 5000, 5000, 300), GenerationPorts.Format.PDF);
+            return tooSmall ? null : new Plan(document.templateId(), document.templateRevisionId(), new GenerationPorts.Stock(101600, 152400, 5000, 5000, 5000, 5000, 300), GenerationPorts.Format.PDF);
          }
       };
       config = new EchoConfig("db", dataSource, "echoFixturePrinters", "echoFixtureMedia", destinations, new EchoGenerator()
@@ -240,6 +277,7 @@ class EchoTest
       RunProcessInput selection = resume(setup, "setup");
       selection.addValue("printerId", "printer");
       selection.addValue("mediaId", "4x6");
+      selection.addValue("templateId", 7);
       RunProcessOutput scanning = new RunProcessAction().execute(selection);
       String run = scanning.getValueString("echoRunId");
       assertNotNull(run);
@@ -275,7 +313,7 @@ class EchoTest
    @Test
    void retryUsesSameRequestAndRefusesChangedType() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> context = captured("CODE128", "001234567890");
       var first = config.service.print(run, context);
       assertEquals(first, config.service.print(run, context));
@@ -298,12 +336,12 @@ class EchoTest
    @Test
    void reopeningCannotReassignTheSameCanonicalScanToAnotherPrint() throws Exception
    {
-      String firstRun = config.service.start("printer", "4x6");
+      String firstRun = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> context = captured("CODE128", "001234567890");
       var first = config.service.print(firstRun, context);
       assertEquals(context.get("scanId"), first.scanId());
       config.service.close(firstRun);
-      String secondRun = config.service.start("printer", "4x6");
+      String secondRun = config.service.start("printer", "4x6", 7);
       assertThrows(QException.class, () -> config.service.print(secondRun, context));
       assertEquals(1, requests.size());
       config.service.print(secondRun, captured("CODE128", "001234567890"));
@@ -318,7 +356,7 @@ class EchoTest
    @Test
    void lostResponseNeverCreatesANewPrintIdentity() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> original = captured("CODE128", "000001");
       uncertain = true;
       assertThrows(QException.class, () -> config.service.print(run, original));
@@ -337,7 +375,7 @@ class EchoTest
    @Test
    void unsupportedAndControlPayloadsFailWithoutPrinting() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       for(String type : List.of("UNKNOWN", "MANUAL", "GS1_128", "unsupported", "EAN13", "EAN8", "UPCA", "UPCE0",
          "LABEL-TYPE-EAN13", "LABEL-TYPE-EAN8", "LABEL-TYPE-UPCA", "LABEL-TYPE-UPCE0"))
       {
@@ -361,7 +399,7 @@ class EchoTest
    @Test
    void nonAsciiPayloadsAreRejectedBeforeIntentOrGeneration() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       for(String type : List.of("CODE128", "QRCODE", "CODE39", "DATAMATRIX", "PDF417", "AZTEC"))
       {
          for(String value : List.of("café", "中文", "A\u007fB", "😀", "A B", "\u0080"))
@@ -395,7 +433,7 @@ class EchoTest
    @Test
    void transientPrePinFailureRetriesTheSameEventOnce() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> layout = captured("CODE128", "retry-layout");
       tooSmall = true;
       assertThrows(QException.class, () -> config.service.print(run, layout));
@@ -425,7 +463,7 @@ class EchoTest
    @Test
    void missingOrConflictingPinNeverReachesTheGenerator() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> missing = captured("CODE128", "pin-missing");
       tooSmall = true;
       assertThrows(QException.class, () -> config.service.print(run, missing));
@@ -435,7 +473,7 @@ class EchoTest
       assertTrue(requests.isEmpty());
       config.service.close(run);
 
-      String second = config.service.start("printer", "4x6");
+      String second = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> conflicting = captured("CODE128", "pin-conflict");
       tooSmall = true;
       assertThrows(QException.class, () -> config.service.print(second, conflicting));
@@ -458,7 +496,7 @@ class EchoTest
    @Test
    void simultaneousSameEventRetriesMakeAtMostOneExternalRequest() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> context = captured("CODE128", "simultaneous");
       tooSmall = true;
       assertThrows(QException.class, () -> config.service.print(run, context));
@@ -506,7 +544,7 @@ class EchoTest
    @Test
    void authorityLostAfterAcceptanceKeepsTheDurableReceiptWithoutAcknowledgment() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> context = captured("CODE128", "revoked-after-accept");
       afterAccept = mobile::otherOperator;
       assertThrows(QException.class, () -> config.service.print(run, context));
@@ -525,7 +563,7 @@ class EchoTest
    @Test
    void authorityLostDuringLookupRecoveryKeepsTheDurableReceipt() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> context = captured("CODE128", "revoked-during-lookup");
       uncertain = true;
       assertThrows(QException.class, () -> config.service.print(run, context));
@@ -577,13 +615,231 @@ class EchoTest
 
 
    /***************************************************************************
+    ** Setup requires a document that is numeric, authorized and compatible; a
+    ** missing, unknown, withdrawn or malformed choice never starts printing.
+    ***************************************************************************/
+   @Test
+   void setupRequiresAnAuthorizedCompatibleDocument() throws Exception
+   {
+      for(Integer invalid : new Integer[] { 999, 0, -7, null })
+      {
+         assertThrows(QException.class, () -> config.service.start("printer", "4x6", invalid));
+      }
+      // the typed INTEGER field accepts only integral values; text forms must be plain digits
+      assertEquals(7, EchoSteps.documentId(7));
+      assertEquals(7, EchoSteps.documentId(7L));
+      assertEquals(7, EchoSteps.documentId("7"));
+      for(java.io.Serializable invalid : new java.io.Serializable[] { null, " ", "abc", "7.5", "-7", "0", "1e1", "1".repeat(11), "99999999999", 7.5, 7.0f, 0, -1, Long.MAX_VALUE, true })
+      {
+         assertThrows(QException.class, () -> EchoSteps.documentId(invalid));
+      }
+      RunProcessOutput typed = new RunProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS));
+      RunProcessInput garbage = resume(typed, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", "abc");
+      assertThrows(QException.class, () -> new RunProcessAction().execute(garbage));
+      documentWithdrawn = true;
+      assertThrows(QException.class, () -> config.service.start("printer", "4x6", 7));
+      documentWithdrawn = false;
+      RunProcessOutput setup = new RunProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS));
+      RunProcessInput withoutDocument = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6");
+      assertThrows(QException.class, () -> new RunProcessAction().execute(withoutDocument));
+      assertTrue(requests.isEmpty());
+      var step = (com.kingsrook.qqq.backend.core.model.metadata.processes.QFrontendStepMetaData) QContext.getQInstance().getProcess(EchoQBitProducer.PROCESS).getStep("setup");
+      var field = step.getFormFields().stream().filter(candidate -> "templateId".equals(candidate.getName())).findFirst().orElseThrow();
+      assertEquals("Document", field.getLabel());
+      assertTrue(field.getIsRequired());
+      assertEquals(EchoDocumentChoices.NAME, field.getPossibleValueSourceName());
+   }
+
+
+
+   /***************************************************************************
+    ** The native possible-value search returns exactly the printer-and-size
+    ** scoped, authorized documents; unknown printers and sizes are refused.
+    ***************************************************************************/
+   @Test
+   void documentChoicesComeFromTheNativePossibleValueSearch() throws Exception
+   {
+      var all = documentSearch("printer", "4x6", null);
+      assertEquals(List.of("7", "8"), all.stream().map(value -> String.valueOf(value.getId())).toList());
+      assertEquals(List.of("Label A", "Label B"), all.stream().map(value -> value.getLabel()).toList());
+      assertEquals(List.of("8"), documentSearch("printer", "4x6", "Label B").stream().map(value -> String.valueOf(value.getId())).toList());
+      assertTrue(all.getFirst().getId() instanceof Integer, "Document ids are true integers.");
+      assertEquals(List.of(8), idSearch(List.of("8")));
+      assertEquals(List.of(8), idSearch(List.of(8)));
+      assertEquals(List.of(), idSearch(List.of("99")));
+      assertThrows(QException.class, () -> idSearch(List.of("abc")));
+      assertThrows(QException.class, () -> idSearch(List.of("7.5")));
+      assertTrue(documentSearch(null, "4x6", null).isEmpty());
+      assertTrue(documentSearch("printer", null, null).isEmpty());
+      assertThrows(QException.class, () -> documentSearch("forged", "4x6", null));
+      assertThrows(QException.class, () -> documentSearch("printer", "9x9", null));
+      documentWithdrawn = true;
+      assertTrue(documentSearch("printer", "4x6", null).isEmpty());
+   }
+
+
+
+   /***************************************************************************
+    ** Exact-id lookups arrive as strings over HTTP and must coerce strictly.
+    ***************************************************************************/
+   private List<Object> idSearch(List<Serializable> ids) throws QException
+   {
+      var input = new com.kingsrook.qqq.backend.core.model.actions.values.SearchPossibleValueSourceInput();
+      input.setPossibleValueSourceName(EchoDocumentChoices.NAME);
+      input.setOtherValues(new HashMap<>(Map.of("printerId", "printer", "mediaId", "4x6")));
+      input.setIdList(ids);
+      return new com.kingsrook.qqq.backend.core.actions.values.SearchPossibleValueSourceAction().execute(input).getResults().stream().map(value -> (Object) value.getId()).toList();
+   }
+
+
+
+   /***************************************************************************
+    ** Run the ordinary possible-value search action with dependency values.
+    ***************************************************************************/
+   private List<com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValue<?>> documentSearch(String printer, String media, String term) throws QException
+   {
+      var input = new com.kingsrook.qqq.backend.core.model.actions.values.SearchPossibleValueSourceInput();
+      input.setPossibleValueSourceName(EchoDocumentChoices.NAME);
+      Map<String, Serializable> others = new HashMap<>();
+      if(printer != null)
+      {
+         others.put("printerId", printer);
+      }
+      if(media != null)
+      {
+         others.put("mediaId", media);
+      }
+      input.setOtherValues(others);
+      input.setSearchTerm(term);
+      return new com.kingsrook.qqq.backend.core.actions.values.SearchPossibleValueSourceAction().execute(input).getResults();
+   }
+
+
+
+   /***************************************************************************
+    ** The document chosen at setup serves every scan in the run; neither a
+    ** repeated setup call nor a forged process value can retarget it.
+    ***************************************************************************/
+   @Test
+   void chosenDocumentIsUsedForEveryScanAndCannotBeRetargeted() throws Exception
+   {
+      RunProcessOutput setup = new RunProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS));
+      RunProcessInput selection = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", 8);
+      RunProcessOutput scanning = new RunProcessAction().execute(selection);
+      String run = scanning.getValueString("echoRunId");
+      RunProcessOutput first = scan(scanning, "CODE128", "first-value");
+      assertThrows(QException.class, () -> config.service.select(run, "printer", "4x6", 7));
+      RunProcessInput forged = resume(first, "scan");
+      forged.getValues().putAll(event("QRCODE", "second-value"));
+      forged.addValue("templateId", 7);
+      new RunProcessAction().execute(forged);
+      assertEquals(2, requests.size());
+      assertEquals(List.of(8, 8), plannedDocuments);
+      assertEquals(java.util.Set.of(8), acceptedPlans.values().stream().map(plan -> plan.templateId()).collect(java.util.stream.Collectors.toSet()));
+      assertEquals(java.util.Set.of(80), acceptedPlans.values().stream().map(plan -> plan.templateRevisionId()).collect(java.util.stream.Collectors.toSet()));
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT templateId,templateRevisionId FROM echo_run"))
+      {
+         assertTrue(rows.next());
+         assertEquals(8, rows.getInt(1));
+         assertEquals(80, rows.getInt(2));
+         assertFalse(rows.next());
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** A republished or withdrawn document fails visibly on the next scan, never
+    ** substituting another, while leaving remains available and a retry resumes.
+    ***************************************************************************/
+   @Test
+   void changedOrWithdrawnDocumentFailsVisiblyWithoutSubstitution() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7);
+      config.service.print(run, captured("CODE128", "before-change"));
+      Map<String, Serializable> next = captured("CODE128", "after-change");
+      documentRevisionShift = 1;
+      assertThrows(QException.class, () -> config.service.print(run, next));
+      documentRevisionShift = 0;
+      documentWithdrawn = true;
+      assertThrows(QException.class, () -> config.service.print(run, next));
+      assertEquals(1, requests.size());
+      assertEquals(List.of(7, 7, 7), plannedDocuments);
+      documentWithdrawn = false;
+      config.service.print(run, next);
+      assertEquals(2, requests.size());
+      config.service.close(run);
+   }
+
+
+
+   /***************************************************************************
+    ** QQQ empties a process's stored state (and so its ownership record) when
+    ** step code throws. Business refusals are therefore recorded on the step
+    ** output: a bad setup choice can be corrected in the same process, a failed
+    ** scan leaves it resumable, and Leave still closes the run.
+    ***************************************************************************/
+   @Test
+   void businessRefusalsNeverTrapTheProcessAndLeaveStillWorks() throws Exception
+   {
+      RunProcessOutput setup = new RunProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS));
+      RunProcessInput bad = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", 999);
+      assertThrows(QException.class, () -> new RunProcessAction().execute(bad));
+      RunProcessInput good = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", 8);
+      RunProcessOutput scanning = new RunProcessAction().execute(good);
+      RunProcessOutput first = scan(scanning, "CODE128", "before-failure");
+      documentWithdrawn = true;
+      assertThrows(QException.class, () -> scan(first, "QRCODE", "refused"));
+      documentWithdrawn = false;
+      assertEquals(1, requests.size());
+      new CancelProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER)
+         .withProcessName(EchoQBitProducer.PROCESS).withProcessUUID(scanning.getProcessUUID()));
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT state FROM echo_run"))
+      {
+         assertTrue(rows.next());
+         assertEquals("CLOSED", rows.getString(1));
+         assertFalse(rows.next());
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Re-running the schema script keeps existing runs, which keep a NULL
+    ** document and so cannot print until the operator chooses one again.
+    ***************************************************************************/
+   @Test
+   void documentMigrationPreservesExistingRuns() throws Exception
+   {
+      try(Connection connection = dataSource.getConnection(); var command = connection.createStatement(); var resource = getClass().getResourceAsStream("/db/echo-h2.sql"))
+      {
+         command.executeUpdate("INSERT INTO echo_run(id,actorId,deviceId,publicSessionId,printerRecordId,mediaId,state) VALUES ('old-run','operator','d','s','printer','4x6','OPEN')");
+         for(String statement : new String(resource.readAllBytes(), StandardCharsets.UTF_8).split(";"))
+         {
+            if(!statement.isBlank())
+            {
+               command.execute(statement);
+            }
+         }
+         try(var rows = command.executeQuery("SELECT templateId,templateRevisionId FROM echo_run WHERE id='old-run'"))
+         {
+            assertTrue(rows.next());
+            assertEquals(0, rows.getInt(1));
+            assertTrue(rows.wasNull());
+         }
+      }
+   }
+
+
+
+   /***************************************************************************
     ** Forged IDs and later destination revocation refuse before queue effects.
     ***************************************************************************/
    @Test
    void destinationAuthorityAndRunOwnershipAreRechecked() throws Exception
    {
-      assertThrows(QException.class, () -> config.service.start("forged", "4x6"));
-      String run = config.service.start("printer", "4x6");
+      assertThrows(QException.class, () -> config.service.start("forged", "4x6", 7));
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> context = captured("QRCODE", "001234");
       destinationAvailable = false;
       assertThrows(QException.class, () -> config.service.print(run, context));
@@ -601,7 +857,7 @@ class EchoTest
    @Test
    void leaveClosesAdmissionWithoutReprinting() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       config.service.print(run, captured("CODE128", "original"));
       config.service.close(run);
       assertThrows(QException.class, () -> config.service.print(run, captured("CODE128", "after-leave")));
@@ -632,7 +888,7 @@ class EchoTest
    void canceledConfiguredProcessCannotResumePrinting() throws Exception
    {
       RunProcessOutput setup = new RunProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS));
-      RunProcessInput selection = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6");
+      RunProcessInput selection = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", 7);
       RunProcessOutput scanning = new RunProcessAction().execute(selection);
       new CancelProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS).withProcessUUID(scanning.getProcessUUID()));
       assertThrows(QException.class, () -> scan(scanning, "CODE128", "after-cancel"));
@@ -648,9 +904,9 @@ class EchoTest
    void alternateOwnRunCannotRetargetTheProcess() throws Exception
    {
       RunProcessOutput setup = new RunProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS));
-      RunProcessInput selection = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6");
+      RunProcessInput selection = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", 7);
       RunProcessOutput scanning = new RunProcessAction().execute(selection);
-      String otherRun = config.service.start("printer", "4x6");
+      String otherRun = config.service.start("printer", "4x6", 7);
       RunProcessInput forged = resume(scanning, "scan").withValue("echoRunId", otherRun);
       forged.getValues().putAll(event("CODE128", "must-not-print"));
       assertThrows(QException.class, () -> new RunProcessAction().execute(forged));
@@ -665,7 +921,7 @@ class EchoTest
    @Test
    void oneEventInFlightDoesNotHoldTheDatabaseAcrossGeneration() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       var first = captured("CODE128", "first");
       var second = captured("QRCODE", "second");
       entered = new java.util.concurrent.CountDownLatch(1);
@@ -709,7 +965,7 @@ class EchoTest
    @Test
    void crashAfterQueueAcceptanceRecoversWithoutAnotherSubmission() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       var context = captured("CODE128", "000001");
       uncertain = true;
       assertThrows(QException.class, () -> config.service.print(run, context));
@@ -730,11 +986,11 @@ class EchoTest
    @Test
    void changedMediaAndTooSmallLayoutCannotPrint() throws Exception
    {
-      String driftRun = config.service.start("printer", "4x6");
+      String driftRun = config.service.start("printer", "4x6", 7);
       mediaRevision = "b".repeat(64);
       assertThrows(QException.class, () -> config.service.print(driftRun, captured("CODE128", "drift")));
       mediaRevision = "a".repeat(64);
-      String smallRun = config.service.start("printer", "4x6");
+      String smallRun = config.service.start("printer", "4x6", 7);
       tooSmall = true;
       assertThrows(QException.class, () -> config.service.print(smallRun, captured("CODE128", "too-small")));
       assertTrue(requests.isEmpty());
@@ -748,8 +1004,8 @@ class EchoTest
    @Test
    void setupReplayCannotRetargetPrinter() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
-      assertThrows(QException.class, () -> config.service.select(run, "printer2", "4x6"));
+      String run = config.service.start("printer", "4x6", 7);
+      assertThrows(QException.class, () -> config.service.select(run, "printer2", "4x6", 7));
       config.service.print(run, captured("QRCODE", "still-original"));
       assertEquals(1, requests.size());
    }
@@ -763,7 +1019,7 @@ class EchoTest
    @Test
    void nativeSourceReadHonorsActualActorSecurityLock() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       var acceptedScan = config.service.print(run, captured("CODE128", "000001"));
       var own = source(acceptedScan.scanId());
       assertNotNull(own);
@@ -806,7 +1062,7 @@ class EchoTest
    @Test
    void desktopOriginalActorCanReadRetainedSourceWithoutScannerAuthority() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       Map<String, Serializable> context = captured("CODE128", "000001");
       var acceptedScan = config.service.print(run, context);
       config.service.close(run);
@@ -833,7 +1089,7 @@ class EchoTest
    @Test
    void desktopRevokedOrDifferentActorCannotReadRetainedSource() throws Exception
    {
-      String run = config.service.start("printer", "4x6");
+      String run = config.service.start("printer", "4x6", 7);
       var acceptedScan = config.service.print(run, captured("CODE128", "000001"));
       config.service.close(run);
       desktop("operator", false);

@@ -58,7 +58,7 @@ final class EchoStore
    /***************************************************************************
     ** Freeze setup under the run lock; replay may confirm but never retarget it.
     ***************************************************************************/
-   void select(String id, MobileDeviceAuthorization.Identity identity, EchoDestinations.Destination destination) throws QException
+   void select(String id, MobileDeviceAuthorization.Identity identity, EchoDestinations.Destination destination, EchoDestinations.Document document) throws QException
    {
       try(Connection connection = dataSource.getConnection())
       {
@@ -66,7 +66,7 @@ final class EchoStore
          try
          {
             Run current = run(connection, id, identity);
-            if("OPEN".equals(current.state()) && current.destination().equals(destination))
+            if("OPEN".equals(current.state()) && current.destination().equals(destination) && document.equals(current.document()))
             {
                connection.commit();
                return;
@@ -75,9 +75,10 @@ final class EchoStore
             {
                throw new QException("Echo setup is already complete or closed. Leave Echo to choose again.");
             }
-            write(connection, "UPDATE echo_run SET state='OPEN',printerRecordId=?,mediaId=?,mediaRevision=?,widthMicrons=?,heightMicrons=?,dpiX=?,dpiY=? WHERE id=?",
+            write(connection, "UPDATE echo_run SET state='OPEN',printerRecordId=?,mediaId=?,mediaRevision=?,widthMicrons=?,heightMicrons=?,dpiX=?,dpiY=?,templateId=?,templateRevisionId=? WHERE id=?",
                destination.printerRecordId(), destination.mediaId(), destination.mediaRevision(), Integer.toString(destination.widthMicrons()),
-               Integer.toString(destination.heightMicrons()), Integer.toString(destination.dpiX()), Integer.toString(destination.dpiY()), id);
+               Integer.toString(destination.heightMicrons()), Integer.toString(destination.dpiX()), Integer.toString(destination.dpiY()),
+               document.templateId().toString(), document.templateRevisionId().toString(), id);
             connection.commit();
          }
          catch(Exception failure)
@@ -156,7 +157,7 @@ final class EchoStore
             if(acceptedJob != null)
             {
                connection.commit();
-               return new Admission(id, destination, acceptedJob, false, pinned);
+               return new Admission(id, destination, acceptedJob, false, pinned, run.document());
             }
             if(run.pending() != null && !run.pending().equals(scan.eventId()))
             {
@@ -170,7 +171,7 @@ final class EchoStore
                // event may safely be retried; the pin compare-and-set admits only one caller //
                ////////////////////////////////////////////////////////////////////////////////
                boolean unpinnedRetry = pinned == null && ("ATTENTION".equals(state) || "IN_FLIGHT".equals(state));
-               return new Admission(id, destination, null, !unpinnedRetry, pinned);
+               return new Admission(id, destination, null, !unpinnedRetry, pinned, run.document());
             }
             else
             {
@@ -179,7 +180,7 @@ final class EchoStore
             }
             write(connection, "UPDATE echo_run SET pendingEventId=? WHERE id=?", scan.eventId(), runId);
             connection.commit();
-            return new Admission(id, destination, null, false, null);
+            return new Admission(id, destination, null, false, null, run.document());
          }
          catch(Exception failure)
          {
@@ -323,7 +324,9 @@ final class EchoStore
                throw new QException("This Echo run does not belong to this scanner sign-in.");
             }
             return new Run(row.getString("state"), row.getString("pendingEventId"), new EchoDestinations.Destination(row.getString("printerRecordId"),
-               row.getString("mediaId"), row.getString("mediaRevision"), row.getInt("widthMicrons"), row.getInt("heightMicrons"), row.getInt("dpiX"), row.getInt("dpiY")));
+               row.getString("mediaId"), row.getString("mediaRevision"), row.getInt("widthMicrons"), row.getInt("heightMicrons"), row.getInt("dpiX"), row.getInt("dpiY")),
+               row.getObject("templateId") == null || row.getObject("templateRevisionId") == null ? null
+                  : new EchoDestinations.Document(row.getInt("templateId"), row.getInt("templateRevisionId")));
          }
       }
    }
@@ -394,7 +397,7 @@ final class EchoStore
    /***************************************************************************
     ** State is loaded only under its database admission lock.
     ***************************************************************************/
-   private record Run(String state, String pending, EchoDestinations.Destination destination)
+   private record Run(String state, String pending, EchoDestinations.Destination destination, EchoDestinations.Document document)
    {
    }
 
@@ -403,7 +406,8 @@ final class EchoStore
    /***************************************************************************
     ** Accepted replay has a job; new/reconciled work does not yet acknowledge.
     ***************************************************************************/
-   record Admission(String scanId, EchoDestinations.Destination destination, String acceptedJob, boolean reconciliationOnly, EchoDestinations.Plan pinnedPlan)
+   record Admission(String scanId, EchoDestinations.Destination destination, String acceptedJob, boolean reconciliationOnly, EchoDestinations.Plan pinnedPlan,
+                    EchoDestinations.Document document)
    {
    }
 }

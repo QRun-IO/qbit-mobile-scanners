@@ -48,7 +48,7 @@ public final class EchoHost
     ** Media enforcement comes only from the owner's explicit adoption factory.
     ***************************************************************************/
    public record Deployment(String printingBackend, String generationBackend, String echoBackend, DataSource echoState, PrintingService printing,
-      GenerationPorts.IsolatedRenderer renderer, EchoTemplates templates)
+      GenerationPorts.IsolatedRenderer renderer)
    {
       /***********************************************************************
        ** Refuse an absent deployment-owned part before any composition.
@@ -57,7 +57,6 @@ public final class EchoHost
       {
          Objects.requireNonNull(printing);
          Objects.requireNonNull(renderer);
-         Objects.requireNonNull(templates);
       }
    }
 
@@ -78,7 +77,7 @@ public final class EchoHost
       new PrintingQBitProducer().withConfig(new PrintingQBitConfig().withBackendName(deployment.printingBackend()).withService(deployment.printing())
          .withRetainedSourceAuthority(source)).produce(instance, "printing");
       EchoConfig config = EchoOwnerAdapters.config(instance, deployment.echoBackend(), deployment.echoState(), new DocumentGenerationService(generation),
-         deployment.templates(), GenerationPorts.Format.ZPL);
+         GenerationPorts.Format.ZPL);
       new EchoQBitProducer().produce(instance, config);
       // Generation validates its configured source tables, so echoScan must be registered first.
       new DocumentGenerationQBitProducer().withQBitConfig(generation).produce(instance);

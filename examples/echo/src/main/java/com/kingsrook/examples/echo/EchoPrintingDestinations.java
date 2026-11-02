@@ -17,8 +17,14 @@ import com.kingsrook.qbits.printing.PrintingMediaProfile;
 import com.kingsrook.qbits.printing.PrintingOperatorAuthorization;
 import com.kingsrook.qqq.backend.core.actions.permissions.PermissionEnforcement;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterOrderBy;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,17 +37,19 @@ import org.json.JSONObject;
  *******************************************************************************/
 public final class EchoPrintingDestinations implements EchoDestinations
 {
-   private final EchoTemplates templates;
+   private static final int MAXIMUM_DOCUMENTS = 200;
+   private static final String UNAVAILABLE = "The chosen document is not available for this printer and paper or label size. Leave Echo and choose again.";
+
    private final GenerationPorts.Format format;
 
 
 
    /***************************************************************************
     ** The output format is fixed by the host and checked against each printer.
+    ** Documents are discovered from the actor's published Generation templates.
     ***************************************************************************/
-   public EchoPrintingDestinations(EchoTemplates templates, GenerationPorts.Format format)
+   public EchoPrintingDestinations(GenerationPorts.Format format)
    {
-      this.templates = Objects.requireNonNull(templates);
       this.format = Objects.requireNonNull(format);
    }
 
@@ -72,31 +80,151 @@ public final class EchoPrintingDestinations implements EchoDestinations
 
 
    /***************************************************************************
-    ** Reauthorize the same destination, then pin the published revision whose
-    ** stock equals it. Generation repeats this comparison at admission.
+    ** The destination is reauthorized, then the chosen template must be a
+    ** published, compatible one; the run pins its current revision.
     ***************************************************************************/
    @Override
-   public Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, EchoService.Scan scan) throws QException
+   public Document authorizeDocument(MobileDeviceAuthorization.Identity identity, Destination destination, Integer templateId) throws QException
+   {
+      if(templateId == null || !destination.equals(authorize(identity, destination.printerRecordId(), destination.mediaId())))
+      {
+         throw new QException(UNAVAILABLE);
+      }
+      return resolve(destination, templateId).document();
+   }
+
+
+
+   /***************************************************************************
+    ** Reauthorize the same destination and the pinned document. A withdrawn or
+    ** republished template fails visibly; no other revision is substituted.
+    ***************************************************************************/
+   @Override
+   public Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, Document document, EchoService.Scan scan) throws QException
    {
       if(!destination.equals(authorize(identity, destination.printerRecordId(), destination.mediaId())))
       {
          throw new QException("The selected printer or media is no longer available.");
       }
-      Integer templateId = templates.templateId(scan.rendererSymbology(), destination);
+      if(document == null || document.templateId() == null)
+      {
+         throw new QException("This Echo run has no chosen document. Leave Echo and choose again.");
+      }
+      Resolved current = resolve(destination, document.templateId());
+      if(!current.document().equals(document))
+      {
+         throw new QException("The chosen document changed or was withdrawn. Leave Echo and choose again.");
+      }
+      return current.plan();
+   }
+
+
+
+   /***************************************************************************
+    ** Published Echo-compatible templates for the selected printer and size.
+    ** Anything the actor cannot read or that does not reproduce the scanned
+    ** symbology dynamically at this exact stock is simply not listed.
+    ***************************************************************************/
+   @Override
+   public List<DocumentChoice> documents(String printerRecordId, String mediaId) throws QException
+   {
+      Destination destination;
+      try
+      {
+         destination = destination(printerRecordId, PrintingOperatorAuthorization.printer(printerRecordId, format.name()).getValueString("media_profiles_json"), mediaId);
+      }
+      catch(RuntimeException failure)
+      {
+         throw new QException("Choose an authorized printer and supported paper or label size.");
+      }
+      QueryInput input = new QueryInput();
+      input.setTableName(GenerationTables.TEMPLATE);
+      input.setPermissionEnforcement(PermissionEnforcement.ENFORCE);
+      input.setFilter(new QQueryFilter(new QFilterCriteria("tableName", QCriteriaOperator.EQUALS, EchoQBitProducer.SCAN_TABLE))
+         .withCriteria(new QFilterCriteria("publishedRevisionId", QCriteriaOperator.IS_NOT_BLANK)).withOrderBy(new QFilterOrderBy("name")).withLimit(MAXIMUM_DOCUMENTS));
+      List<DocumentChoice> choices = new ArrayList<>();
+      for(QRecord template : new QueryAction().execute(input).getRecords())
+      {
+         try
+         {
+            resolve(destination, template.getValueInteger("id"));
+            choices.add(new DocumentChoice(template.getValueInteger("id"), template.getValueString("name")));
+         }
+         catch(QException skipped)
+         {
+            // not compatible with this printer media, or not readable by this actor
+         }
+      }
+      return choices;
+   }
+
+
+
+   /***************************************************************************
+    ** Current published revision, stock and dynamic scene contract of one
+    ** template, read under the actor's enforced permissions.
+    ***************************************************************************/
+   private Resolved resolve(Destination destination, Integer templateId) throws QException
+   {
       QRecord template = get(GenerationTables.TEMPLATE, templateId);
       Integer revisionId = template.getValueInteger("publishedRevisionId");
-      if(revisionId == null)
+      if(revisionId == null || !EchoQBitProducer.SCAN_TABLE.equals(template.getValueString("tableName")))
       {
-         throw new QException("No qualified same-symbology layout fits the selected paper or label size.");
+         throw new QException(UNAVAILABLE);
       }
       QRecord revision = get(GenerationTables.REVISION, revisionId);
       String source = format == GenerationPorts.Format.PDF ? revision.getValueString("pdfSource") : revision.getValueString("zplSource");
+      GenerationPorts.Stock stock = stock(revision);
       if(!templateId.equals(revision.getValueInteger("templateId")) || !EchoQBitProducer.SCAN_TABLE.equals(revision.getValueString("tableName"))
-         || "PREVIEW".equals(revision.getValueString("purpose")) || source == null || source.isBlank())
+         || "PREVIEW".equals(revision.getValueString("purpose")) || source == null || source.isBlank()
+         || !Integer.valueOf(destination.widthMicrons()).equals(stock.widthMicrons()) || !Integer.valueOf(destination.heightMicrons()).equals(stock.heightMicrons())
+         || !Integer.valueOf(destination.dpiX()).equals(stock.dpi()) || (format == GenerationPorts.Format.ZPL && !reproducesScannedSymbology(source)))
       {
-         throw new QException("No qualified same-symbology layout fits the selected paper or label size.");
+         throw new QException(UNAVAILABLE);
       }
-      return new Plan(templateId, revisionId, stock(revision), format);
+      return new Resolved(new Document(templateId, revisionId), new Plan(templateId, revisionId, stock, format));
+   }
+
+
+
+   /***************************************************************************
+    ** The published scene must draw the scanned value with the scanned type via
+    ** dynamic binding, and allow every symbology Echo admits - never a fixed one.
+    ***************************************************************************/
+   static boolean reproducesScannedSymbology(String zplScene)
+   {
+      try
+      {
+         JSONObject scene = new JSONObject(zplScene);
+         if(!"qqq-zpl-scene/1".equals(scene.optString("schema")))
+         {
+            return false;
+         }
+         for(Object item : scene.getJSONArray("elements"))
+         {
+            JSONObject element = (JSONObject) item;
+            if("barcode".equals(element.optString("type")) && "/record/rendererSymbology".equals(element.optString("symbologyPath"))
+               && "/record/barcode".equals(element.optString("valuePath")) && element.optJSONArray("allowedSymbologies") != null
+               && element.getJSONArray("allowedSymbologies").toList().containsAll(EchoTemplates.SYMBOLOGIES))
+            {
+               return true;
+            }
+         }
+         return false;
+      }
+      catch(RuntimeException failure)
+      {
+         return false;
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** One template's pinned document and the plan derived from it.
+    ***************************************************************************/
+   private record Resolved(Document document, Plan plan)
+   {
    }
 
 
@@ -195,7 +323,7 @@ public final class EchoPrintingDestinations implements EchoDestinations
       QRecord record = new GetAction().execute(input).getRecord();
       if(record == null)
       {
-         throw new QException("No qualified same-symbology layout fits the selected paper or label size.");
+         throw new QException(UNAVAILABLE);
       }
       return record;
    }

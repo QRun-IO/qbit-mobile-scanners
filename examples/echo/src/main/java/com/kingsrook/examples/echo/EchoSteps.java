@@ -60,9 +60,16 @@ public final class EchoSteps
       @Override
       public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
       {
-         String run = boundRun(input, output);
-         EchoConfig.current().service.select(run, input.getValueString("printerId"), input.getValueString("mediaId"));
-         output.addValue(EchoQBitProducer.WIDGET, new EchoWidget.Data());
+         try
+         {
+            String run = boundRun(input, output);
+            EchoConfig.current().service.select(run, input.getValueString("printerId"), input.getValueString("mediaId"), documentId(input.getValue("templateId")));
+            output.addValue(EchoQBitProducer.WIDGET, new EchoWidget.Data());
+         }
+         catch(QException failure)
+         {
+            recoverable(output, failure);
+         }
       }
    }
 
@@ -80,18 +87,25 @@ public final class EchoSteps
       @Override
       public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
       {
-         String run = boundRun(input, output);
-         var context = MobileScannerActions.capture(input, EchoQBitProducer.APP);
-         EchoService.Acceptance accepted = EchoConfig.current().service.print(run, context);
-         output.addValue("scanContext", new HashMap<>(context));
-         output.addValue("scanId", context.get("scanId"));
-         output.addValue("echoScanId", accepted.scanId());
-         output.addValue("acknowledgedEventId", accepted.eventId());
-         output.addValue("scanSaved", true);
-         output.addValue("printJobId", accepted.printJobId());
-         output.addValue("printStatus", "QUEUED");
-         output.addValue(EchoQBitProducer.WIDGET, new EchoWidget.Data());
-         output.getProcessState().setNextStepName("scan");
+         try
+         {
+            String run = boundRun(input, output);
+            var context = MobileScannerActions.capture(input, EchoQBitProducer.APP);
+            EchoService.Acceptance accepted = EchoConfig.current().service.print(run, context);
+            output.addValue("scanContext", new HashMap<>(context));
+            output.addValue("scanId", context.get("scanId"));
+            output.addValue("echoScanId", accepted.scanId());
+            output.addValue("acknowledgedEventId", accepted.eventId());
+            output.addValue("scanSaved", true);
+            output.addValue("printJobId", accepted.printJobId());
+            output.addValue("printStatus", "QUEUED");
+            output.addValue(EchoQBitProducer.WIDGET, new EchoWidget.Data());
+            output.getProcessState().setNextStepName("scan");
+         }
+         catch(QException failure)
+         {
+            recoverable(output, failure);
+         }
       }
    }
 
@@ -110,6 +124,46 @@ public final class EchoSteps
       {
          EchoConfig.current().service.close(processId(output));
       }
+   }
+
+
+
+   /***************************************************************************
+    ** An ordinary business refusal (invalid choice, changed document, printer
+    ** or authorization problem) is reported to the client as the normal process
+    ** error, but must not be thrown out of the step: QQQ replaces the stored
+    ** process state with an empty one when step code throws, which drops its
+    ** ownership record and then denies every later request, including Leave.
+    ** Recording the exception on the output keeps the state, so the operator
+    ** can correct the choice, retry the same scan, or leave.
+    ***************************************************************************/
+   private static void recoverable(RunBackendStepOutput output, QException failure)
+   {
+      output.setException(failure);
+   }
+
+
+
+   /***************************************************************************
+    ** Strict integer Document id: an integral number, or plain digits from a
+    ** legacy text form. Fractions, exponents, blanks and overflow are refused.
+    ***************************************************************************/
+   static Integer documentId(java.io.Serializable raw) throws QException
+   {
+      Long value = null;
+      if(raw instanceof Integer || raw instanceof Long || raw instanceof Short || raw instanceof Byte)
+      {
+         value = ((Number) raw).longValue();
+      }
+      else if(raw instanceof String text && text.matches("[0-9]{1,10}"))
+      {
+         value = Long.parseLong(text);
+      }
+      if(value == null || value < 1 || value > Integer.MAX_VALUE)
+      {
+         throw new QException("Choose an available document for this printer and paper or label size.");
+      }
+      return value.intValue();
    }
 
 

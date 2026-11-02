@@ -1,5 +1,7 @@
 # Echo remaining work
 
+- [ ] Root gate for the required Document choice (printer, paper or label size, then Document at run start; see DOCUMENT-CHOICE-HANDOFF.md): module and demo verify, then on-device check that the generic form shows the dependent Document field.
+
 Verified by root (2026-11-02): module `verify` 33 tests, Checkstyle 0, against the complete private cohort `0.1.0-echo.gen64c9pu507`. Runnable demo `verify` 22 tests, Checkstyle 0, including the composed acceptance below, with the real new Echo read checker and the renderer owner's TL1 factory (52 owner tests pass, no copied transport). A local demo run was observed live on an ephemeral loopback port (scanner and admin native login and metadata 200). No printer or template on it, and no physical printing.
 
 ## Done

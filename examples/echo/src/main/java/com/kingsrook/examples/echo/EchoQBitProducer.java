@@ -20,6 +20,8 @@ import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.PermissionLevel;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.QPermissionRules;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSource;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSourceType;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QComponentType;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QFrontendComponentMetaData;
@@ -57,6 +59,11 @@ public final class EchoQBitProducer
       {
          instance.addSecurityKeyType(new QSecurityKeyType().withName("qqq.session.userId"));
       }
+      if(instance.getPossibleValueSource(EchoDocumentChoices.NAME) == null)
+      {
+         instance.addPossibleValueSource(new QPossibleValueSource().withName(EchoDocumentChoices.NAME).withType(QPossibleValueSourceType.CUSTOM)
+            .withIdType(QFieldType.INTEGER).withCustomCodeReference(new QCodeReference(EchoDocumentChoices.class)));
+      }
       QFieldMetaData printer = text("printerId", 200).withLabel("Printer").withIsRequired(true).withPossibleValueSourceName(config.printerPossibleValues);
       if(PrintingTables.PRINTER.equals(config.printerPossibleValues))
       {
@@ -79,10 +86,12 @@ public final class EchoQBitProducer
       instance.addProcess(new QProcessMetaData().withName(PROCESS).withLabel("Echo — scan to print").withPermissionRules(rules())
          .withCancelStep(new QBackendStepMetaData().withName("cancel").withCode(new QCodeReference(EchoSteps.Cancel.class)))
          .withStep(new QBackendStepMetaData().withName("begin").withCode(new QCodeReference(EchoSteps.Begin.class)))
-         .withStep(new QFrontendStepMetaData().withName("setup").withLabel("Choose printer and paper or label")
+         .withStep(new QFrontendStepMetaData().withName("setup").withLabel("Choose printer, paper or label, and document")
             .withFormField(printer)
             .withFormField(text("mediaId", 200).withLabel("Paper or label size").withIsRequired(true)
                .withPossibleValueSourceName(config.mediaPossibleValues).withPossibleValueSourceDependsOn(List.of("printerId")))
+            .withFormField(new QFieldMetaData("templateId", QFieldType.INTEGER).withLabel("Document").withIsRequired(true)
+               .withPossibleValueSourceName(EchoDocumentChoices.NAME).withPossibleValueSourceDependsOn(List.of("printerId", "mediaId")))
             .withComponent(new QFrontendComponentMetaData().withType(QComponentType.EDIT_FORM)))
          .withStep(new QBackendStepMetaData().withName("start").withCode(new QCodeReference(EchoSteps.Start.class)))
          .withStep(new QFrontendStepMetaData().withName("scan").withLabel("Echo — scan to print").withFormat("scanner")

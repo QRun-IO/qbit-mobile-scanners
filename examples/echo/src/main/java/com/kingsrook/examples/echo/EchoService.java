@@ -45,11 +45,11 @@ public final class EchoService
    /***************************************************************************
     ** Resolve both choices under current authority, then bind them once per run.
     ***************************************************************************/
-   public String start(String printerId, String mediaId) throws QException
+   public String start(String printerId, String mediaId, Integer templateId) throws QException
    {
       String run = UUID.randomUUID().toString();
       begin(run);
-      select(run, printerId, mediaId);
+      select(run, printerId, mediaId, templateId);
       return run;
    }
 
@@ -69,11 +69,12 @@ public final class EchoService
    /***************************************************************************
     ** A setup choice cannot be silently changed by repeating the setup step.
     ***************************************************************************/
-   public void select(String runId, String printerId, String mediaId) throws QException
+   public void select(String runId, String printerId, String mediaId, Integer templateId) throws QException
    {
       MobileDeviceAuthorization.Identity identity = identity();
       requireText(printerId, 200);
       requireText(mediaId, 200);
+      Integer template = EchoSteps.documentId(templateId);
       EchoDestinations.Destination destination = destinations.authorize(identity, printerId, mediaId);
       if(destination == null || !printerId.equals(destination.printerRecordId()) || !mediaId.equals(destination.mediaId())
          || destination.mediaRevision() == null || !destination.mediaRevision().matches("[a-f0-9]{64}")
@@ -82,8 +83,13 @@ public final class EchoService
       {
          throw new QException("Choose an authorized printer and supported paper or label size.");
       }
+      EchoDestinations.Document document = destinations.authorizeDocument(identity, destination, template);
+      if(document == null || !template.equals(document.templateId()) || document.templateRevisionId() == null || document.templateRevisionId() < 1)
+      {
+         throw new QException("Choose an available document for this printer and paper or label size.");
+      }
       check(identity);
-      store.select(runId, identity, destination);
+      store.select(runId, identity, destination, document);
    }
 
 
@@ -132,7 +138,11 @@ public final class EchoService
          {
             throw new QException("The selected printer or media is no longer available.");
          }
-         EchoDestinations.Plan plan = destinations.plan(identity, destination, scan);
+         if(admission.document() == null)
+         {
+            throw new QException("This Echo run has no chosen document. Leave Echo and choose again.");
+         }
+         EchoDestinations.Plan plan = destinations.plan(identity, destination, admission.document(), scan);
          if(plan == null || plan.templateId() == null || plan.templateId() < 1 || plan.templateRevisionId() == null || plan.templateRevisionId() < 1
             || plan.format() == null || !stockMatches(plan.stock(), destination))
          {

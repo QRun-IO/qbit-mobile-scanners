@@ -2,7 +2,7 @@
 
 Optional module (`qqq-echo-demo`) that turns the Echo example into a server you can start. The library module `examples/echo` does not depend on it. It reuses `MobileScannersDemo` (database, `scanner`/`admin` accounts, native server) and adds Collaboration, Record Files, Printing, Document Generation and Echo from their public production classes. Nothing is simulated: the renderer is the owner's cold Docker bridge, output is retained by Record Files, and printing is Printing's own service. The server binds `127.0.0.1` only.
 
-Status (2026-11-02): 22 demo tests and 38 Echo library tests pass, Checkstyle 0. The composed acceptance test passes: an authenticated approved scanner, two scans, two retained originals and two accepted Printing jobs on one printer, an idempotent retry, and leaving closes the run. It uses a controlled synthetic renderer and a simulated Printing queue, so it is **not physical output**. The production `EchoDemo` default is unchanged and fails closed (the owner's cold bridge needs `runsc`; Windows Docker Desktop reports `runc`). A local run prints its URL in the startup log (`ECHO_DEMO_READY port=<port>`, then `http://127.0.0.1:<port>`; the port is chosen per run). Not production-ready and not a public SDK release. See `CLAUDE-HANDOFF.md` for status and what remains.
+Status (2026-11-02): 24 demo tests and 45 Echo library tests pass, Checkstyle 0. The composed acceptance test passes: an authenticated approved scanner, two scans, two retained originals and two accepted Printing jobs on one printer, an idempotent retry, and leaving closes the run. It uses a controlled synthetic renderer and a simulated Printing queue, so it is **not physical output**. The production `EchoDemo` default is unchanged and fails closed (the owner's cold bridge needs `runsc`; Windows Docker Desktop reports `runc`). A local run prints its URL in the startup log (`ECHO_DEMO_READY port=<port>`, then `http://127.0.0.1:<port>`; the port is chosen per run). Not production-ready and not a public SDK release. See `CLAUDE-HANDOFF.md` for status and what remains.
 
 ## Trusted local development launcher
 
@@ -71,7 +71,7 @@ Retained files are stored by `LocalFilesystemAttachmentStorage` (the attachment 
 
 `ECHO_RELEASE_GENERATED_FILES=true` sets Record Files' generated-file quarantine policy to off. Without it generated output is quarantined, Echo sees it as unavailable, and every print is refused. Turn it on only if you trust every producer allowed to retain generated output in this deployment.
 
-Template pin, all three or none: `ECHO_TEMPLATE_ID`, `ECHO_TEMPLATE_MEDIA_ID`, `ECHO_TEMPLATE_MEDIA_REVISION`. Without it the host starts and Echo refuses every scan with "No qualified same-symbology layout".
+The legacy `ECHO_TEMPLATE_ID`, `ECHO_TEMPLATE_MEDIA_ID` and `ECHO_TEMPLATE_MEDIA_REVISION` pin no longer selects a document and is ignored. The operator chooses the document at the start of every run from the published templates described below.
 
 ## Accounts and permissions
 
@@ -80,8 +80,8 @@ Template pin, all three or none: `ECHO_TEMPLATE_ID`, `ECHO_TEMPLATE_MEDIA_ID`, `
 ## Operator order
 
 1. Start the host. Enroll the Windows printing agent against `/printing/v1` and let it report printer media.
-2. As `admin`, publish the ZPL template for the reported media in Document Generation (scene per `EchoTemplatePublisher`). Record the template id, the media id and the media revision.
-3. Restart with the template pin.
+2. As `admin`, publish one or more ZPL templates for the reported media in Document Generation (scene per `EchoTemplatePublisher`; give each its own name with `EchoTemplatePublisher.publish(definitions, media, name)`). Each published, compatible template becomes a separate Document choice.
+3. As the scanner, open Echo: choose the printer, then the paper or label size, then the Document (offered only from published `echoScan` templates whose stock equals that size and whose scene draws the scanned value and type dynamically). The three choices are fixed for the run; leave Echo and reopen it to change them.
 
 ## Existing databases
 

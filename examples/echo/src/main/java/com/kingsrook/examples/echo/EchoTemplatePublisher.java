@@ -76,12 +76,24 @@ public final class EchoTemplatePublisher
     ***************************************************************************/
    public static Integer publish(DocumentDefinitionService definitions, EchoDestinations.Destination media) throws QException
    {
+      return publish(definitions, media, null);
+   }
+
+
+
+   /***************************************************************************
+    ** Publish one more document for the same media under its own operator-facing
+    ** name; each published template becomes a separate choice in Echo's setup.
+    ***************************************************************************/
+   public static Integer publish(DocumentDefinitionService definitions, EchoDestinations.Destination media, String name) throws QException
+   {
       GenerationPorts.Stock stock = stock(media);
       String scene = zplScene(media);
-      Integer type = definitions.createType("Echo scan label");
-      Integer stockId = definitions.createStock("Echo " + media.mediaId(), stock);
+      String label = name == null || name.isBlank() ? media.mediaId() : name.strip();
+      Integer type = definitions.createType(name == null || name.isBlank() ? "Echo scan label" : "Echo scan label " + label);
+      Integer stockId = definitions.createStock("Echo " + label, stock);
       definitions.bind(type, EchoQBitProducer.SCAN_TABLE, false, true);
-      Integer template = definitions.createTemplate("Echo " + media.mediaId(), type, stockId, EchoQBitProducer.SCAN_TABLE);
+      Integer template = definitions.createTemplate("Echo " + label, type, stockId, EchoQBitProducer.SCAN_TABLE);
       definitions.saveSources(template, stockId, null, scene, definitions.loadDraft(template).fingerprint());
       definitions.publish(template, definitions.loadDraft(template).fingerprint());
       return template;

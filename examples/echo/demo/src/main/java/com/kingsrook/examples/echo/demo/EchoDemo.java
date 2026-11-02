@@ -16,11 +16,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import com.kingsrook.examples.echo.EchoHost;
 import com.kingsrook.examples.echo.EchoQBitProducer;
-import com.kingsrook.examples.echo.EchoTemplates;
 import com.kingsrook.qbits.collaboration.CollaborationQBitConfig;
 import com.kingsrook.qbits.collaboration.CollaborationQBitProducer;
 import com.kingsrook.qbits.collaboration.attachments.uploadjournal.UploadJournalTable;
@@ -199,9 +197,9 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
          .withAttachmentLifecycle(new QCodeReference(RecordFilesAttachmentLifecycle.class))
          .withAttachmentStorage(new QCodeReference(LocalFilesystemAttachmentStorage.class));
       new CollaborationQBitProducer().withQBitConfig(collaboration).produce(instance);
-      EchoTemplates templates = settings.template() == null ? EchoTemplates.of(Map.of())
-         : EchoTemplates.forMedia(settings.template().mediaId(), settings.template().mediaRevision(), settings.template().templateId());
-      EchoHost.install(instance, new EchoHost.Deployment(BACKEND, BACKEND, BACKEND, dataSource, printing, renderer, templates));
+      // Documents are the operator's published, Echo-compatible templates, discovered per run; the legacy
+      // ECHO_TEMPLATE_* host pin no longer selects one.
+      EchoHost.install(instance, new EchoHost.Deployment(BACKEND, BACKEND, BACKEND, dataSource, printing, renderer));
       RecordFilesQBitConfig recordFiles = new RecordFilesQBitConfig().withBackendName(BACKEND).withParentTables(List.of(EchoQBitProducer.SCAN_TABLE))
          .withQuarantineGeneratedFiles(settings.releaseGeneratedFiles() ? Boolean.FALSE : null);
       new RecordFilesQBitProducer().withQBitConfig(recordFiles).produce(instance);

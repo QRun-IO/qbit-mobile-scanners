@@ -28,11 +28,51 @@ public interface EchoDestinations
 
 
    /***************************************************************************
-    ** Reauthorize the selected destination and provide a published revision whose
-    ** isolated renderer fits this exact value/type at integral module sizes.
-    ** Refuse unsupported types or media too small for safe quiet zones.
+    ** Authorize the chosen document for this exact destination: a currently
+    ** published, Echo-compatible template the actor may use, whose stock equals
+    ** the media. The returned revision is what the run pins; ids from forms are
+    ** never trusted and no other template is substituted.
     ***************************************************************************/
-   Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, EchoService.Scan scan) throws QException;
+   Document authorizeDocument(MobileDeviceAuthorization.Identity identity, Destination destination, Integer templateId) throws QException;
+
+
+
+   /***************************************************************************
+    ** Reauthorize the selected destination and the run's pinned document, whose
+    ** revision must still be the published one, and return the exact plan. The
+    ** isolated renderer fits this value/type at integral module sizes; refuse
+    ** unsupported types, withdrawn or changed documents.
+    ***************************************************************************/
+   Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, Document document, EchoService.Scan scan) throws QException;
+
+
+
+   /***************************************************************************
+    ** Documents the current actor may choose for this printer and paper or
+    ** label size. Setup offers only these; authorizeDocument still rechecks.
+    ***************************************************************************/
+   default List<DocumentChoice> documents(String printerRecordId, String mediaId) throws QException
+   {
+      return List.of();
+   }
+
+
+
+   /***************************************************************************
+    ** Public identifier and label of one eligible document, never its source.
+    ***************************************************************************/
+   record DocumentChoice(Integer id, String label)
+   {
+   }
+
+
+
+   /***************************************************************************
+    ** The document and published revision chosen once for the run.
+    ***************************************************************************/
+   record Document(Integer templateId, Integer templateRevisionId)
+   {
+   }
 
 
 

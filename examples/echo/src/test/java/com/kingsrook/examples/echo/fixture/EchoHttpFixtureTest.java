@@ -88,8 +88,25 @@ class EchoHttpFixtureTest
          JSONObject launched = complete(form("/qqq/v1/processes/echoPrint/init", scanner, new JSONObject(), true), EchoQBitProducer.PROCESS, scanner, true);
          assertEquals("setup", launched.getString("nextStep"));
          String process = launched.getString("processUUID");
+         // the published searchProcessPossibleValues contract: POST JSON {values, processValues, useCase}
+         HttpResponse<String> documents = request("POST", "/qqq/v1/processes/echoPrint/possibleValues/templateId", scanner, new JSONObject()
+            .put("values", new JSONObject().put("printerId", EchoHttpFixture.PRINTER).put("mediaId", EchoHttpFixture.MEDIA))
+            .put("processValues", new JSONObject()).put("useCase", "form").toString(), true);
+         assertEquals(200, documents.statusCode());
+         JSONArray options = new JSONObject(documents.body()).getJSONArray("options");
+         assertEquals(2, options.length());
+         assertEquals(EchoHttpFixture.DOCUMENT_A, options.getJSONObject(0).getInt("id"));
+         assertEquals(EchoHttpFixture.DOCUMENT_B, options.getJSONObject(1).getInt("id"));
+         assertTrue(options.getJSONObject(0).get("id") instanceof Number, "Document ids are JSON integers.");
+         HttpResponse<String> withoutMedia = request("POST", "/qqq/v1/processes/echoPrint/possibleValues/templateId", scanner, new JSONObject()
+            .put("values", new JSONObject().put("printerId", EchoHttpFixture.PRINTER)).put("processValues", new JSONObject()).put("useCase", "form").toString(), true);
+         assertEquals(200, withoutMedia.statusCode());
+         // the semantic API may omit optional empty options
+         JSONArray noOptions = new JSONObject(withoutMedia.body()).optJSONArray("options");
+         assertTrue(noOptions == null || noOptions.length() == 0, "No document is offered without a chosen size.");
          JSONObject selected = complete(form("/qqq/v1/processes/echoPrint/" + process + "/step/setup", scanner,
-            new JSONObject().put("printerId", EchoHttpFixture.PRINTER).put("mediaId", EchoHttpFixture.MEDIA), true), EchoQBitProducer.PROCESS, scanner, true);
+            new JSONObject().put("printerId", EchoHttpFixture.PRINTER).put("mediaId", EchoHttpFixture.MEDIA)
+               .put("templateId", EchoHttpFixture.DOCUMENT_B), true), EchoQBitProducer.PROCESS, scanner, true);
          assertEquals("scan", selected.getString("nextStep"));
          String run = selected.getJSONObject("values").getString("echoRunId");
          JSONObject block = selected.getJSONObject("values").getJSONObject(EchoQBitProducer.WIDGET).getJSONArray("subBlocks").getJSONObject(0).getJSONObject("values");
@@ -124,6 +141,7 @@ class EchoHttpFixtureTest
          assertEquals("CLOSED", runValues.getString("state"));
          assertEquals(EchoHttpFixture.PRINTER, runValues.getString("printerRecordId"));
          assertEquals(EchoHttpFixture.MEDIA, runValues.getString("mediaId"));
+         assertEquals(EchoHttpFixture.DOCUMENT_B, runValues.getInt("templateId"), "The chosen document is persisted as the same integer id.");
       }
    }
 

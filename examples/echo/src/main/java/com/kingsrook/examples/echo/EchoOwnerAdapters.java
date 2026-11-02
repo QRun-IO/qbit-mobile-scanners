@@ -38,7 +38,7 @@ public final class EchoOwnerAdapters
     ** Generation must already allow the echoScan table as a source table.
     ***************************************************************************/
    public static EchoConfig config(QInstance instance, String backendName, DataSource dataSource, DocumentGenerationService generation,
-      EchoTemplates templates, GenerationPorts.Format format)
+      GenerationPorts.Format format)
    {
       if(instance.getPossibleValueSource(EchoMediaChoices.NAME) == null)
       {
@@ -46,6 +46,6 @@ public final class EchoOwnerAdapters
             .withIdType(QFieldType.STRING).withCustomCodeReference(new QCodeReference(EchoMediaChoices.class)));
       }
       return new EchoConfig(backendName, dataSource, PrintingTables.PRINTER, EchoMediaChoices.NAME,
-         new EchoPrintingDestinations(templates, format), new EchoDocumentGenerator(generation));
+         new EchoPrintingDestinations(format), new EchoDocumentGenerator(generation));
    }
 }
