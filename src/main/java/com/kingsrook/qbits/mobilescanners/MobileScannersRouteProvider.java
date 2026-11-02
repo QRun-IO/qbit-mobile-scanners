@@ -13,6 +13,7 @@ import com.kingsrook.qqq.backend.core.exceptions.QBadRequestException;
 import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.permissions.ClientChannelsMetaData;
 import com.kingsrook.qqq.middleware.javalin.QJavalinRouteProviderInterface;
 import com.kingsrook.qqq.middleware.javalin.QJavalinUtils;
 import com.kingsrook.qqq.middleware.javalin.executors.ExecutorSessionUtils;
@@ -77,6 +78,30 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
 
 
    /***************************************************************************
+    ** The shared device headers also belong to other extensions' own device
+    ** registries. Only a request for another extension's route (not scanner
+    ** routes, and not generic metadata/process/widget calls) from a distinct
+    ** registered client channel is left to that extension's authenticator. The
+    ** channel is attribution that QQQ already validated against its registry;
+    ** it grants nothing here: no scanner device is bound, so scanner capture
+    ** still requires its own verified credential, and Android stays verified.
+    ***************************************************************************/
+   private boolean isForeignExtensionClient(Context context)
+   {
+      String path = context.path();
+      if(!path.startsWith("/qqq/v1/qbit/") || path.startsWith("/qqq/v1" + MobileScannersUiApi.PREFIX + "/"))
+      {
+         return false;
+      }
+      var session = QContext.getQSession();
+      String channel = session == null ? null : session.getClientChannelName();
+      return channel != null && session.getCredentialScope() == null && !"android".equals(channel) && !"web".equals(channel)
+         && ClientChannelsMetaData.of(instance).isAllowedChannel(channel);
+   }
+
+
+
+   /***************************************************************************
     ** Verify credentials before native handlers; authentication remains QQQ's.
     ***************************************************************************/
    private void bindDevice(Context context) throws Exception
@@ -120,6 +145,10 @@ public class MobileScannersRouteProvider implements QJavalinRouteProviderInterfa
          ExecutorSessionUtils.setupSession(context, instance);
          MobileSessionService.requireNotEnded();
          if(id == null && token == null)
+         {
+            return;
+         }
+         if(isForeignExtensionClient(context))
          {
             return;
          }

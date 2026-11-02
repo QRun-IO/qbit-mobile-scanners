@@ -266,6 +266,83 @@ class EchoDemoAcceptanceTest
 
 
    /***************************************************************************
+    ** The shared X-QQQ-Device-* headers belong to two independent registries.
+    ** A real native Printing agent enrollment and session must work on its own
+    ** channel, while a printer proof never satisfies scanner authentication and
+    ** the channel marker alone never replaces it.
+    ***************************************************************************/
+   @Test
+   void printerDeviceProofIsAuthorizedByPrintingAndNeverByScannerAuthentication() throws Exception
+   {
+      int port = freePort();
+      EchoDemoSettings settings = new EchoDemoSettings(root, port, TENANT, TOKEN, true, null, null);
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      origin = "http://127.0.0.1:" + port;
+      try(EchoDemo demo = new EchoDemo(settings, new ControlledRenderer()))
+      {
+         demo.initializeDatabase(scannerPassword, adminPassword);
+         String code = demo.printing().createEnrollment("default", "Printer agent").getString("enrollmentCode");
+         demo.start(port);
+         String scanner = login("scanner", scannerPassword);
+         String admin = login("admin", adminPassword);
+         enrollAndApproveDevice(scanner, admin);
+         String scannerId = deviceId;
+         String scannerToken = deviceToken;
+         String agent = "api/qqq-print-agent";
+
+         HttpResponse<String> enrolled = as(agent, "POST", "/qqq/v1/qbit/printing/devices/enroll", admin,
+            new JSONObject().put("enrollmentCode", code).put("deviceName", "Printer agent").put("agentVersion", "acceptance-1").toString(), null, null);
+         assertEquals(200, enrolled.statusCode(), "Printing enrollment must not be intercepted by scanner device binding.");
+         String printerId = new JSONObject(enrolled.body()).getString("deviceId");
+         String printerToken = new JSONObject(enrolled.body()).getString("deviceToken");
+         assertFalse(printerId.equals(scannerId), "Printing and scanner devices are separate registries.");
+
+         assertEquals(200, as(agent, "POST", "/qqq/v1/qbit/printing/device/bind", admin, "{}", printerId, printerToken).statusCode());
+         HttpResponse<String> session = as(agent, "GET", "/qqq/v1/qbit/printing/session", admin, null, printerId, printerToken);
+         assertEquals(200, session.statusCode(), "The Printing session with its own device proof must succeed.");
+         assertEquals(printerId, new JSONObject(session.body()).getString("deviceId"));
+
+         assertEquals(403, as(agent, "GET", "/qqq/v1/qbit/printing/session", admin, null, printerId, "wrong-proof").statusCode());
+         assertEquals(403, as(agent, "GET", "/qqq/v1/qbit/printing/session", scanner, null, printerId, printerToken).statusCode(),
+            "A different actor cannot use the printer proof.");
+
+         // scanner operations always verify the scanner registry, whatever channel the request claims
+         assertEquals(403, as("android/qqq-mobile", "POST", "/qqq/v1/processes/echoPrint/init", scanner, "{}", printerId, printerToken).statusCode());
+         assertEquals(403, as(agent, "POST", "/qqq/v1/processes/echoPrint/init", scanner, "{}", printerId, printerToken).statusCode());
+         assertEquals(403, as(agent, "POST", "/qqq/v1/processes/echoPrint/init", scanner, "{}", scannerId, "wrong-proof").statusCode());
+         assertEquals(403, as(agent, "GET", "/qqq/v1/qbit/mobile-scanners/devices/current", scanner, null, printerId, printerToken).statusCode());
+         // Android keeps scanner verification even on another extension's routes
+         assertEquals(403, as("android/qqq-mobile", "GET", "/qqq/v1/qbit/printing/session", admin, null, printerId, printerToken).statusCode());
+         // and the scanner's own proof still works on its own channel and routes
+         assertEquals(200, as("android/qqq-mobile", "GET", "/qqq/v1/metaData", scanner, null, scannerId, scannerToken).statusCode());
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** One request with an explicit client channel and optional device proof.
+    ***************************************************************************/
+   private HttpResponse<String> as(String channel, String method, String path, String session, String body, String id, String token) throws Exception
+   {
+      HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(origin + path)).timeout(Duration.ofSeconds(20)).header("X-QQQ-Client", channel)
+         .header("Origin", origin).header("Content-Type", "application/json");
+      if(session != null)
+      {
+         request.header("Cookie", "sessionUUID=" + session);
+      }
+      if(id != null)
+      {
+         request.header("X-QQQ-Device-Id", id).header("X-QQQ-Device-Token", token);
+      }
+      return client.send(request.method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body)).build(),
+         HttpResponse.BodyHandlers.ofString());
+   }
+
+
+
+   /***************************************************************************
     ** A real Printing device and one ready ZPL queue with one reported media
     ** profile, enabled, through the owner's public service. Returns the row id.
     ***************************************************************************/

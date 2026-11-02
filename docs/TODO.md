@@ -1,5 +1,7 @@
 # QQQ Mobile Scanners TODO
 
+- [ ] Root Maven gate for the per-extension device-header scope fix (base verify + Echo demo composed regression), then redo native printer pairing.
+
 - [x] Publish reviewed Echo retry/receipt fixes as signed Gitea commit912040d;38 library/22 demo tests pass. Native printer pairing remains at Windows administrator approval; physical output and public CI/artifacts are still open.
 
 - [x] Verify real composed Echo native HTTP pipeline:38example/22demo, retained files, accepted jobs, retry identity and Leave closure; simulated printer/controlled renderer only.
