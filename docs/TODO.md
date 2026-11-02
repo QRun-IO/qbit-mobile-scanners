@@ -2,6 +2,8 @@
 
 Current demo path (November2; supersedes historical runtime/pairing notes below):
 
+- [x] Implement and verify additive mobile1.5 raw-byte/AIM transport, exact retry binding, optional context and preserving H2 migration:135 scanner/demo/Echo tests pass. Android counterpart is implemented; native capture and installed-runtime adoption remain open.
+- [ ] Qualify actual TC22 raw-byte delivery, AIM extraction and decoder settings; finish renderer scanner-mode/extended-symbology integration. Transport support alone does not establish same-symbol reproduction.
 - [x] Fix and adopt the Generation/renderer byte-limit mismatch in both demo launchers; three failures with old wiring, 74 passing library/demo tests with the fix. One clearly synthetic native HTTP event now reaches the actual Windows printer spooler through Echo, with process cancellation verified after failure and acceptance. Paper output, TC22 trigger capture and rescan remain separate open checks.
 - [x] Render the actual published 4x1 document through the real renderer and independently decode its Code128 and leading-zero QR pixels; both preserve exact value/symbology and fit the configured stock. See [evidence and test images](../examples/echo/demo/docs/ECHO-RENDERER-ACCEPTANCE.md). Physical printing remains unverified.
 - [x] Correct the five inert test-token secret-scan findings using generated fixtures and exact historical fingerprints; local historical/staged scans and all 27 demo tests pass. Current primary CI remains an open gate.

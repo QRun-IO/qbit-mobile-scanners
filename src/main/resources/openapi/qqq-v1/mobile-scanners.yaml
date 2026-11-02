@@ -327,8 +327,18 @@ components:
         \ identifiers are preserved; absent legacy type is UNKNOWN, or MANUAL for\
         \ explicit manual source. Identity is server-derived. appId identifies the\
         \ server-configured application; processName is the registered executing process.\
-        \ Raw event inputs are consumed so the next event cannot inherit them."
+        \ Extension 1.5 adds optional aimIdentifier and rawDataBase64, present only\
+        \ when the accepted scan has them and otherwise omitted. Raw event inputs\
+        \ are consumed so the next event cannot inherit them."
       properties:
+        aimIdentifier:
+          description: "Extension 1.5, optional. The original AIM identifier reported\
+            \ by the scanner SDK, exactly three characters matching ^\\][A-Za-z][0-9A-Za-z]$.\
+            \ Never guessed from symbology. Omit when unavailable. Present blank,\
+            \ malformed or wrong-typed values are rejected. Participates in exact\
+            \ event retry binding."
+          maxLength: 3
+          type: "string"
         appId:
           maxLength: 200
           type: "string"
@@ -349,6 +359,17 @@ components:
           type: "string"
         processName:
           maxLength: 200
+          type: "string"
+        rawDataBase64:
+          description: "Extension 1.5, optional. Canonical standard padded Base64\
+            \ of 1 to 8192 bytes, byte-for-byte the scanner SDK getRawData result.\
+            \ The server does not decode it, strip prefixes or assume it equals the\
+            \ UTF-8 of barcode. It may include SDK code-ID framing, so it is exact\
+            \ SDK output, not symbol codewords or evidence of attested scanner configuration.\
+            \ Omit when unavailable. Present blank, non-canonical, malformed, oversize\
+            \ or wrong-typed values are rejected. Participates in exact event retry\
+            \ binding."
+          maxLength: 10924
           type: "string"
         receivedAt:
           format: "date-time"
@@ -385,6 +406,14 @@ components:
         \ comes only from verified user/device context, never these values. Barcode\
         \ is a nonempty string, preserving leading zeroes."
       properties:
+        aimIdentifier:
+          description: "Extension 1.5, optional. The original AIM identifier reported\
+            \ by the scanner SDK, exactly three characters matching ^\\][A-Za-z][0-9A-Za-z]$.\
+            \ Never guessed from symbology. Omit when unavailable. Present blank,\
+            \ malformed or wrong-typed values are rejected. Participates in exact\
+            \ event retry binding."
+          maxLength: 3
+          type: "string"
         barcode:
           maxLength: 4096
           type: "string"
@@ -395,6 +424,17 @@ components:
         eventId:
           format: "uuid"
           maxLength: 36
+          type: "string"
+        rawDataBase64:
+          description: "Extension 1.5, optional. Canonical standard padded Base64\
+            \ of 1 to 8192 bytes, byte-for-byte the scanner SDK getRawData result.\
+            \ The server does not decode it, strip prefixes or assume it equals the\
+            \ UTF-8 of barcode. It may include SDK code-ID framing, so it is exact\
+            \ SDK output, not symbol codewords or evidence of attested scanner configuration.\
+            \ Omit when unavailable. Present blank, non-canonical, malformed, oversize\
+            \ or wrong-typed values are rejected. Participates in exact event retry\
+            \ binding."
+          maxLength: 10924
           type: "string"
         scanSource:
           description: "Capture method, for example datawedge, camera or manual. Absent\
@@ -646,7 +686,7 @@ info:
   description: "Native scanner devices, customer branding and SCANNER process widget\
     \ contract."
   title: "QQQ Middleware API extension: mobile-scanners"
-  version: "1.4.0"
+  version: "1.5.0"
 openapi: "3.0.3"
 paths:
   /qqq/v1/qbit/mobile-scanners/branding:

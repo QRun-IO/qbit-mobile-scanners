@@ -183,6 +183,129 @@ class MobileHttpAcceptanceTest
 
 
    /*******************************************************************************
+    ** Extension 1.5 optional metadata reaches the row and context byte-for-byte,
+    ** while older clients and malformed values keep the existing semantics.
+    *******************************************************************************/
+   @Test
+   void exactCaptureMetadataRoundTripsOverHttp() throws Exception
+   {
+      String database = "jdbc:h2:mem:exactScans" + UUID.randomUUID().toString().replace("-", "") + ";DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE";
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      MobileScannersDemo application = new MobileScannersDemo(database);
+      application.initializeDatabase(scannerPassword, adminPassword);
+      Integer port;
+      try(ServerSocket socket = new ServerSocket(0))
+      {
+         port = socket.getLocalPort();
+      }
+      origin = "http://127.0.0.1:" + port;
+      QApplicationJavalinServer server = application.start(port);
+      try
+      {
+         assertSemanticDiscovery(false);
+         String scanner = login("scanner", scannerPassword);
+         String admin = login("admin", adminPassword);
+         JSONObject device = new JSONObject(request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner,
+            new JSONObject().put("installationId", UUID.randomUUID().toString()).toString(), false).body());
+         deviceId = device.getString("deviceId");
+         deviceToken = device.getString("deviceToken");
+         runAdminFromRecord("mobileDeviceApprove", admin);
+         String processId = launchCapture(scanner);
+
+         byte[] raw = new byte[] { 0, 'A', 0, (byte) 0xFF, (byte) 0x80, 0x1D, '0', '0' };
+         String encoded = Base64.getEncoder().encodeToString(raw);
+         JSONObject exact = new JSONObject().put("barcode", "0001234").put("symbology", "CODE128").put("scanSource", "datawedge")
+            .put("eventId", UUID.randomUUID().toString()).put("capturedAt", "2026-11-01T12:00:00Z")
+            .put("aimIdentifier", "]C0").put("rawDataBase64", encoded);
+         JSONObject first = complete(processStep(MobileScannersQBitProducer.CAPTURE, processId, "scan", scanner, exact, true), MobileScannersQBitProducer.CAPTURE, scanner, true);
+         JSONObject context = first.getJSONObject("values").getJSONObject("scanContext");
+         assertSchema("MobileScannersScanContextV1", context);
+         assertEquals("0001234", context.getString("barcode"));
+         assertEquals("]C0", context.getString("aimIdentifier"));
+         assertEquals(encoded, context.getString("rawDataBase64"));
+         assertEquals(List.of(0, 65, 0, 255, 128, 29, 48, 48), unsignedBytes(Base64.getDecoder().decode(context.getString("rawDataBase64"))));
+         JSONObject retry = complete(processStep(MobileScannersQBitProducer.CAPTURE, processId, "scan", scanner, exact, true), MobileScannersQBitProducer.CAPTURE, scanner, true);
+         assertEquals(context.getString("scanId"), retry.getJSONObject("values").getString("scanId"));
+         assertEquals(encoded, retry.getJSONObject("values").getJSONObject("scanContext").getString("rawDataBase64"));
+         assertEquals(1, scanCount(database));
+
+         JSONObject legacy = new JSONObject().put("barcode", "0001234").put("eventId", UUID.randomUUID().toString())
+            .put("capturedAt", "2026-11-01T12:00:00Z");
+         JSONObject unknown = complete(processStep(MobileScannersQBitProducer.CAPTURE, processId, "scan", scanner, legacy, true), MobileScannersQBitProducer.CAPTURE, scanner, true);
+         JSONObject legacyContext = unknown.getJSONObject("values").getJSONObject("scanContext");
+         assertSchema("MobileScannersScanContextV1", legacyContext);
+         assertFalse(legacyContext.has("aimIdentifier"), "A legacy event must not inherit the previous event's AIM identifier.");
+         assertFalse(legacyContext.has("rawDataBase64"), "A legacy event must not inherit the previous event's raw bytes.");
+         assertEquals(2, scanCount(database));
+
+         JSONObject changed = new JSONObject(exact.toString()).put("rawDataBase64", Base64.getEncoder().encodeToString(new byte[] { 0, 'A' }));
+         complete(processStep(MobileScannersQBitProducer.CAPTURE, launchCapture(scanner), "scan", scanner, changed, true), MobileScannersQBitProducer.CAPTURE, scanner, true, true);
+         JSONObject changedAim = new JSONObject(exact.toString()).put("aimIdentifier", "]Q1");
+         complete(processStep(MobileScannersQBitProducer.CAPTURE, launchCapture(scanner), "scan", scanner, changedAim, true), MobileScannersQBitProducer.CAPTURE, scanner, true, true);
+         JSONObject absent = new JSONObject(exact.toString());
+         absent.remove("aimIdentifier");
+         absent.remove("rawDataBase64");
+         complete(processStep(MobileScannersQBitProducer.CAPTURE, launchCapture(scanner), "scan", scanner, absent, true), MobileScannersQBitProducer.CAPTURE, scanner, true, true);
+         for(JSONObject invalid : List.of(new JSONObject(exact.toString()).put("aimIdentifier", ""),
+            new JSONObject(exact.toString()).put("aimIdentifier", "]c"),
+            new JSONObject(exact.toString()).put("aimIdentifier", "]C10"),
+            new JSONObject(exact.toString()).put("rawDataBase64", ""),
+            new JSONObject(exact.toString()).put("rawDataBase64", "AEEA/4AdMDA"),
+            new JSONObject(exact.toString()).put("rawDataBase64", encoded + "\n"),
+            new JSONObject(exact.toString()).put("rawDataBase64", Base64.getEncoder().encodeToString(new byte[8193])),
+            new JSONObject(exact.toString()).put("rawDataBase64", 12)))
+         {
+            invalid.put("eventId", UUID.randomUUID().toString());
+            complete(processStep(MobileScannersQBitProducer.CAPTURE, launchCapture(scanner), "scan", scanner, invalid, true), MobileScannersQBitProducer.CAPTURE, scanner, true, true);
+         }
+         assertEquals(2, scanCount(database), "Conflicting or malformed metadata must never persist another scan.");
+         try(var connection = DriverManager.getConnection(database, "sa", "");
+            var query = connection.prepareStatement("SELECT rawDataBase64, aimIdentifier FROM mobileScan WHERE eventId = ?"))
+         {
+            query.setString(1, exact.getString("eventId"));
+            try(var rows = query.executeQuery())
+            {
+               assertTrue(rows.next());
+               assertEquals(encoded, rows.getString(1));
+               assertEquals("]C0", rows.getString(2));
+            }
+         }
+      }
+      finally
+      {
+         server.stop();
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Start a fresh capture process so one rejected event cannot hide another.
+    *******************************************************************************/
+   private String launchCapture(String scanner) throws Exception
+   {
+      return complete(processInit(MobileScannersQBitProducer.CAPTURE, scanner, true), MobileScannersQBitProducer.CAPTURE, scanner, true).getString("processUUID");
+   }
+
+
+
+   /*******************************************************************************
+    ** Compare raw bytes without sign-extension surprises.
+    *******************************************************************************/
+   private static List<Integer> unsignedBytes(byte[] bytes)
+   {
+      List<Integer> values = new java.util.ArrayList<>();
+      for(byte value : bytes)
+      {
+         values.add(Byte.toUnsignedInt(value));
+      }
+      return values;
+   }
+
+
+
+   /*******************************************************************************
     ** A pending/revoked handheld must not save, even with a valid user session.
     *******************************************************************************/
    @Test
@@ -650,7 +773,7 @@ class MobileHttpAcceptanceTest
          }
       }
       assertNotNull(mobile);
-      assertEquals("1.4.0", mobile.getString("version"));
+      assertEquals("1.5.0", mobile.getString("version"));
       assertEquals("/qbit/mobile-scanners", mobile.getString("pathPrefix"));
       var openApiResponse = request("GET", "/qqq/v1/openapi.json", null, null, device);
       assertEquals(200, openApiResponse.statusCode());

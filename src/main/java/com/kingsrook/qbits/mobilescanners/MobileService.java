@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import com.kingsrook.qqq.backend.core.actions.QBackendTransaction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
@@ -42,6 +43,11 @@ import com.kingsrook.qqq.backend.core.model.data.QRecord;
 public final class MobileService
 {
    static final ThreadLocal<QBackendTransaction> TRANSACTION = new ThreadLocal<>();
+
+   static final int AIM_IDENTIFIER_LENGTH = 3;
+   static final int RAW_DATA_MAXIMUM_BYTES = 8192;
+   static final int RAW_DATA_MAXIMUM_CHARACTERS = 10924;
+   private static final Pattern AIM_IDENTIFIER = Pattern.compile("^\\][A-Za-z][0-9A-Za-z]$");
 
 
 
@@ -302,8 +308,11 @@ public final class MobileService
       String id = hash(deviceId + ":" + eventId);
       String scanSource = normalizedScanSource(optional(input, "scanSource", 200));
       String symbology = normalizedSymbology(optional(input, "symbology", 200), scanSource);
+      String aimIdentifier = aimIdentifier(input);
+      String rawDataBase64 = rawDataBase64(input);
       QRecord record = new QRecord().withValue("id", id).withValue("deviceId", deviceId).withValue("eventId", eventId)
          .withValue("barcode", barcode).withValue("symbology", symbology).withValue("scanSource", scanSource)
+         .withValue("aimIdentifier", aimIdentifier).withValue("rawDataBase64", rawDataBase64)
          .withValue("capturedAt", captured).withValue("receivedAt", Instant.now()).withValue("userId", userId())
          .withValue("appId", appId).withValue("processName", processName);
       for(String field : new String[] { "manufacturer", "model", "osVersion", "appVersion" })
@@ -344,8 +353,9 @@ public final class MobileService
       {
          throw new QException("This eventId was already used for a different scan.");
       }
-      for(String field : new String[] { "barcode", "userId", "processName", "appId" })
+      for(String field : new String[] { "barcode", "userId", "processName", "appId", "aimIdentifier", "rawDataBase64" })
       {
+         // Absent (NULL) and present metadata are different events, including historical rows.
          if(!Objects.equals(existing.getValueString(field), requested.getValueString(field)))
          {
             throw new QException("This eventId was already used for a different scan.");
@@ -354,6 +364,51 @@ public final class MobileService
       existing.setValue("scanSource", originalSource);
       existing.setValue("symbology", originalSymbology);
       return existing;
+   }
+
+
+
+   /***************************************************************************
+    ** Optional original AIM identifier, for example ]C1; absent stays absent and
+    ** is never guessed from the symbology.
+    ***************************************************************************/
+   static String aimIdentifier(Map<String, ?> input) throws QException
+   {
+      String value = optional(input, "aimIdentifier", AIM_IDENTIFIER_LENGTH);
+      if(value != null && !AIM_IDENTIFIER.matcher(value).matches())
+      {
+         throw new QBadRequestException("aimIdentifier must be a three character AIM identifier such as ]C1.");
+      }
+      return value;
+   }
+
+
+
+   /***************************************************************************
+    ** Optional exact SDK raw bytes as canonical padded Base64. Bytes are never
+    ** decoded into text, trimmed or compared with the barcode string.
+    ***************************************************************************/
+   static String rawDataBase64(Map<String, ?> input) throws QException
+   {
+      String value = optional(input, "rawDataBase64", RAW_DATA_MAXIMUM_CHARACTERS);
+      if(value == null)
+      {
+         return null;
+      }
+      byte[] decoded;
+      try
+      {
+         decoded = Base64.getDecoder().decode(value);
+      }
+      catch(IllegalArgumentException e)
+      {
+         throw new QBadRequestException("rawDataBase64 must be canonical padded Base64.");
+      }
+      if(decoded.length < 1 || decoded.length > RAW_DATA_MAXIMUM_BYTES || !Base64.getEncoder().encodeToString(decoded).equals(value))
+      {
+         throw new QBadRequestException("rawDataBase64 must be canonical padded Base64 of 1 to " + RAW_DATA_MAXIMUM_BYTES + " bytes.");
+      }
+      return value;
    }
 
 

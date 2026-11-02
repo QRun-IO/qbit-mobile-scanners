@@ -60,16 +60,16 @@ class EchoHttpFixtureTest
          fixture.start(port);
          JSONObject version = new JSONObject(request("GET", "/qqq/v1/version", null, null, false).body());
          assertEquals("1.10.0", version.getString("apiVersion"));
-         boolean mobile14 = false;
+         boolean mobile15 = false;
          for(Object extension : version.getJSONArray("extensions"))
          {
             JSONObject item = (JSONObject) extension;
             if("mobile-scanners".equals(item.getString("name")))
             {
-               mobile14 = "1.4.0".equals(item.getString("version"));
+               mobile15 = "1.5.0".equals(item.getString("version"));
             }
          }
-         assertTrue(mobile14);
+         assertTrue(mobile15);
          String scanner = login("scanner", scannerPassword);
          String admin = login("admin", adminPassword);
          HttpResponse<String> enrolled = request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner,

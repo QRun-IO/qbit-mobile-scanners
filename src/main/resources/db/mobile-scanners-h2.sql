@@ -74,3 +74,6 @@ ALTER TABLE mobileDevice ALTER COLUMN locationCapturedAt TIMESTAMP;
 ALTER TABLE mobileDevice ALTER COLUMN locationReceivedAt TIMESTAMP;
 ALTER TABLE mobileScan ALTER COLUMN capturedAt TIMESTAMP;
 ALTER TABLE mobileScan ALTER COLUMN receivedAt TIMESTAMP;
+-- Extension 1.5 optional exact capture metadata. NULL means absent for historical rows, older clients and manual entry.
+ALTER TABLE mobileScan ADD COLUMN IF NOT EXISTS aimIdentifier VARCHAR(3);
+ALTER TABLE mobileScan ADD COLUMN IF NOT EXISTS rawDataBase64 VARCHAR(10924);

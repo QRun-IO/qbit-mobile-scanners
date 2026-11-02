@@ -56,12 +56,16 @@ public final class MobileScannersSchemas
       schemas.put("MobileScannersScanEventV1", object("Values submitted to the current core process frontend step. barcode, eventId and capturedAt required. eventId remains unchanged on retry; identity comes only from verified user/device context, never these values. Barcode is a nonempty string, preserving leading zeroes.", Map.of(
          "barcode", text(4096), "eventId", uuid(), "capturedAt", text(40).withFormat("date-time"),
          "symbology", text(200).withDescription("Exact decoder identifier, never inferred from barcode text. If absent or blank, the server uses MANUAL for scanSource manual, otherwise UNKNOWN."),
-         "scanSource", text(200).withDescription("Capture method, for example datawedge, camera or manual. Absent or blank becomes UNKNOWN.")), "barcode", "eventId", "capturedAt"));
+         "scanSource", text(200).withDescription("Capture method, for example datawedge, camera or manual. Absent or blank becomes UNKNOWN."),
+         "aimIdentifier", aimIdentifier(), "rawDataBase64", rawDataBase64()), "barcode", "eventId", "capturedAt"));
       Map<String, Schema> scanContext = new TreeMap<>();
       scanContext.putAll(Map.of("scanId", text(64), "barcode", text(4096), "symbology", text(200), "scanSource", text(200), "eventId", uuid(),
          "capturedAt", text(40).withFormat("date-time"), "receivedAt", text(40).withFormat("date-time")));
       scanContext.putAll(Map.of("userId", text(200), "deviceId", uuid(), "appId", text(200), "processName", text(200)));
-      schemas.put("MobileScannersScanContextV1", object("Persisted accepted scan for subsequent backend actions. Decoder identifiers are preserved; absent legacy type is UNKNOWN, or MANUAL for explicit manual source. Identity is server-derived. appId identifies the server-configured application; processName is the registered executing process. Raw event inputs are consumed so the next event cannot inherit them.", scanContext, scanContext.keySet().toArray(String[]::new)));
+      List<String> requiredContext = List.copyOf(scanContext.keySet());
+      scanContext.put("aimIdentifier", aimIdentifier());
+      scanContext.put("rawDataBase64", rawDataBase64());
+      schemas.put("MobileScannersScanContextV1", object("Persisted accepted scan for subsequent backend actions. Decoder identifiers are preserved; absent legacy type is UNKNOWN, or MANUAL for explicit manual source. Identity is server-derived. appId identifies the server-configured application; processName is the registered executing process. Extension 1.5 adds optional aimIdentifier and rawDataBase64, present only when the accepted scan has them and otherwise omitted. Raw event inputs are consumed so the next event cannot inherit them.", scanContext, requiredContext.toArray(String[]::new)));
       schemas.put("MobileScannersScanAcknowledgmentV1", object("Properties in core process response values after persistence. scanSaved=true, acknowledgedEventId matching the submitted eventId, and a nonempty scanId acknowledge success after async polling completes. Extension 1.3 always supplies scanContext for subsequent backend steps. It remains optional in this schema for older 1.x servers. A retry returns its original scanId and context; changed type/source/process is rejected.", Map.of(
          "acknowledgedEventId", uuid(), "scanId", text(64), "scanSaved", new Schema().withType(Type.BOOLEAN),
          "scanContext", ref("MobileScannersScanContextV1")), "acknowledgedEventId", "scanId", "scanSaved"));
@@ -87,6 +91,26 @@ public final class MobileScannersSchemas
    static Schema text(int maximum)
    {
       return new Schema().withType(Type.STRING).withMaxLength(maximum);
+   }
+
+
+
+   /***************************************************************************
+    ** Extension 1.5 original AIM identifier; optional and never inferred.
+    ***************************************************************************/
+   private static Schema aimIdentifier()
+   {
+      return text(3).withDescription("Extension 1.5, optional. The original AIM identifier reported by the scanner SDK, exactly three characters matching ^\\][A-Za-z][0-9A-Za-z]$. Never guessed from symbology. Omit when unavailable. Present blank, malformed or wrong-typed values are rejected. Participates in exact event retry binding.");
+   }
+
+
+
+   /***************************************************************************
+    ** Extension 1.5 exact SDK raw bytes; no decoding or trust is implied.
+    ***************************************************************************/
+   private static Schema rawDataBase64()
+   {
+      return text(10924).withDescription("Extension 1.5, optional. Canonical standard padded Base64 of 1 to 8192 bytes, byte-for-byte the scanner SDK getRawData result. The server does not decode it, strip prefixes or assume it equals the UTF-8 of barcode. It may include SDK code-ID framing, so it is exact SDK output, not symbol codewords or evidence of attested scanner configuration. Omit when unavailable. Present blank, non-canonical, malformed, oversize or wrong-typed values are rejected. Participates in exact event retry binding.");
    }
 
 

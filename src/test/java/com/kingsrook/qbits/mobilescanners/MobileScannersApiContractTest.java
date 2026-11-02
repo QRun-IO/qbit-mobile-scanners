@@ -15,6 +15,7 @@ import com.kingsrook.qqq.middleware.javalin.specs.v1.MiddlewareVersionV1;
 import com.kingsrook.qqq.middleware.javalin.tools.UiApiContract;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -63,7 +64,21 @@ class MobileScannersApiContractTest
          assertTrue(model.getComponents().getSchemas().containsKey(schema), schema);
       }
       assertEquals(7, extension.getSpecs().size());
-      assertEquals("1.4.0", extension.getSemanticVersion());
+      assertEquals("1.5.0", extension.getSemanticVersion());
+      assertEquals(java.util.List.of(), UiApiContract.check(generated, Files.readString(contract), Files.readString(Path.of("src/test/resources/openapi/mobile-scanners-1.4.0.yaml")), 1,
+         "Regenerate the current extension contract."));
+      var scanEvent = model.getComponents().getSchemas().get("MobileScannersScanEventV1");
+      var scanContext = model.getComponents().getSchemas().get("MobileScannersScanContextV1");
+      for(String optional : java.util.List.of("aimIdentifier", "rawDataBase64"))
+      {
+         assertTrue(scanEvent.getProperties().containsKey(optional), optional);
+         assertTrue(scanContext.getProperties().containsKey(optional), optional);
+         assertFalse(generated.contains("- \"" + optional + "\""), optional + " must stay optional, never a required key.");
+      }
+      assertEquals(3, scanEvent.getProperties().get("aimIdentifier").getMaxLength());
+      assertEquals(10924, scanEvent.getProperties().get("rawDataBase64").getMaxLength());
+      assertTrue(generated.contains("rawDataBase64"));
+      assertTrue(generated.contains("aimIdentifier"));
       assertTrue(generated.contains("mobileScannersEnrollDevice"));
       assertTrue(generated.contains("X-QQQ-Device-Token"));
       assertTrue(generated.contains("acknowledgedEventId"));

@@ -100,6 +100,7 @@ public class MobileScannersQBitProducer implements QBitProducer
          scan.withField(text(field, 200));
       }
       scan.withField(text("barcode", 4096)).withField(time("capturedAt")).withField(time("receivedAt"));
+      scan.withField(text("aimIdentifier", MobileService.AIM_IDENTIFIER_LENGTH)).withField(text("rawDataBase64", MobileService.RAW_DATA_MAXIMUM_CHARACTERS));
       instance.addTable(scan);
       MobileSessionMetadata.register(instance, config.getBackendName());
       instance.addWidget(new QWidgetMetaData().withName(WIDGET).withLabel("Scan a barcode").withType("composite")

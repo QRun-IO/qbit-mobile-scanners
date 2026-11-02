@@ -57,9 +57,26 @@ Host-owned processes use `MobileScannerActions.capture(input, appName)` with the
 
 Raw event fields and old receipts are consumed before capture, including rejected attempts, so the next submission cannot inherit a preceding type. Following steps use the nested accepted context. Historical NULL type/source values normalize for comparison and returned context without rewriting those rows or accepting a newly claimed known type on retry. Pre-1.3 process state containing a receipt without context fails closed: leave/cancel and reopen the scanner process. Logout and device re-enrollment are unnecessary.
 
+### Exact capture metadata in 1.5
+
+Extension 1.5.0 adds two optional flat string values to `MobileScannersScanEventV1` and, when present, to `MobileScannersScanContextV1`. Neither is a required key and old required fields are unchanged. Missing values are valid for older clients and manual capture.
+
+| Value | Rule |
+| --- | --- |
+| `aimIdentifier` | Exactly 3 characters matching `^\][A-Za-z][0-9A-Za-z]$`: the original AIM identifier from the scanner SDK, never guessed from `symbology`. |
+| `rawDataBase64` | Canonical standard padded Base64 of 1 to 8192 decoded bytes (at most 10924 characters): the byte-for-byte SDK `getRawData` result. The server does not decode it, strip prefixes or assume it equals the UTF-8 of `barcode`. It may include SDK code-ID framing, so it is exact SDK output, not symbol codewords and not evidence of attested scanner configuration. |
+
+A present value that is blank, not a string, malformed, non-canonical (missing or extra padding, whitespace, URL alphabet, non-zero trailing bits) or oversize is rejected by the server with no scan saved. A JSON `null` is treated as absent. Stored values are nullable columns on `mobileScan`; historical rows keep `NULL`, which means absent.
+
+Exact equality of both values, including absent versus present, participates in event retry binding: an identical retry returns the original row and scan ID, while changed bytes, a changed AIM identifier, or adding or dropping either value for an existing `eventId` is rejected like any other changed scan. The context contains these keys only when the accepted scan has them. Both input keys are consumed before capture (including rejected attempts) and any submitted `scanContext` is replaced, so the next event cannot inherit them and a client cannot forge them. They carry no identity and no trust elevation, and there is no decoder profile or trust field in this version.
+
+A client sends these fields only when the current server's `mobile-scanners` version is `>=1.5.0 <2.0.0`, the registered path is advertised and the server's process metadata permits them. Older servers receive exactly the legacy five keys (`barcode`, `symbology`, `scanSource`, `eventId`, `capturedAt`). Hardware qualification of AIM and raw-byte fidelity is separate follow-up work; this transport does not by itself establish exact barcode reproduction.
+
+Schema migration (H2, idempotent, nullable): `ALTER TABLE mobileScan ADD COLUMN IF NOT EXISTS aimIdentifier VARCHAR(3)` and `... rawDataBase64 VARCHAR(10924)` in `mobile-scanners-h2.sql`. Other backends must add equivalent nullable columns before deploying 1.5.0 servers; do not assume `ADD COLUMN IF NOT EXISTS` or the type sizes exist elsewhere.
+
 ## Contract checks and compatibility
 
-The published fragment is [mobile-scanners.yaml](../src/main/resources/openapi/qqq-v1/mobile-scanners.yaml); the initial release baseline is [mobile-scanners-1.0.0.yaml](../src/test/resources/openapi/mobile-scanners-1.0.0.yaml). `MobileScannersApiContractTest` rejects generated-document drift, unresolved contract structure, incompatible baseline changes and missing version bumps using QQQ's shared contract checker. Object required fields and scanner numeric bounds are standard OpenAPI keywords, added by small Schema subclasses because RC20's base model does not expose those setters.
+The published fragment is [mobile-scanners.yaml](../src/main/resources/openapi/qqq-v1/mobile-scanners.yaml); the initial release baseline is [mobile-scanners-1.0.0.yaml](../src/test/resources/openapi/mobile-scanners-1.0.0.yaml), with additional frozen baselines such as [mobile-scanners-1.4.0.yaml](../src/test/resources/openapi/mobile-scanners-1.4.0.yaml) (the contract immediately before the 1.5.0 capture metadata). `MobileScannersApiContractTest` rejects generated-document drift, unresolved contract structure, incompatible baseline changes and missing version bumps using QQQ's shared contract checker. Object required fields and scanner numeric bounds are standard OpenAPI keywords, added by small Schema subclasses because RC20's base model does not expose those setters.
 
 For an intentional contract edit, update specs/schemas and the extension semantic version, then regenerate only the current fragment:
 

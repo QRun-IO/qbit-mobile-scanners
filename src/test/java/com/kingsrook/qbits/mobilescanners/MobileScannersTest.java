@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -524,6 +525,151 @@ class MobileScannersTest
       input.addValue("symbology", "QR_CODE");
       assertThrows(QException.class, () -> MobileScannerActions.capture(input));
       assertFalse(input.getValues().containsKey("symbology"), "A rejected event must not contaminate the following submission.");
+   }
+
+
+
+   /***************************************************************************
+    ** Exact SDK bytes, including NUL and high bytes, persist and return unchanged.
+    ***************************************************************************/
+   @Test
+   void rawBytesAndAimIdentifierRoundTripExactlyAndBindRetries() throws Exception
+   {
+      bind(approvedDevice());
+      byte[] raw = new byte[] { 0, 'A', 0, (byte) 0xFF, (byte) 0x80, 0x1D, '0', '0' };
+      String encoded = Base64.getEncoder().encodeToString(raw);
+      Map<String, Serializable> input = scan();
+      input.put("barcode", "00001234");
+      input.put("aimIdentifier", "]C0");
+      input.put("rawDataBase64", encoded);
+      QRecord saved = MobileService.capture(input);
+      assertEquals("00001234", saved.getValueString("barcode"));
+      assertEquals("]C0", saved.getValueString("aimIdentifier"));
+      QRecord stored = MobileService.get(MobileScannersQBitProducer.SCAN, saved.getValueString("id"));
+      assertEquals(encoded, stored.getValueString("rawDataBase64"));
+      assertTrue(java.util.Arrays.equals(raw, Base64.getDecoder().decode(stored.getValueString("rawDataBase64"))));
+      assertEquals(saved.getValueString("id"), MobileService.capture(input).getValueString("id"), "Exact retry returns the same row.");
+
+      Map<String, Serializable> changedBytes = new HashMap<>(input);
+      changedBytes.put("rawDataBase64", Base64.getEncoder().encodeToString(new byte[] { 0, 'A', 0, (byte) 0xFE }));
+      assertThrows(QException.class, () -> MobileService.capture(changedBytes));
+      Map<String, Serializable> changedAim = new HashMap<>(input);
+      changedAim.put("aimIdentifier", "]Q1");
+      assertThrows(QException.class, () -> MobileService.capture(changedAim));
+      Map<String, Serializable> absentAim = new HashMap<>(input);
+      absentAim.remove("aimIdentifier");
+      assertThrows(QException.class, () -> MobileService.capture(absentAim), "Absent versus present metadata must conflict.");
+      Map<String, Serializable> absentRaw = new HashMap<>(input);
+      absentRaw.remove("rawDataBase64");
+      assertThrows(QException.class, () -> MobileService.capture(absentRaw), "Absent versus present metadata must conflict.");
+      assertEquals(1, scanRows());
+
+      Map<String, Serializable> legacy = scan();
+      QRecord legacyRow = MobileService.capture(legacy);
+      assertNull(legacyRow.getValueString("aimIdentifier"));
+      assertNull(legacyRow.getValueString("rawDataBase64"));
+      assertEquals(legacyRow.getValueString("id"), MobileService.capture(legacy).getValueString("id"));
+      Map<String, Serializable> addedLater = new HashMap<>(legacy);
+      addedLater.put("rawDataBase64", encoded);
+      assertThrows(QException.class, () -> MobileService.capture(addedLater), "A historical NULL row cannot be retried with new metadata.");
+      assertEquals(2, scanRows());
+   }
+
+
+
+   /***************************************************************************
+    ** Present optional metadata must be well typed, canonical and bounded.
+    ***************************************************************************/
+   @Test
+   void malformedAimAndRawMetadataAreRejectedWithoutSaving() throws Exception
+   {
+      bind(approvedDevice());
+      Base64.Encoder encoder = Base64.getEncoder();
+      List<Map<String, Serializable>> invalid = new ArrayList<>();
+      for(String aim : new String[] { "", " ", "]C", "]C10", "C01", "]01", "]c!", "]C-", "]C0\n" })
+      {
+         invalid.add(Map.of("aimIdentifier", aim));
+      }
+      invalid.add(Map.of("aimIdentifier", 7));
+      invalid.add(Map.of("aimIdentifier", true));
+      for(String raw : new String[] { "", " ", "AEEA/4AdMDA", "AEEA/4AdMDA=\n", "AEEA_4AdMDA=", "AEEA/4AdMDA==", "AEF=", "!!!!", "QQ=", encoder.encodeToString(new byte[8193]) })
+      {
+         invalid.add(Map.of("rawDataBase64", raw));
+      }
+      invalid.add(Map.of("rawDataBase64", 12));
+      invalid.add(Map.of("rawDataBase64", new byte[] { 1 }));
+      invalid.add(Map.of("rawDataBase64", "A".repeat(MobileService.RAW_DATA_MAXIMUM_CHARACTERS + 1)));
+      for(Map<String, Serializable> metadata : invalid)
+      {
+         Map<String, Serializable> input = scan();
+         input.putAll(metadata);
+         assertThrows(QException.class, () -> MobileService.capture(input), metadata.toString());
+      }
+      assertEquals(0, scanRows());
+      Map<String, Serializable> boundary = scan();
+      boundary.put("rawDataBase64", encoder.encodeToString(new byte[MobileService.RAW_DATA_MAXIMUM_BYTES]));
+      assertEquals(encoder.encodeToString(new byte[MobileService.RAW_DATA_MAXIMUM_BYTES]), MobileService.capture(boundary).getValueString("rawDataBase64"));
+      Map<String, Serializable> one = scan();
+      one.put("rawDataBase64", encoder.encodeToString(new byte[] { 0 }));
+      assertEquals("AA==", MobileService.capture(one).getValueString("rawDataBase64"));
+   }
+
+
+
+   /***************************************************************************
+    ** Context omits missing keys, replaces forged values and never carries
+    ** the previous event's metadata into the next event.
+    ***************************************************************************/
+   @Test
+   void processContextCarriesOptionalMetadataOnlyForTheAcceptedEvent() throws Exception
+   {
+      bind(approvedDevice());
+      String encoded = Base64.getEncoder().encodeToString(new byte[] { 0, (byte) 0xC3, 0x28 });
+      RunBackendStepInput input = new RunBackendStepInput().withProcessName(MobileScannersQBitProducer.CAPTURE).withValues(scan());
+      input.addValue("aimIdentifier", "]E0");
+      input.addValue("rawDataBase64", encoded);
+      Map<String, Serializable> first = MobileScannerActions.capture(input);
+      assertEquals("]E0", first.get("aimIdentifier"));
+      assertEquals(encoded, first.get("rawDataBase64"));
+      assertFalse(input.getValues().containsKey("aimIdentifier"));
+      assertFalse(input.getValues().containsKey("rawDataBase64"));
+
+      input.addValue("scanContext", new HashMap<>(Map.of("aimIdentifier", "]Q1", "rawDataBase64", "Zm9yZ2Vk")));
+      input.addValue("scanSaved", true);
+      input.addValue("acknowledgedEventId", first.get("eventId"));
+      input.addValue("barcode", "00001234");
+      input.addValue("eventId", UUID.randomUUID().toString());
+      input.addValue("capturedAt", "2026-11-01T12:00:00Z");
+      Map<String, Serializable> legacy = MobileScannerActions.capture(input);
+      assertFalse(legacy.containsKey("aimIdentifier"), "Missing optional keys are omitted, not null or inherited.");
+      assertFalse(legacy.containsKey("rawDataBase64"), "Missing optional keys are omitted, not null or inherited.");
+      assertEquals("scanner", legacy.get("userId"));
+
+      input.addValue("scanContext", new HashMap<>(legacy));
+      input.addValue("scanSaved", true);
+      input.addValue("acknowledgedEventId", legacy.get("eventId"));
+      input.addValue("barcode", "00001234");
+      input.addValue("eventId", UUID.randomUUID().toString());
+      input.addValue("capturedAt", "2026-11-01T12:00:00Z");
+      input.addValue("rawDataBase64", "not base64!");
+      assertThrows(QException.class, () -> MobileScannerActions.capture(input));
+      assertFalse(input.getValues().containsKey("rawDataBase64"), "A rejected event must not contaminate the following submission.");
+      assertFalse(input.getValues().containsKey("aimIdentifier"));
+   }
+
+
+
+   /***************************************************************************
+    ** Count persisted scans through JDBC, outside the guarded QQQ actions.
+    ***************************************************************************/
+   private int scanRows() throws Exception
+   {
+      try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+         var statement = connection.createStatement(); var rows = statement.executeQuery("SELECT COUNT(*) FROM mobileScan"))
+      {
+         assertTrue(rows.next());
+         return rows.getInt(1);
+      }
    }
 
 
