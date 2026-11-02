@@ -116,8 +116,12 @@ public final class EchoService
          check(identity);
          String recovered = generator.lookupAccepted(admission.pinnedPlan(), admission.scanId(), "echo:" + admission.scanId(), admission.destination());
          requireText(recovered, 200);
-         check(identity);
+         //////////////////////////////////////////////////////////////////////////////////////
+         // the owner's returned receipt is durable fact: record it, then recheck authority //
+         // before acknowledging, so a late revocation never loses an accepted queue job     //
+         //////////////////////////////////////////////////////////////////////////////////////
          store.accepted(runId, admission.scanId(), scan.eventId(), recovered);
+         check(identity);
          return new Acceptance(admission.scanId(), scan.eventId(), recovered);
       }
       try
@@ -138,9 +142,13 @@ public final class EchoService
          check(identity);
          String job = generator.accept(plan, admission.scanId(), "echo:" + admission.scanId(), destination);
          requireText(job, 200);
-         check(identity);
          store.accepted(runId, admission.scanId(), scan.eventId(), job);
+         check(identity);
          return new Acceptance(admission.scanId(), scan.eventId(), job);
+      }
+      catch(EchoStore.PinNotWon failure)
+      {
+         throw failure;
       }
       catch(QException failure)
       {

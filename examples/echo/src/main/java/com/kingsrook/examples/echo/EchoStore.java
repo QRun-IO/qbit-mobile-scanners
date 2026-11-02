@@ -117,6 +117,7 @@ final class EchoStore
             String id = scan.mobileScanId();
             String acceptedJob = null;
             boolean exists = false;
+            String state = null;
             EchoDestinations.Plan pinned = null;
             try(PreparedStatement query = connection.prepareStatement("SELECT * FROM echo_scan WHERE id=?"))
             {
@@ -130,6 +131,7 @@ final class EchoStore
                         throw new QException("This scan already belongs to another Echo run. Use a new physical scan event for another label.");
                      }
                      exists = true;
+                     state = row.getString("state");
                      if(row.getObject("templateId") != null && row.getObject("templateRevisionId") != null && row.getString("format") != null)
                      {
                         pinned = new EchoDestinations.Plan(row.getInt("templateId"), row.getInt("templateRevisionId"),
@@ -163,7 +165,12 @@ final class EchoStore
             if(exists)
             {
                connection.commit();
-               return new Admission(id, destination, null, true, pinned);
+               ////////////////////////////////////////////////////////////////////////////////
+               // no external call can precede the pin, so an unpinned ATTENTION/IN_FLIGHT    //
+               // event may safely be retried; the pin compare-and-set admits only one caller //
+               ////////////////////////////////////////////////////////////////////////////////
+               boolean unpinnedRetry = pinned == null && ("ATTENTION".equals(state) || "IN_FLIGHT".equals(state));
+               return new Admission(id, destination, null, !unpinnedRetry, pinned);
             }
             else
             {
@@ -194,14 +201,24 @@ final class EchoStore
 
    /***************************************************************************
     ** Persist exact rendering intent before external work can accept a job.
+    ** Exactly one caller may pin an unpinned event (reviving ATTENTION to
+    ** IN_FLIGHT); any other outcome means no external request may be made.
     ***************************************************************************/
    void pin(String scanId, EchoDestinations.Plan plan) throws QException
    {
-      try(Connection connection = dataSource.getConnection())
+      try(Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(
+         "UPDATE echo_scan SET state='IN_FLIGHT',templateId=?,templateRevisionId=?,format=?,topMicrons=?,rightMicrons=?,bottomMicrons=?,leftMicrons=? WHERE id=? AND state IN ('IN_FLIGHT','ATTENTION') AND templateId IS NULL"))
       {
-         write(connection, "UPDATE echo_scan SET templateId=?,templateRevisionId=?,format=?,topMicrons=?,rightMicrons=?,bottomMicrons=?,leftMicrons=? WHERE id=? AND state='IN_FLIGHT' AND templateId IS NULL",
-            plan.templateId().toString(), plan.templateRevisionId().toString(), plan.format().name(), plan.stock().topMicrons().toString(),
-            plan.stock().rightMicrons().toString(), plan.stock().bottomMicrons().toString(), plan.stock().leftMicrons().toString(), scanId);
+         String[] values = {plan.templateId().toString(), plan.templateRevisionId().toString(), plan.format().name(), plan.stock().topMicrons().toString(),
+            plan.stock().rightMicrons().toString(), plan.stock().bottomMicrons().toString(), plan.stock().leftMicrons().toString(), scanId};
+         for(int index = 0; index < values.length; index++)
+         {
+            statement.setString(index + 1, values[index]);
+         }
+         if(statement.executeUpdate() != 1)
+         {
+            throw new PinNotWon();
+         }
       }
       catch(SQLException failure)
       {
@@ -353,6 +370,23 @@ final class EchoStore
    private static QException unavailable()
    {
       return new QException("Echo state is unavailable. Do not resubmit as a new scan; reconcile the existing event.");
+   }
+
+
+
+   /***************************************************************************
+    ** Another attempt owns or already pinned this event; it must not be marked
+    ** ATTENTION or reach the generator from this caller.
+    ***************************************************************************/
+   static final class PinNotWon extends QException
+   {
+      /*********************************************************************
+       ** Fixed user-safe text; no identifiers.
+       *********************************************************************/
+      PinNotWon()
+      {
+         super("Another attempt is already handling this scan. Retry the same scan shortly or leave Echo.");
+      }
    }
 
 

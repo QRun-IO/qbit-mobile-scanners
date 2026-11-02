@@ -61,6 +61,10 @@ class EchoTest
    private String mediaRevision;
    private java.util.concurrent.CountDownLatch entered;
    private java.util.concurrent.CountDownLatch release;
+   private java.util.concurrent.CyclicBarrier planGate;
+   private Runnable planHook;
+   private Runnable afterAccept;
+   private Runnable afterLookup;
 
 
 
@@ -91,6 +95,10 @@ class EchoTest
       mediaRevision = "a".repeat(64);
       entered = null;
       release = null;
+      planGate = null;
+      planHook = null;
+      afterAccept = null;
+      afterLookup = null;
       EchoDestinations destinations = new EchoDestinations()
       {
          /*******************************************************************
@@ -113,6 +121,21 @@ class EchoTest
          @Override
          public Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, EchoService.Scan scan)
          {
+            if(planHook != null)
+            {
+               planHook.run();
+            }
+            if(planGate != null)
+            {
+               try
+               {
+                  planGate.await(5, java.util.concurrent.TimeUnit.SECONDS);
+               }
+               catch(Exception failure)
+               {
+                  throw new IllegalStateException("Fixture plan gate failed.", failure);
+               }
+            }
             return tooSmall ? null : new Plan(1, 1, new GenerationPorts.Stock(101600, 152400, 5000, 5000, 5000, 5000, 300), GenerationPorts.Format.PDF);
          }
       };
@@ -145,6 +168,10 @@ class EchoTest
             acceptedPlans.put(key, plan);
             acceptedDestinations.put(key, destination);
             accepted.put(key, job);
+            if(afterAccept != null)
+            {
+               afterAccept.run();
+            }
             if(uncertain)
             {
                throw new QException("Fixture lost acceptance response.");
@@ -158,6 +185,10 @@ class EchoTest
          @Override
          public String lookupAccepted(EchoDestinations.Plan plan, String source, String key, EchoDestinations.Destination destination)
          {
+            if(afterLookup != null)
+            {
+               afterLookup.run();
+            }
             if(accepted.containsKey(key))
             {
                assertEquals("echo:" + source, key);
@@ -352,6 +383,194 @@ class EchoTest
          assertTrue(rows.next());
          assertEquals("A ~", rows.getString("barcode"));
          assertFalse(rows.next());
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** A failure before the pin made no external call, so the same event retries
+    ** once and then returns its single queue receipt.
+    ***************************************************************************/
+   @Test
+   void transientPrePinFailureRetriesTheSameEventOnce() throws Exception
+   {
+      String run = config.service.start("printer", "4x6");
+      Map<String, Serializable> layout = captured("CODE128", "retry-layout");
+      tooSmall = true;
+      assertThrows(QException.class, () -> config.service.print(run, layout));
+      assertEquals("ATTENTION", scanRow(layout)[0]);
+      tooSmall = false;
+      var first = config.service.print(run, layout);
+      assertEquals(1, requests.size());
+      assertEquals(first, config.service.print(run, layout));
+      assertEquals(1, requests.size());
+      assertEquals("QUEUED", scanRow(layout)[0]);
+
+      Map<String, Serializable> authorization = captured("QRCODE", "retry-authorization");
+      destinationAvailable = false;
+      assertThrows(QException.class, () -> config.service.print(run, authorization));
+      assertEquals(1, requests.size());
+      destinationAvailable = true;
+      assertNotNull(config.service.print(run, authorization).printJobId());
+      assertEquals(2, requests.size());
+   }
+
+
+
+   /***************************************************************************
+    ** If the pin cannot be won (row missing, or another attempt pinned first)
+    ** the generator is never reached, and a pinned event never generates again.
+    ***************************************************************************/
+   @Test
+   void missingOrConflictingPinNeverReachesTheGenerator() throws Exception
+   {
+      String run = config.service.start("printer", "4x6");
+      Map<String, Serializable> missing = captured("CODE128", "pin-missing");
+      tooSmall = true;
+      assertThrows(QException.class, () -> config.service.print(run, missing));
+      tooSmall = false;
+      planHook = () -> sql("DELETE FROM echo_scan WHERE id='" + missing.get("scanId") + "'");
+      assertThrows(QException.class, () -> config.service.print(run, missing));
+      assertTrue(requests.isEmpty());
+      config.service.close(run);
+
+      String second = config.service.start("printer", "4x6");
+      Map<String, Serializable> conflicting = captured("CODE128", "pin-conflict");
+      tooSmall = true;
+      assertThrows(QException.class, () -> config.service.print(second, conflicting));
+      tooSmall = false;
+      planHook = () -> sql("UPDATE echo_scan SET state='IN_FLIGHT',templateId=99,templateRevisionId=99,format='PDF',topMicrons=0,rightMicrons=0,bottomMicrons=0,leftMicrons=0 WHERE id='"
+         + conflicting.get("scanId") + "'");
+      assertThrows(QException.class, () -> config.service.print(second, conflicting));
+      assertTrue(requests.isEmpty());
+      planHook = null;
+      assertThrows(QException.class, () -> config.service.print(second, conflicting));
+      assertTrue(requests.isEmpty());
+   }
+
+
+
+   /***************************************************************************
+    ** Two simultaneous retries of one unpinned event: the pin compare-and-set
+    ** lets at most one reach the external generator.
+    ***************************************************************************/
+   @Test
+   void simultaneousSameEventRetriesMakeAtMostOneExternalRequest() throws Exception
+   {
+      String run = config.service.start("printer", "4x6");
+      Map<String, Serializable> context = captured("CODE128", "simultaneous");
+      tooSmall = true;
+      assertThrows(QException.class, () -> config.service.print(run, context));
+      tooSmall = false;
+      planGate = new java.util.concurrent.CyclicBarrier(2);
+      List<java.util.concurrent.CompletableFuture<Object>> attempts = new ArrayList<>();
+      for(int index = 0; index < 2; index++)
+      {
+         attempts.add(java.util.concurrent.CompletableFuture.supplyAsync(() ->
+         {
+            mobile.bind();
+            try
+            {
+               return config.service.print(run, context);
+            }
+            catch(QException failure)
+            {
+               return failure;
+            }
+            finally
+            {
+               EchoMobileFixture.clear();
+            }
+         }));
+      }
+      int successes = 0;
+      for(var attempt : attempts)
+      {
+         if(attempt.get(10, java.util.concurrent.TimeUnit.SECONDS) instanceof EchoService.Acceptance)
+         {
+            successes++;
+         }
+      }
+      assertEquals(1, successes);
+      assertEquals(1, requests.size());
+      assertEquals("QUEUED", scanRow(context)[0]);
+   }
+
+
+
+   /***************************************************************************
+    ** Authority lost after the owner accepted the job still records the trusted
+    ** queue receipt (not ATTENTION) but never acknowledges or does more work.
+    ***************************************************************************/
+   @Test
+   void authorityLostAfterAcceptanceKeepsTheDurableReceiptWithoutAcknowledgment() throws Exception
+   {
+      String run = config.service.start("printer", "4x6");
+      Map<String, Serializable> context = captured("CODE128", "revoked-after-accept");
+      afterAccept = mobile::otherOperator;
+      assertThrows(QException.class, () -> config.service.print(run, context));
+      assertEquals(1, requests.size());
+      String[] row = scanRow(context);
+      assertEquals("QUEUED", row[0]);
+      assertEquals("job:" + context.get("scanId"), row[1]);
+   }
+
+
+
+   /***************************************************************************
+    ** The read-only recovery path records its trusted receipt before the final
+    ** authority recheck, so a late revocation cannot lose it either.
+    ***************************************************************************/
+   @Test
+   void authorityLostDuringLookupRecoveryKeepsTheDurableReceipt() throws Exception
+   {
+      String run = config.service.start("printer", "4x6");
+      Map<String, Serializable> context = captured("CODE128", "revoked-during-lookup");
+      uncertain = true;
+      assertThrows(QException.class, () -> config.service.print(run, context));
+      assertEquals("ATTENTION", scanRow(context)[0]);
+      uncertain = false;
+      afterLookup = mobile::otherOperator;
+      assertThrows(QException.class, () -> config.service.print(run, context));
+      assertEquals(1, requests.size());
+      String[] row = scanRow(context);
+      assertEquals("QUEUED", row[0]);
+      assertEquals("job:" + context.get("scanId"), row[1]);
+   }
+
+
+
+   /***************************************************************************
+    ** Direct fixture inspection of the example's own state table.
+    ***************************************************************************/
+   private String[] scanRow(Map<String, Serializable> context) throws Exception
+   {
+      try(Connection connection = dataSource.getConnection(); var query = connection.prepareStatement("SELECT state,printJobId FROM echo_scan WHERE id=?"))
+      {
+         query.setString(1, String.valueOf(context.get("scanId")));
+         try(var rows = query.executeQuery())
+         {
+            assertTrue(rows.next());
+            return new String[] {rows.getString("state"), rows.getString("printJobId")};
+         }
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Fixture-only state manipulation standing in for a competing attempt.
+    ***************************************************************************/
+   private void sql(String statement)
+   {
+      try(Connection connection = dataSource.getConnection(); var command = connection.createStatement())
+      {
+         command.executeUpdate(statement);
+      }
+      catch(java.sql.SQLException failure)
+      {
+         throw new IllegalStateException(failure);
       }
    }
 

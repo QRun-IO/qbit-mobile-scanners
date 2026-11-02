@@ -4,7 +4,7 @@ Updated: 2026-11-01. Scope: `examples/echo` library module. Primary forge: Gitea
 
 ## Verified state (reported by root; I ran nothing)
 
-- `mvnw verify` for this module: **33 tests pass**, **Checkstyle 0** (2026-11-02), against a complete private owner cohort: Generation and bridges `0.1.0-echo.gen64c9pu507`, Printing protected main `64c9ebf`, core `4.1.0-pu.507b0d21e09d7eebb76782d14660483c45c77b11`, 15 artifacts. The POM defaults (`qqq.version` 4.1.0-RC.20, `generation.version` 0.1.0-SNAPSHOT, `printing.version` 0.4.0-SNAPSHOT) are not that cohort.
+- `mvnw verify` for this module: **38 tests pass**, **Checkstyle 0** (2026-11-02), against a complete private owner cohort: Generation and bridges `0.1.0-echo.gen64c9pu507`, Printing protected main `64c9ebf`, core `4.1.0-pu.507b0d21e09d7eebb76782d14660483c45c77b11`, 15 artifacts. The POM defaults (`qqq.version` 4.1.0-RC.20, `generation.version` 0.1.0-SNAPSHOT, `printing.version` 0.4.0-SNAPSHOT) are not that cohort.
 - Scanner source `707e1ab` (Gitea PR 7): scanner 50, demo 7 and Record Files 18 tests pass. Android `c55d300` is retained inside migration merge `a2f0080` (identical tree).
 - Runnable demo (`demo/`): **22 tests pass, Checkstyle 0**, with the new Echo read checker (it accepts Collaboration's and Record Files' plain capability probe for sessions with `echo.use`) and the renderer owner's TL1 trusted-local factory (52 owner tests pass; the demo copies no transport). Its clean composed acceptance passes: authenticated approved scanner, real `echoPrint`, real Generation, Record Files retention and Printing job acceptance; two scans give two retained originals and two accepted jobs on one printer, a retry gives the same job, and leaving closes the run. It uses a controlled synthetic renderer and a simulated Printing queue. A local run was observed live on an ephemeral loopback port (scanner and admin native login and metadata 200) with no printer or template. The production `EchoDemo` default still fails closed on Windows Docker Desktop (`runc`, not `runsc`).
 - TC22 native five-stage flow and 86 semantic API calls pass **against simulated printing only**.
@@ -39,7 +39,7 @@ Updated: 2026-11-01. Scope: `examples/echo` library module. Primary forge: Gitea
 
 ## Test inventory
 
-18 core and HTTP-fixture tests (`EchoTest` 17, `EchoHttpFixtureTest` 1) and 14 adapter tests (`EchoOwnerAdaptersTest`): exact profile mapping, unknown or malformed media refusal, template keys, exact request pins, no-queue results, undurable or unavailable or missing receipt refusal, read-only lookup, mismatched-media lookup, printer-filtered media choices, bounded printer dependency, absent deployment parts refused, and the published scene geometry. Total 32, as reported by root.
+24 core and HTTP-fixture tests (`EchoTest` 23, `EchoHttpFixtureTest` 1) and 14 adapter tests (`EchoOwnerAdaptersTest`): exact profile mapping, unknown or malformed media refusal, template keys, exact request pins, no-queue results, undurable or unavailable or missing receipt refusal, read-only lookup, mismatched-media lookup, printer-filtered media choices, bounded printer dependency, absent deployment parts refused, and the published scene geometry. Total 38, verified by the coordinator.
 
 ## Next gates (in order)
 

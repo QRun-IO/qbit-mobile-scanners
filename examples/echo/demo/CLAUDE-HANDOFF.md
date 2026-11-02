@@ -4,7 +4,7 @@ Date: 2026-11-02. Scope: `examples/echo/demo/**`. Source checkpoint, not a relea
 
 ## Verified status
 
-- Demo module `verify`: **22 tests pass, Checkstyle 0** (acceptance 1, settings 5, startup 1, object files 6, trusted-local renderer settings 9), against the real new Echo read checker and the renderer owner's TL1 factory. Parent `examples/echo` `verify`: 33 tests pass.
+- Demo module `verify`: **22 tests pass, Checkstyle 0** (acceptance 1, settings 5, startup 1, object files 6, trusted-local renderer settings 9), against the real new Echo read checker and the renderer owner's TL1 factory. Parent `examples/echo` `verify`: 38 tests pass.
 - The renderer owner's own tests for the TL1 trusted-local exchange pass (52 owner tests). The demo uses the owner's public factory and copies no transport.
 - **Complete composed acceptance (`EchoDemoAcceptanceTest`) passes** over a fresh private file database: an authenticated, approved scanner runs the real `echoPrint` process through real Generation, Record Files retention and Printing job acceptance. Two scans (Code 128 `001234567890`, QR `QR-VALUE-0099`) give exactly two retained originals and two accepted Printing jobs on the one selected printer and media; a retry of the same event returns the same job and renders nothing again; leaving closes the run (`CLOSED`).
 - **Controlled inputs, not physical output:** the renderer returns fixed synthetic ZPL built from the exact context Generation passes it, and the "printer" is a Printing device and queue enrolled through the owner's public `PrintingService` API. No Docker, agent, printer or device is touched.
