@@ -267,18 +267,18 @@ public final class EchoService
             case "CODE128", "LABEL-TYPE-CODE128" -> "code128";
             case "QRCODE", "LABEL-TYPE-QRCODE" -> "qr";
             case "CODE39", "LABEL-TYPE-CODE39" -> "code39";
-            case "EAN13", "LABEL-TYPE-EAN13" -> "ean13";
-            case "EAN8", "LABEL-TYPE-EAN8" -> "ean8";
-            case "UPCA", "LABEL-TYPE-UPCA" -> "upca";
-            case "UPCE0", "LABEL-TYPE-UPCE0" -> "upce";
             case "DATAMATRIX", "LABEL-TYPE-DATAMATRIX" -> "datamatrix";
             case "PDF417", "LABEL-TYPE-PDF417" -> "pdf417";
             case "AZTEC", "LABEL-TYPE-AZTEC" -> "aztec";
             default -> throw new QException("This barcode type cannot yet be reproduced faithfully by Echo. No print was requested.");
          };
-         if(value.chars().anyMatch(Character::isISOControl))
+         ///////////////////////////////////////////////////////////////////////////////////////
+         // the qualified first-physical profile is printable ASCII 0x20..0x7E for all types; //
+         // other characters can decode differently under the scanner charset. Never convert. //
+         ///////////////////////////////////////////////////////////////////////////////////////
+         if(value.chars().anyMatch(character -> character < 0x20 || character > 0x7E))
          {
-            throw new QException("This scan needs control/binary/GS1 payload handling that Echo has not qualified. No print was requested.");
+            throw new QException("This scan needs control/binary/GS1 or non-ASCII payload handling that Echo has not qualified; only printable ASCII is supported. No print was requested.");
          }
          return new Scan(event, value, type, renderer, source, captured, mobileScan, received);
       }

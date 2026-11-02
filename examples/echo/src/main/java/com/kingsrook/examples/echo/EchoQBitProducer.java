@@ -7,6 +7,10 @@ package com.kingsrook.examples.echo;
 
 
 import java.util.List;
+import com.kingsrook.qbits.printing.PrintingTables;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
@@ -53,6 +57,12 @@ public final class EchoQBitProducer
       {
          instance.addSecurityKeyType(new QSecurityKeyType().withName("qqq.session.userId"));
       }
+      QFieldMetaData printer = text("printerId", 200).withLabel("Printer").withIsRequired(true).withPossibleValueSourceName(config.printerPossibleValues);
+      if(PrintingTables.PRINTER.equals(config.printerPossibleValues))
+      {
+         printer.withPossibleValueSourceFilter(new QQueryFilter(new QFilterCriteria("enabled", QCriteriaOperator.EQUALS, 1))
+            .withCriteria(new QFilterCriteria("available", QCriteriaOperator.EQUALS, 1)));
+      }
       QTableMetaData scan = new QTableMetaData().withName(SCAN_TABLE).withLabel("Echo Scans").withBackendName(config.backendName)
          .withBackendDetails(new RDBMSTableBackendDetails().withTableName("echo_scan")).withPrimaryKeyField("id")
          .withRecordSecurityLock(new RecordSecurityLock().withFieldName("actorId").withSecurityKeyType("qqq.session.userId"))
@@ -70,7 +80,7 @@ public final class EchoQBitProducer
          .withCancelStep(new QBackendStepMetaData().withName("cancel").withCode(new QCodeReference(EchoSteps.Cancel.class)))
          .withStep(new QBackendStepMetaData().withName("begin").withCode(new QCodeReference(EchoSteps.Begin.class)))
          .withStep(new QFrontendStepMetaData().withName("setup").withLabel("Choose printer and paper or label")
-            .withFormField(text("printerId", 200).withLabel("Printer").withIsRequired(true).withPossibleValueSourceName(config.printerPossibleValues))
+            .withFormField(printer)
             .withFormField(text("mediaId", 200).withLabel("Paper or label size").withIsRequired(true)
                .withPossibleValueSourceName(config.mediaPossibleValues).withPossibleValueSourceDependsOn(List.of("printerId")))
             .withComponent(new QFrontendComponentMetaData().withType(QComponentType.EDIT_FORM)))

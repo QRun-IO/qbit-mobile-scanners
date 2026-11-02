@@ -26,6 +26,7 @@ public final class EchoConfig implements QBitConfig
    final String printerPossibleValues;
    final String mediaPossibleValues;
    final EchoService service;
+   final EchoDestinations destinations;
    final IdentitySource identities;
 
 
@@ -53,6 +54,7 @@ public final class EchoConfig implements QBitConfig
       this.printerPossibleValues = Objects.requireNonNull(printerPossibleValues);
       this.mediaPossibleValues = Objects.requireNonNull(mediaPossibleValues);
       this.identities = Objects.requireNonNull(identities);
+      this.destinations = Objects.requireNonNull(destinations);
       service = new EchoService(dataSource, destinations, generator, identities);
    }
 
@@ -68,10 +70,20 @@ public final class EchoConfig implements QBitConfig
       {
          errors.add("Echo requires its configured backend and enforced core permissions.");
       }
-      if(instance.getPossibleValueSource(printerPossibleValues) == null || instance.getPossibleValueSource(mediaPossibleValues) == null)
+      if(!hasChoices(instance, printerPossibleValues) || !hasChoices(instance, mediaPossibleValues))
       {
          errors.add("Echo requires authorized printer and supported-media possible-value sources.");
       }
+   }
+
+
+
+   /***************************************************************************
+    ** A table's implicit possible-value source exists once the table is registered.
+    ***************************************************************************/
+   private static boolean hasChoices(QInstance instance, String name)
+   {
+      return instance.getPossibleValueSource(name) != null || instance.getTable(name) != null;
    }
 
 

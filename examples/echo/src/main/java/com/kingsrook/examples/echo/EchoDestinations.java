@@ -6,6 +6,7 @@
 package com.kingsrook.examples.echo;
 
 
+import java.util.List;
 import com.kingsrook.qbits.documentgeneration.GenerationPorts;
 import com.kingsrook.qbits.mobilescanners.MobileDeviceAuthorization;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
@@ -32,6 +33,26 @@ public interface EchoDestinations
     ** Refuse unsupported types or media too small for safe quiet zones.
     ***************************************************************************/
    Plan plan(MobileDeviceAuthorization.Identity identity, Destination destination, EchoService.Scan scan) throws QException;
+
+
+
+   /***************************************************************************
+    ** Paper or label sizes the current actor may select for exactly this printer.
+    ** Setup offers only these; authorize still rechecks the exact pair.
+    ***************************************************************************/
+   default List<MediaChoice> media(String printerRecordId) throws QException
+   {
+      return List.of();
+   }
+
+
+
+   /***************************************************************************
+    ** Public identifier and label of one supported size, never its private pin.
+    ***************************************************************************/
+   record MediaChoice(String id, String label)
+   {
+   }
 
 
 

@@ -307,12 +307,52 @@ class EchoTest
    void unsupportedAndControlPayloadsFailWithoutPrinting() throws Exception
    {
       String run = config.service.start("printer", "4x6");
-      for(String type : List.of("UNKNOWN", "MANUAL", "GS1_128", "unsupported"))
+      for(String type : List.of("UNKNOWN", "MANUAL", "GS1_128", "unsupported", "EAN13", "EAN8", "UPCA", "UPCE0",
+         "LABEL-TYPE-EAN13", "LABEL-TYPE-EAN8", "LABEL-TYPE-UPCA", "LABEL-TYPE-UPCE0"))
       {
          assertThrows(QException.class, () -> config.service.print(run, captured(type, "001234")));
       }
       assertThrows(QException.class, () -> config.service.print(run, captured("QRCODE", "A\nB")));
       assertTrue(requests.isEmpty());
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT COUNT(*) FROM echo_scan"))
+      {
+         assertTrue(rows.next());
+         assertEquals(0, rows.getInt(1));
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Only the qualified printable ASCII profile is admitted; anything else is
+    ** refused untouched before an intent is stored or generation is called.
+    ***************************************************************************/
+   @Test
+   void nonAsciiPayloadsAreRejectedBeforeIntentOrGeneration() throws Exception
+   {
+      String run = config.service.start("printer", "4x6");
+      for(String type : List.of("CODE128", "QRCODE", "CODE39", "DATAMATRIX", "PDF417", "AZTEC"))
+      {
+         for(String value : List.of("café", "中文", "A\u007fB", "😀", "A B", "\u0080"))
+         {
+            var failure = assertThrows(QException.class, () -> config.service.print(run, captured(type, value)));
+            assertTrue(failure.getMessage().contains("printable ASCII"));
+         }
+      }
+      assertTrue(requests.isEmpty());
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT COUNT(*) FROM echo_scan"))
+      {
+         assertTrue(rows.next());
+         assertEquals(0, rows.getInt(1));
+      }
+      config.service.print(run, captured("CODE128", "A ~"));
+      assertEquals(1, requests.size());
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT barcode FROM echo_scan"))
+      {
+         assertTrue(rows.next());
+         assertEquals("A ~", rows.getString("barcode"));
+         assertFalse(rows.next());
+      }
    }
 
 
@@ -509,12 +549,33 @@ class EchoTest
       var own = source(acceptedScan.scanId());
       assertNotNull(own);
       assertEquals("operator", own.getValueString("actorId"));
+
+      // core's capability/discovery READ probe is the exact base input; writes and unknown subclasses stay refused
+      var probe = new com.kingsrook.qqq.backend.core.model.actions.AbstractActionInput();
+      assertTrue(com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper.hasTablePermission(probe, EchoQBitProducer.SCAN_TABLE,
+         com.kingsrook.qqq.backend.core.actions.permissions.TablePermissionSubType.READ));
+      var scanTable = QContext.getQInstance().getTable(EchoQBitProducer.SCAN_TABLE);
+      var checker = new EchoSourceReadPermissions();
+      checker.checkPermissionsThrowing(probe, scanTable);
+      checker.checkPermissionsThrowing(null, scanTable);
+      assertThrows(QException.class, () -> checker.checkPermissionsThrowing(new com.kingsrook.qqq.backend.core.model.actions.AbstractActionInput()
+      {
+      }, scanTable));
+      assertThrows(QException.class, () -> checker.checkPermissionsThrowing(new com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput(), scanTable));
+      assertThrows(QException.class, () -> checker.checkPermissionsThrowing(new com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput(), scanTable));
+      assertThrows(QException.class, () -> checker.checkPermissionsThrowing(new com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput(), scanTable));
+      assertThrows(QException.class, () -> new com.kingsrook.qqq.backend.core.actions.tables.UpdateAction().execute(
+         new com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput().withTableName(EchoQBitProducer.SCAN_TABLE)
+            .withRecord(new com.kingsrook.qqq.backend.core.model.data.QRecord().withValue("id", acceptedScan.scanId()).withValue("barcode", "forged"))));
+      assertEquals("000001", source(acceptedScan.scanId()).getValueString("barcode"));
       assertThrows(QException.class, () -> new com.kingsrook.qqq.backend.core.actions.tables.InsertAction().execute(
          new com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput().withTableName(EchoQBitProducer.SCAN_TABLE)
             .withRecord(new com.kingsrook.qqq.backend.core.model.data.QRecord().withValue("id", "forged"))));
       mobile.otherOperator();
       QContext.getQSession().withSecurityKeyValue("qqq.session.userId", "operator");
       assertEquals(null, source(acceptedScan.scanId()));
+      assertTrue(com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper.hasTablePermission(new com.kingsrook.qqq.backend.core.model.actions.AbstractActionInput(),
+         EchoQBitProducer.SCAN_TABLE, com.kingsrook.qqq.backend.core.actions.permissions.TablePermissionSubType.READ));
    }
 
 
@@ -558,6 +619,8 @@ class EchoTest
       config.service.close(run);
       desktop("operator", false);
       assertThrows(QException.class, () -> source(acceptedScan.scanId()));
+      assertFalse(com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper.hasTablePermission(new com.kingsrook.qqq.backend.core.model.actions.AbstractActionInput(),
+         EchoQBitProducer.SCAN_TABLE, com.kingsrook.qqq.backend.core.actions.permissions.TablePermissionSubType.READ));
       desktop("other-operator", true);
       QContext.getQSession().withSecurityKeyValue("qqq.session.userId", "operator");
       assertEquals(null, source(acceptedScan.scanId()));

@@ -26,6 +26,8 @@ public final class EchoSourceReadPermissions implements CustomPermissionChecker
    /***************************************************************************
     ** Metadata discovery and explicit read actions only; no saved scanner session
     ** or device identifier is reconstructed for desktop or retained-source reads.
+    ** The exact base AbstractActionInput is core's capability/discovery READ probe
+    ** (it carries no subtype); every concrete write or unknown subclass is refused.
     ***************************************************************************/
    @Override
    public void checkPermissionsThrowing(AbstractActionInput action, MetaDataWithPermissionRules metadata) throws QPermissionDeniedException
@@ -33,7 +35,8 @@ public final class EchoSourceReadPermissions implements CustomPermissionChecker
       var session = QContext.getQSession();
       if(session == null || session.getUser() == null || session.getUser().getIdReference() == null
          || session.getUser().getIdReference().isBlank() || !session.hasPermission(EchoQBitProducer.PERMISSION)
-         || (action != null && !(action instanceof GetInput || action instanceof QueryInput || action instanceof CountInput || action instanceof AggregateInput)))
+         || (action != null && action.getClass() != AbstractActionInput.class
+            && !(action instanceof GetInput || action instanceof QueryInput || action instanceof CountInput || action instanceof AggregateInput)))
       {
          throw new QPermissionDeniedException("Current Echo access is required; retained scan sources are read-only.");
       }

@@ -1,5 +1,8 @@
 # QQQ Mobile Scanners TODO
 
+- [x] Verify real composed Echo native HTTP pipeline:33example/22demo, retained files, accepted jobs, retry identity and Leave closure; simulated printer/controlled renderer only.
+- [ ] Complete native printer connection and physical TC22 scan/print/rescan on current loaded stock, then qualify published dependencies and primary CI.
+
 - [x] Verify effective security-key set comparison and early Collaboration authentication initialization: scanner50/native Record Files18, Checkstyle0 on private coherent cohort.
 - [ ] Complete live Echo renderer/printer composition and physical TC22 print/rescan; startup smoke and simulated printing do not close this gate.
 
