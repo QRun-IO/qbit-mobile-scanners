@@ -1,6 +1,6 @@
-Root verification:45 Echo library +24 composed demo tests PASS, Checkstyle0. Android99 focused/host tests +8 Node guards/lint0errors0warnings pass and test APK compiles. Updated TC22 document-choice test is still in progress, not a physical-print claim.
+Root verification:45 Echo library +24 composed demo tests PASS, Checkstyle0. Android99 focused/host tests +8 Node guards/lint0errors0warnings pass and test APK compiles. Updated TC22 document-choice test passed all7 stages and112 published semantic requests against simulated printing; no physical-print claim.
 
-# Echo required Document choice (server verified; native acceptance in progress)
+# Echo required Document choice (server and native UI verified)
 
 ## Process contract (ordinary QQQ metadata; Android renders it generically)
 `echoPrint` frontend step `setup`, form fields in order:

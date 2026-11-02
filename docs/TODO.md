@@ -1,5 +1,8 @@
 # QQQ Mobile Scanners TODO
 
+- [x] Implement explicit required INTEGER Document choice with printer/media dependency, server-pinned revision and recoverable errors:45 library/24 composed tests and real TC22 seven-stage/112-request semantic acceptance pass (simulated printing).
+- [ ] Roll out document-selection server feature and complete current Windows-authorized printer pairing, real4x1 publication and physical scan/print/rescan.
+
 - [ ] Root Maven gate for the per-extension device-header scope fix (base verify + Echo demo composed regression), then redo native printer pairing.
 
 - [x] Publish reviewed Echo retry/receipt fixes as signed Gitea commit912040d;38 library/22 demo tests pass. Native printer pairing remains at Windows administrator approval; physical output and public CI/artifacts are still open.
