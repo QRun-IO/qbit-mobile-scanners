@@ -9,7 +9,7 @@ release_on_main: false
 release_tag_policy: stable
 test_branch_policy: all
 publish:
-  snapshot: false
+  snapshot: true
   release_candidate: false
   release: false
   feature: false

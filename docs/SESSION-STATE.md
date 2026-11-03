@@ -1,3 +1,11 @@
+## November 3 — snapshot publication preparation (proposed branch `ci/enable-scanner-snapshots`)
+
+- PR 7 merged as `795a0a2`. Exact feature head `090e3c1`: CI 3603 PASS (2m09s). Post-merge run 3607: PASS (2m08s), but the snapshot flag was disabled, so nothing was captured (confirmed by the shared CI owner).
+- This branch changes only `publish.snapshot` to true in `.qqq-ci.yml` to enable development snapshots on `develop`. It is not a stable release or a `main` promotion. Still needed: owner enrollment reconciliation, normal CI and merge, and actual artifact receipt.
+- The local runtime on 57832 still runs the earlier qualified private core and has not been upgraded to RC.21.
+- Generation copies, signed `aac68907`, is acknowledged by the owner and adoption is underway. There is no canonical artifact yet.
+- Physical checks (operator remote), native Authentik, and production Android signing remain deferred. The proven RC.21 evidence (377 tests plus 15 admin-browser E2E) still stands. Source publication does not equal 1.0.
+
 ## November 3 — current checkpoint (supersedes everything below)
 
 - **Server source:** `45f9cbddb14999d28add02dd9a37e4ce018e282e` is signed and pushed on Gitea PR 7 (earlier "uncommitted" statements below are historical). The five `qqq.version` POM pins to public **QQQ 4.1.0-RC.21** (root, demo, Echo, Echo demo, record-files) and the record-files POM test fix below are included in this verified dependency update.

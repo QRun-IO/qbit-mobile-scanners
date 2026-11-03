@@ -1,5 +1,14 @@
 # QQQ Mobile Scanners TODO
 
+Snapshot publication (November 3, proposed branch `ci/enable-scanner-snapshots`):
+
+- [x] PR 7 merged as `795a0a2`; feature `090e3c1` CI 3603 PASS (2m09s); post-merge 3607 PASS (2m08s) but snapshot flag was disabled, so no artifact.
+- [x] Propose `publish.snapshot: true` only in `.qqq-ci.yml` (develop development snapshots; not a stable release or `main` promotion).
+- [ ] Owner enrollment reconciliation; normal CI and merge of this change; actual snapshot artifact receipt.
+- [ ] Local runtime 57832 is still the earlier qualified private core, not upgraded to RC.21.
+- [ ] Generation copies `aac68907` is owner-acknowledged and adoption is underway; no canonical artifact yet.
+- [ ] Physical checks, native Authentik and production Android signing stay deferred. Source publication does not equal 1.0.
+
 Current checkpoint (November 3; supersedes the notes below where they differ):
 
 - [x] Server `45f9cbd` is signed and pushed (Gitea PR 7). Android `f72b90d` is signed and pushed to the existing AGit PR 10 head and Gitea CI 3480 succeeded on it (pull requests #8 and #10 still open; not merged, not released). Updated normal APK installed without clearing data; fresh disposable TC22 Echo run passed 109/109 semantic requests (simulated inputs/printing).
