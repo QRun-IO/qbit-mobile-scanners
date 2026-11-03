@@ -108,7 +108,25 @@ public interface EchoDestinations
    /***************************************************************************
     ** A generation-owned immutable template supplies stock and fitting policy.
     ***************************************************************************/
-   record Plan(Integer templateId, Integer templateRevisionId, GenerationPorts.Stock stock, GenerationPorts.Format format)
+   record Plan(Integer templateId, Integer templateRevisionId, GenerationPorts.Stock stock, GenerationPorts.Format format, int copies)
    {
+      /************************************************************************
+       ** Destinations plan the document only; the run's pinned copies are added
+       ** by the service, so a plain plan is one copy.
+       ************************************************************************/
+      public Plan(Integer templateId, Integer templateRevisionId, GenerationPorts.Stock stock, GenerationPorts.Format format)
+      {
+         this(templateId, templateRevisionId, stock, format, 1);
+      }
+
+
+
+      /************************************************************************
+       ** The same exact document with the run's server-pinned copies per scan.
+       ************************************************************************/
+      Plan withCopies(int count)
+      {
+         return new Plan(templateId, templateRevisionId, stock, format, count);
+      }
    }
 }

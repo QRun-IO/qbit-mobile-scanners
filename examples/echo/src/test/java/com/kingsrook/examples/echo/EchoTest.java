@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -65,6 +66,7 @@ class EchoTest
    private Runnable planHook;
    private Runnable afterAccept;
    private Runnable afterLookup;
+   private QInstance metadata;
    private boolean documentWithdrawn;
    private int documentRevisionShift;
    private final List<Integer> plannedDocuments = new java.util.concurrent.CopyOnWriteArrayList<>();
@@ -82,6 +84,7 @@ class EchoTest
       dataSource.setURL("jdbc:h2:mem:echo_" + UUID.randomUUID().toString().replace("-", "") + ";DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1");
       dataSource.setUser("sa");
       QInstance instance = new QInstance();
+      metadata = instance;
       mobile = new EchoMobileFixture(instance, dataSource.getURL());
       instance.addPossibleValueSource(new QPossibleValueSource().withName("echoFixturePrinters").withType(QPossibleValueSourceType.ENUM)
          .withEnumValues(List.of(new QPossibleValue<>("printer", "Fixture printer"))));
@@ -308,6 +311,248 @@ class EchoTest
 
 
    /***************************************************************************
+    ** Runs without a chosen count print exactly one copy, and the run stores it.
+    ***************************************************************************/
+   @Test
+   void copiesDefaultToOne() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7);
+      var accepted = config.service.print(run, captured("CODE128", "001234567890"));
+      assertEquals(1, accepted.copies());
+      assertEquals(1, acceptedPlans.get("echo:" + accepted.scanId()).copies());
+      assertEquals(1, runCopies(run));
+   }
+
+
+
+   /***************************************************************************
+    ** The chosen count applies to every scan of the run, as ONE job per scan:
+    ** two scans make two requests, never one per copy.
+    ***************************************************************************/
+   @Test
+   void chosenCopiesApplyToEveryScanAsOneJobEach() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7, 3);
+      assertEquals(3, runCopies(run));
+      var first = config.service.print(run, captured("CODE128", "001234567890"));
+      var second = config.service.print(run, captured("QRCODE", "001234567890"));
+      assertEquals(2, requests.size());
+      assertEquals(2, accepted.size());
+      assertEquals(3, first.copies());
+      assertEquals(3, second.copies());
+      assertEquals(3, acceptedPlans.get("echo:" + first.scanId()).copies());
+      assertEquals(3, acceptedPlans.get("echo:" + second.scanId()).copies());
+      assertEquals(1, requestsFor(first.scanId()));
+   }
+
+
+
+   /***************************************************************************
+    ** An exact retry returns the same job, and a lost response recovers through
+    ** read-only lookup with the very same pinned count; neither adds a job.
+    ***************************************************************************/
+   @Test
+   void retriesKeepTheSameCopiesAndAddNoJobs() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7, 5);
+      Map<String, Serializable> context = captured("CODE128", "retry-copies");
+      var first = config.service.print(run, context);
+      assertEquals(first, config.service.print(run, context));
+      assertEquals(1, requests.size());
+      Map<String, Serializable> lost = captured("CODE128", "lost-response");
+      uncertain = true;
+      assertThrows(QException.class, () -> config.service.print(run, lost));
+      uncertain = false;
+      var recovered = config.service.print(run, lost);
+      assertEquals(5, recovered.copies());
+      assertEquals(2, requests.size());
+   }
+
+
+
+   /***************************************************************************
+    ** Only whole numbers within Printing's 1..100 and the generator's own limit
+    ** are accepted, before anything is pinned or printed.
+    ***************************************************************************/
+   @Test
+   void invalidCopiesAreRefusedDuringSetup() throws Exception
+   {
+      for(Integer invalid : new Integer[] { 0, -1, 101, 1000, Integer.MAX_VALUE, Integer.MIN_VALUE })
+      {
+         var failure = assertThrows(QException.class, () -> config.service.start("printer", "4x6", 7, invalid));
+         assertTrue(failure.getMessage().contains("1 to 100"), failure.getMessage());
+      }
+      for(java.io.Serializable raw : new java.io.Serializable[] { "2.5", "1e1", "-2", "abc", 2.5, 3.0, true, "1234567", "0", 0, "101", 101, 1000L })
+      {
+         assertThrows(QException.class, () -> EchoSteps.copies(raw));
+      }
+      // a cleared or omitted optional field is no choice at all: setup resolves it to one
+      assertNull(EchoSteps.copies(null));
+      assertNull(EchoSteps.copies(""));
+      assertNull(EchoSteps.copies("   "));
+      assertEquals(7, EchoSteps.copies("7"));
+      assertEquals(1, EchoSteps.copies(1));
+      assertEquals(100, EchoSteps.copies(100L));
+      // Printing's cap is the only bound: the largest value is accepted, and one past it is not
+      config.service.start("printer", "4x6", 7, 100);
+      assertTrue(requests.isEmpty());
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT COUNT(*) FROM echo_run WHERE state='OPEN'"))
+      {
+         assertTrue(rows.next());
+         assertEquals(1, rows.getInt(1));
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** The server pins the count: setup replay cannot change it and a scan-stage
+    ** value that differs is refused before any event, job or pending state.
+    ***************************************************************************/
+   @Test
+   void serverPinsCopiesAgainstForgedChanges() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7, 3);
+      config.service.select(run, "printer", "4x6", 7, 3);
+      assertThrows(QException.class, () -> config.service.select(run, "printer", "4x6", 7, 4));
+      assertThrows(QException.class, () -> config.service.select(run, "printer", "4x6", 7, null));
+      assertEquals(3, runCopies(run));
+      Map<String, Serializable> context = captured("CODE128", "forged-copies");
+      for(int forged : new int[] { 1, 2, 4, 100 })
+      {
+         assertTrue(assertThrows(QException.class, () -> config.service.print(run, context, forged)).getMessage().contains("cannot change"));
+      }
+      assertTrue(requests.isEmpty());
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT COUNT(*) FROM echo_scan"))
+      {
+         assertTrue(rows.next());
+         assertEquals(0, rows.getInt(1));
+      }
+      var result = config.service.print(run, context, 3);
+      assertEquals(3, result.copies());
+      assertEquals(result, config.service.print(run, context, 3));
+      assertEquals(1, requests.size());
+   }
+
+
+
+   /***************************************************************************
+    ** Through the real process: setup asks for copies (default 1), the running
+    ** step shows the count, and a changed scan-stage value is refused.
+    ***************************************************************************/
+   @Test
+   void processAsksCopiesAtSetupAndPinsThemForTheLoop() throws Exception
+   {
+      RunProcessOutput setup = new RunProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS));
+      var field = metadata.getProcess(EchoQBitProducer.PROCESS).getFrontendStep("setup").getFormFields().stream().filter(candidate -> "copies".equals(candidate.getName())).findFirst().orElseThrow();
+      assertEquals("Copies per scan", field.getLabel());
+      assertEquals(1, field.getDefaultValue());
+      assertFalse(field.getIsRequired());
+      assertEquals(com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType.INTEGER, field.getType());
+      var range = field.getBehaviorOnlyIfSet(com.kingsrook.qqq.backend.core.model.metadata.fields.ValueRangeBehavior.class);
+      assertEquals(1, range.getMinValue().intValue());
+      assertEquals(100, range.getMaxValue().intValue());
+      assertTrue(range.getMinAllowEqualTo() && range.getMaxAllowEqualTo());
+      assertEquals(com.kingsrook.qqq.backend.core.model.metadata.fields.ValueRangeBehavior.Behavior.ERROR, range.getMinBehavior());
+      assertEquals(com.kingsrook.qqq.backend.core.model.metadata.fields.ValueRangeBehavior.Behavior.ERROR, range.getMaxBehavior());
+      RunProcessInput selection = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", 7).withValue("copies", 2);
+      RunProcessOutput scanning = new RunProcessAction().execute(selection);
+      assertEquals(2, scanning.getValue("copies"));
+      RunProcessOutput first = scan(scanning, "CODE128", "001234567890");
+      assertEquals("QUEUED", first.getValue("printStatus"));
+      assertEquals(2, first.getValue("copies"));
+      RunProcessOutput second = scan(first, "QRCODE", "001234567890");
+      assertEquals(2, second.getValue("copies"));
+      assertEquals(2, requests.size());
+      assertTrue(acceptedPlans.values().stream().allMatch(plan -> plan.copies() == 2));
+      RunProcessInput forged = resume(second, "scan").withValue("copies", 9);
+      forged.getValues().putAll(event("CODE128", "forged-process"));
+      assertThrows(QException.class, () -> new RunProcessAction().execute(forged));
+      RunProcessInput invalid = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", 7).withValue("copies", 0);
+      assertThrows(QException.class, () -> new RunProcessAction().execute(invalid));
+      assertEquals(2, requests.size());
+   }
+
+
+
+   /***************************************************************************
+    ** Omitting or clearing the optional field resolves to one in the real process.
+    ***************************************************************************/
+   @Test
+   void blankOrOmittedCopiesResolveToOneInTheProcess() throws Exception
+   {
+      for(java.io.Serializable blank : new java.io.Serializable[] { null, "", "  " })
+      {
+         RunProcessOutput setup = new RunProcessAction().execute(new RunProcessInput().withInputSource(com.kingsrook.qqq.backend.core.model.actions.tables.QInputSource.USER).withProcessName(EchoQBitProducer.PROCESS));
+         RunProcessInput selection = resume(setup, "setup").withValue("printerId", "printer").withValue("mediaId", "4x6").withValue("templateId", 7);
+         if(blank != null)
+         {
+            selection.withValue("copies", blank);
+         }
+         RunProcessOutput scanning = new RunProcessAction().execute(selection);
+         assertEquals(1, scanning.getValue("copies"));
+         assertEquals(1, runCopies(scanning.getValueString("echoRunId")));
+         assertEquals(1, scan(scanning, "CODE128", "blank-" + String.valueOf(blank).length()).getValue("copies"));
+      }
+      assertEquals(3, acceptedPlans.size());
+      assertTrue(acceptedPlans.values().stream().allMatch(plan -> plan.copies() == 1));
+   }
+
+
+
+   /***************************************************************************
+    ** The scanner instructions state a chosen count and stay unchanged for one.
+    ***************************************************************************/
+   @Test
+   void instructionsShowTheChosenCount()
+   {
+      assertFalse(instructions(new EchoWidget.Data(1)).contains("copies"));
+      assertFalse(instructions(new EchoWidget.Data()).contains("copies"));
+      assertTrue(instructions(new EchoWidget.Data(4)).contains("Each scan prints 4 copies."));
+      assertTrue(instructions(new EchoWidget.Data(4)).contains("Leaving stops new scans"));
+   }
+
+
+
+   /***************************************************************************
+    ** Read the widget's instruction text.
+    ***************************************************************************/
+   private static String instructions(EchoWidget.Data data)
+   {
+      return String.valueOf(((Map<?, ?>) data.getSubBlocks().getFirst().get("values")).get("instructions"));
+   }
+
+
+
+   /***************************************************************************
+    ** The persisted run count.
+    ***************************************************************************/
+   private int runCopies(String run) throws Exception
+   {
+      try(Connection connection = dataSource.getConnection(); var query = connection.prepareStatement("SELECT copies FROM echo_run WHERE id=?"))
+      {
+         query.setString(1, run);
+         try(var rows = query.executeQuery())
+         {
+            assertTrue(rows.next());
+            return rows.getInt(1);
+         }
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Generation requests the fixture saw for one scan.
+    ***************************************************************************/
+   private long requestsFor(String scanId)
+   {
+      return requests.stream().filter(("echo:" + scanId)::equals).count();
+   }
+
+
+
+   /***************************************************************************
     ** Accepted retry returns one queue identity; different type cannot reuse it.
     ***************************************************************************/
    @Test
@@ -388,6 +633,143 @@ class EchoTest
          assertTrue(rows.next());
          assertEquals(0, rows.getInt(1));
       }
+   }
+
+
+
+   /***************************************************************************
+    ** Persisted AIM/raw evidence may confirm the plain profile, but a GS1/ECI
+    ** modifier or raw bytes that differ from the display value fail before any
+    ** intent is stored. Absent evidence stays admitted as legacy capture.
+    ***************************************************************************/
+   @Test
+   void scannerEvidenceConfirmsPlainProfileAndRefusesOtherModesBeforePrinting() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7);
+      byte[] raw = "001234".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+      for(String[] mode : new String[][] { { "CODE128", "]C1" }, { "CODE128", "]C2" }, { "CODE128", "]C4" }, { "QRCODE", "]Q3" }, { "QRCODE", "]Q2" },
+         { "CODE39", "]A4" }, { "DATAMATRIX", "]d2" }, { "PDF417", "]L2" }, { "AZTEC", "]z1" }, { "CODE128", "]Q1" } })
+      {
+         var failure = assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence(mode[0], "001234", mode[1], raw)));
+         assertTrue(failure.getMessage().contains("mode"));
+      }
+      for(byte[] differing : new byte[][] { "00123".getBytes(), "001234\u001d".getBytes(), { 0x30, 0x30, (byte) 0xc3, (byte) 0xa9, 0x33, 0x34 }, { 0 } })
+      {
+         var failure = assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence("CODE128", "001234", "]C0", differing)));
+         assertTrue(failure.getMessage().contains("raw bytes differ"));
+      }
+      assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence("EAN13", "5901234123457", "]C0", "5901234123457".getBytes())));
+      assertTrue(requests.isEmpty());
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT COUNT(*) FROM echo_scan"))
+      {
+         assertTrue(rows.next());
+         assertEquals(0, rows.getInt(1));
+      }
+      config.service.print(run, capturedWithEvidence("CODE128", "001234", "]C0", raw));
+      config.service.print(run, capturedWithEvidence("QRCODE", "001234", "]Q1", raw));
+      config.service.print(run, capturedWithEvidence("CODE39", "ABC", null, "ABC".getBytes()));
+      config.service.print(run, capturedWithEvidence("AZTEC", "ABC", "]z0", null));
+      assertEquals(4, requests.size());
+   }
+
+
+
+   /***************************************************************************
+    ** SDK raw bytes may carry the configured AIM prefix: that exact framing and
+    ** the unframed value are both tied to the value; anything else is refused.
+    ***************************************************************************/
+   @Test
+   void rawBytesMustBeTheValueOrTheValueBehindItsAimPrefix() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7);
+      config.service.print(run, capturedWithEvidence("CODE128", "]C0123", "]C0", "]C0]C0123".getBytes()));
+      config.service.print(run, capturedWithEvidence("CODE128", "]C0123", "]C0", "]C0123".getBytes()));
+      for(byte[] wrong : new byte[][] { "]Q1]C0123".getBytes(), "]C0]C0123 ".getBytes(), "]C0".getBytes() })
+      {
+         assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence("CODE128", "]C0123", "]C0", wrong)));
+      }
+      // no AIM identifier means no accepted framing: a prefixed raw value does not match
+      assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence("CODE128", "123", null, "]C0123".getBytes())));
+      assertEquals(2, requests.size());
+   }
+
+
+
+   /***************************************************************************
+    ** EAN/UPC with a valid check digit and matching AIM are admitted, persisted
+    ** with their AIM and bound to it on retry; everything else fails before any
+    ** intent or generation request.
+    ***************************************************************************/
+   @Test
+   void retailBarcodesNeedValidDigitsAndTheirOwnAimIdentifier() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7);
+      String[][] valid = { { "EAN13", "5901234123457", "]E0" }, { "EAN8", "12345670", "]E4" }, { "UPCA", "036000291452", "]E0" },
+         { "UPCE0", "04252614", "]E0" }, { "LABEL-TYPE-EAN13", "4006381333931", "]E0" }, { "UPCE0", "01234565", "]E0" } };
+      for(String[] row : valid)
+      {
+         Map<String, Serializable> context = capturedWithEvidence(row[0], row[1], row[2], row[1].getBytes());
+         var first = config.service.print(run, context);
+         assertEquals(first, config.service.print(run, context));
+      }
+      assertEquals(valid.length, requests.size());
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT barcode,aimIdentifier,rendererSymbology FROM echo_scan WHERE barcode='04252614'"))
+      {
+         assertTrue(rows.next());
+         assertEquals("]E0", rows.getString("aimIdentifier"));
+         assertEquals("upce", rows.getString("rendererSymbology"));
+      }
+      Map<String, Serializable> original = capturedWithEvidence("EAN13", "9780306406157", "]E0", null);
+      config.service.print(run, original);
+      Map<String, Serializable> changed = new HashMap<>(original);
+      changed.put("aimIdentifier", "]E4");
+      assertThrows(QException.class, () -> config.service.print(run, changed));
+      Map<String, Serializable> dropped = new HashMap<>(original);
+      dropped.remove("aimIdentifier");
+      assertThrows(QException.class, () -> config.service.print(run, dropped));
+      // an admissible type: the stored AIM, not the type rules, binds the retry
+      Map<String, Serializable> plain = capturedWithEvidence("CODE128", "bound", "]C0", null);
+      config.service.print(run, plain);
+      Map<String, Serializable> plainWithout = new HashMap<>(plain);
+      plainWithout.remove("aimIdentifier");
+      var conflict = assertThrows(QException.class, () -> config.service.print(run, plainWithout));
+      assertTrue(conflict.getMessage().contains("different barcode context"));
+      Map<String, Serializable> legacy = captured("CODE128", "legacy");
+      config.service.print(run, legacy);
+      Map<String, Serializable> legacyWith = new HashMap<>(legacy);
+      legacyWith.put("aimIdentifier", "]C0");
+      assertTrue(assertThrows(QException.class, () -> config.service.print(run, legacyWith)).getMessage().contains("different barcode context"));
+      int before = requests.size();
+      String[][] invalid = { { "EAN13", "5901234123458", "]E0" }, { "EAN13", "590123412345", "]E0" }, { "EAN13", "5901234123457", "]E4" }, { "EAN13", "5901234123457", null },
+         { "EAN8", "12345671", "]E4" }, { "EAN8", "12345670", "]E0" }, { "UPCA", "036000291453", "]E0" }, { "UPCA", "03600029145", "]E0" },
+         { "UPCE0", "14252614", "]E0" }, { "UPCE0", "04252615", "]E0" }, { "UPCE0", "0425261", "]E0" }, { "UPCE0", "04252614", "]C0" },
+         { "EAN13", "59012341234AB", "]E0" }, { "EAN13", "５９０１２３４１２３４５７", "]E0" }, { "UPCE1", "14252614", "]E0" }, { "EAN13", "5901234123457", "]E3" } };
+      for(String[] row : invalid)
+      {
+         assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence(row[0], row[1], row[2], null)));
+      }
+      assertEquals(before, requests.size());
+   }
+
+
+
+   /***************************************************************************
+    ** The check-digit/number-system rules match known-good GS1 examples.
+    ***************************************************************************/
+   @Test
+   void retailValidationMatchesKnownGs1Examples()
+   {
+      assertTrue(EchoService.Scan.validRetailValue("ean13", "5901234123457"));
+      assertTrue(EchoService.Scan.validRetailValue("ean8", "12345670"));
+      assertTrue(EchoService.Scan.validRetailValue("upca", "036000291452"));
+      // one expansion rule each: last digit 0-2, 3, 4 and 5-9
+      for(String upce : List.of("04252614", "01234505", "01234531", "01234543", "01234565"))
+      {
+         assertTrue(EchoService.Scan.validRetailValue("upce", upce), upce);
+         assertFalse(EchoService.Scan.validRetailValue("upce", upce.substring(0, 7) + (upce.charAt(7) == '0' ? '1' : '0')), upce);
+      }
+      assertFalse(EchoService.Scan.validRetailValue("upce", "11234565"));
+      assertFalse(EchoService.Scan.validRetailValue("code128", "5901234123457"));
    }
 
 
@@ -1147,6 +1529,25 @@ class EchoTest
    {
       return MobileScannerActions.capture(new RunBackendStepInput().withProcessName(EchoQBitProducer.PROCESS)
          .withValues(event(type, value)), EchoQBitProducer.APP);
+   }
+
+
+
+   /***************************************************************************
+    ** Same as captured, with scanner-supplied optional AIM and raw-byte evidence.
+    ***************************************************************************/
+   private Map<String, Serializable> capturedWithEvidence(String type, String value, String aim, byte[] raw) throws QException
+   {
+      Map<String, Serializable> values = event(type, value);
+      if(aim != null)
+      {
+         values.put("aimIdentifier", aim);
+      }
+      if(raw != null)
+      {
+         values.put("rawDataBase64", java.util.Base64.getEncoder().encodeToString(raw));
+      }
+      return MobileScannerActions.capture(new RunBackendStepInput().withProcessName(EchoQBitProducer.PROCESS).withValues(values), EchoQBitProducer.APP);
    }
 
 

@@ -96,6 +96,64 @@ class EchoOwnerAdaptersTest
 
 
    /***************************************************************************
+    ** The run's pinned count reaches Generation's request, one request per scan,
+    ** beside the exact media pin; a plain plan is the one-copy request.
+    ***************************************************************************/
+   @Test
+   void pinnedCopiesReachTheGenerationRequestInOneRequest() throws Exception
+   {
+      List<DocumentGenerationService.Request> sent = new ArrayList<>();
+      EchoDocumentGenerator generator = new EchoDocumentGenerator(owner(sent, "QUEUED", "job-3", Optional.empty()));
+      assertEquals("job-3", generator.accept(PLAN.withCopies(3), "scan-3", "echo:scan-3", DESTINATION));
+      assertEquals(1, sent.size());
+      assertEquals(3, sent.getFirst().copies());
+      assertEquals(new GenerationPorts.MediaProfile("4x6", REVISION), sent.getFirst().mediaProfile());
+      assertEquals("echo:scan-3", sent.getFirst().requestKey());
+      generator.accept(PLAN, "scan-1", "echo:scan-1", DESTINATION);
+      assertEquals(1, sent.get(1).copies());
+      generator.accept(PLAN.withCopies(100), "scan-100", "echo:scan-100", DESTINATION);
+      assertEquals(100, sent.get(2).copies());
+      assertEquals(1, new EchoDestinations.Plan(7, 11, STOCK, GenerationPorts.Format.ZPL).copies());
+      for(int invalid : new int[] { 0, -1, 101, Integer.MAX_VALUE })
+      {
+         assertThrows(QException.class, () -> generator.accept(PLAN.withCopies(invalid), "scan-x", "echo:scan-x", DESTINATION));
+      }
+      assertEquals(3, sent.size());
+   }
+
+
+
+   /***************************************************************************
+    ** Recovery trusts an accepted print only when the owner's committed intent
+    ** has the same count, so a lost response never adopts another count's job.
+    ***************************************************************************/
+   @Test
+   void acceptedLookupIsBoundToTheSameCopies() throws Exception
+   {
+      GenerationPorts.MediaProfile media = new GenerationPorts.MediaProfile("4x6", REVISION);
+      for(int accepted : new int[] { 1, 2, 3, 4, 100 })
+      {
+         GenerationPorts.PrintAcceptance printing = new GenerationPorts.PrintAcceptance(new GenerationPorts.PrintRequest("op", "actor",
+            new GenerationPorts.Source("echoScan", "scan-3"), null, "printer-row", media, accepted), "job-" + accepted, "event-" + accepted, Instant.now());
+         EchoDocumentGenerator generator = new EchoDocumentGenerator(owner(new ArrayList<>(), "QUEUED", "job-1",
+            Optional.of(new DocumentGenerationService.AcceptedPrint(null, printing))));
+         for(int pinned : new int[] { 1, 2, 3, 4, 100 })
+         {
+            if(pinned == accepted)
+            {
+               assertEquals("job-" + accepted, generator.lookupAccepted(PLAN.withCopies(pinned), "scan-3", "echo:scan-3", DESTINATION));
+            }
+            else
+            {
+               assertThrows(QException.class, () -> generator.lookupAccepted(PLAN.withCopies(pinned), "scan-3", "echo:scan-3", DESTINATION));
+            }
+         }
+      }
+   }
+
+
+
+   /***************************************************************************
     ** An incomplete or unqueued owner result is never reported as accepted.
     ***************************************************************************/
    @Test
@@ -218,6 +276,81 @@ class EchoOwnerAdaptersTest
       assertTrue(element.getInt("x") + boxWidth <= rightLimit && element.getInt("y") + boxHeight <= bottomLimit);
       assertTrue(element.getJSONObject("fit").getInt("widthMicrons") <= stock.widthMicrons() - stock.leftMicrons() - stock.rightMicrons());
       assertTrue(element.getJSONObject("fit").getInt("heightMicrons") <= stock.heightMicrons() - stock.topMicrons() - stock.bottomMicrons());
+   }
+
+
+
+   /***************************************************************************
+    ** The scanner-fidelity scene is the plain scene plus exactly the renderer's
+    ** scanner-mode path pair, and still fits the stock and the worker's rules.
+    ***************************************************************************/
+   @Test
+   void scannerFidelitySceneAddsOnlyTheScannerPathsAndEanUpc() throws Exception
+   {
+      org.json.JSONObject plain = new org.json.JSONObject(EchoTemplatePublisher.zplScene(DESTINATION)).getJSONArray("elements").getJSONObject(0);
+      org.json.JSONObject scene = new org.json.JSONObject(EchoTemplatePublisher.zplScannerScene(DESTINATION));
+      org.json.JSONObject element = scene.getJSONArray("elements").getJSONObject(0);
+      assertEquals(java.util.Set.of("schema", "elements"), scene.keySet());
+      java.util.Set<String> keys = new java.util.HashSet<>(plain.keySet());
+      keys.addAll(java.util.List.of("scannerSymbologyPath", "aimIdentifierPath"));
+      assertEquals(keys, element.keySet());
+      assertEquals("/record/symbology", element.getString("scannerSymbologyPath"));
+      assertEquals("/record/aimIdentifier", element.getString("aimIdentifierPath"));
+      assertEquals(EchoTemplates.SYMBOLOGIES.size() + EchoTemplates.SCANNER_SYMBOLOGIES.size(), element.getJSONArray("allowedSymbologies").length());
+      assertTrue(element.getJSONArray("allowedSymbologies").toList().containsAll(java.util.List.of("ean13", "ean8", "upca", "upce", "code128", "qr")));
+      assertEquals(plain.getJSONObject("fit").toMap(), element.getJSONObject("fit").toMap());
+      assertEquals(plain.getInt("x"), element.getInt("x"));
+      assertEquals(plain.getString("valuePath"), element.getString("valuePath"));
+      assertEquals(EchoPrintingDestinations.SceneMode.SCANNER, EchoPrintingDestinations.sceneMode(scene.toString()));
+      assertEquals(EchoPrintingDestinations.SceneMode.PLAIN, EchoPrintingDestinations.sceneMode(EchoTemplatePublisher.zplScene(DESTINATION)));
+      assertTrue(EchoPrintingDestinations.reproducesScannedSymbology(scene.toString()));
+   }
+
+
+
+   /***************************************************************************
+    ** A scene must pair both scanner paths at the row's own fields and cover both
+    ** symbology lists; a half-wired or mis-pointed scene is not an Echo document.
+    ***************************************************************************/
+   @Test
+   void malformedScannerScenesAreNotDocuments() throws Exception
+   {
+      String good = EchoTemplatePublisher.zplScannerScene(DESTINATION);
+      for(String change : java.util.List.of("scannerSymbologyPath", "aimIdentifierPath"))
+      {
+         org.json.JSONObject scene = new org.json.JSONObject(good);
+         scene.getJSONArray("elements").getJSONObject(0).remove(change);
+         assertEquals(null, EchoPrintingDestinations.sceneMode(scene.toString()));
+         scene = new org.json.JSONObject(good);
+         scene.getJSONArray("elements").getJSONObject(0).put(change, "/record/barcode");
+         assertEquals(null, EchoPrintingDestinations.sceneMode(scene.toString()));
+      }
+      org.json.JSONObject noRetail = new org.json.JSONObject(good);
+      noRetail.getJSONArray("elements").getJSONObject(0).put("allowedSymbologies", new org.json.JSONArray(EchoTemplates.SYMBOLOGIES));
+      assertEquals(null, EchoPrintingDestinations.sceneMode(noRetail.toString()));
+      org.json.JSONObject plainWithPaths = new org.json.JSONObject(EchoTemplatePublisher.zplScene(DESTINATION));
+      plainWithPaths.getJSONArray("elements").getJSONObject(0).put("aimIdentifierPath", "/record/aimIdentifier");
+      assertEquals(null, EchoPrintingDestinations.sceneMode(plainWithPaths.toString()));
+   }
+
+
+
+   /***************************************************************************
+    ** EAN/UPC print only from the scanner-fidelity document, which in turn needs
+    ** the AIM identifier; the plain document keeps serving the legacy types.
+    ***************************************************************************/
+   @Test
+   void documentModeAndScanMustAgree() throws Exception
+   {
+      EchoService.Scan retail = new EchoService.Scan("e", "5901234123457", "LABEL-TYPE-EAN13", "ean13", "zebra-emdk", "c", "m", "r", "]E0");
+      EchoService.Scan legacyCode128 = new EchoService.Scan("e", "001234", "CODE128", "code128", "zebra-emdk", "c", "m", "r", null);
+      EchoService.Scan aimCode128 = new EchoService.Scan("e", "001234", "CODE128", "code128", "zebra-emdk", "c", "m", "r", "]C0");
+      assertTrue(EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.PLAIN, retail).contains("scanner-fidelity"));
+      assertEquals(null, EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.SCANNER, retail));
+      assertEquals(null, EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.PLAIN, legacyCode128));
+      assertEquals(null, EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.PLAIN, aimCode128));
+      assertEquals(null, EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.SCANNER, aimCode128));
+      assertTrue(EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.SCANNER, legacyCode128).contains("AIM"));
    }
 
 

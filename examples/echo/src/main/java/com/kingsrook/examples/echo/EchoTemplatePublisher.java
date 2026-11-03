@@ -71,6 +71,23 @@ public final class EchoTemplatePublisher
 
 
    /***************************************************************************
+    ** Scanner-fidelity scene: the renderer's scanner mode verifies the recorded
+    ** label and AIM identifier for every type and converts EAN/UPC full values.
+    ** The paths are the echoScan row fields the Generation record exposes.
+    ***************************************************************************/
+   static String zplScannerScene(EchoDestinations.Destination media) throws QException
+   {
+      JSONObject scene = new JSONObject(zplScene(media));
+      JSONObject element = scene.getJSONArray("elements").getJSONObject(0);
+      List<String> allowed = new java.util.ArrayList<>(EchoTemplates.SYMBOLOGIES);
+      allowed.addAll(EchoTemplates.SCANNER_SYMBOLOGIES);
+      element.put("allowedSymbologies", new JSONArray(allowed)).put("scannerSymbologyPath", "/record/symbology").put("aimIdentifierPath", "/record/aimIdentifier");
+      return scene.toString();
+   }
+
+
+
+   /***************************************************************************
     ** Publish immutable stock and source; the owner validates it in the isolated
     ** renderer. Returns the template id for EchoTemplates.forMedia.
     ***************************************************************************/
@@ -87,13 +104,36 @@ public final class EchoTemplatePublisher
     ***************************************************************************/
    public static Integer publish(DocumentDefinitionService definitions, EchoDestinations.Destination media, String name) throws QException
    {
+      return publish(definitions, media, name, zplScene(media), "Echo ", "Echo scan label");
+   }
+
+
+
+   /***************************************************************************
+    ** Publish the separate, clearly named scanner-fidelity document: it passes the
+    ** recorded scanner label and AIM identifier to the renderer's scanner mode,
+    ** which verifies them and is the only way EAN/UPC reproduce. It needs an AIM
+    ** identifier on every scan, so the plain document stays the choice for older
+    ** scanners and servers.
+    ***************************************************************************/
+   public static Integer publishScannerFidelity(DocumentDefinitionService definitions, EchoDestinations.Destination media, String name) throws QException
+   {
+      return publish(definitions, media, name, zplScannerScene(media), "Echo scanner-fidelity (AIM, EAN/UPC) ", "Echo scanner-fidelity label");
+   }
+
+
+
+   /***************************************************************************
+    ** Shared definition steps; only the scene and the operator-facing names differ.
+    ***************************************************************************/
+   private static Integer publish(DocumentDefinitionService definitions, EchoDestinations.Destination media, String name, String scene, String prefix, String typeName) throws QException
+   {
       GenerationPorts.Stock stock = stock(media);
-      String scene = zplScene(media);
       String label = name == null || name.isBlank() ? media.mediaId() : name.strip();
-      Integer type = definitions.createType(name == null || name.isBlank() ? "Echo scan label" : "Echo scan label " + label);
-      Integer stockId = definitions.createStock("Echo " + label, stock);
+      Integer type = definitions.createType(name == null || name.isBlank() ? typeName : typeName + " " + label);
+      Integer stockId = definitions.createStock(prefix + label, stock);
       definitions.bind(type, EchoQBitProducer.SCAN_TABLE, false, true);
-      Integer template = definitions.createTemplate("Echo " + label, type, stockId, EchoQBitProducer.SCAN_TABLE);
+      Integer template = definitions.createTemplate(prefix + label, type, stockId, EchoQBitProducer.SCAN_TABLE);
       definitions.saveSources(template, stockId, null, scene, definitions.loadDraft(template).fingerprint());
       definitions.publish(template, definitions.loadDraft(template).fingerprint());
       return template;

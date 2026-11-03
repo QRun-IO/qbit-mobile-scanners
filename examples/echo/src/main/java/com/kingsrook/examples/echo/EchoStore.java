@@ -58,7 +58,7 @@ final class EchoStore
    /***************************************************************************
     ** Freeze setup under the run lock; replay may confirm but never retarget it.
     ***************************************************************************/
-   void select(String id, MobileDeviceAuthorization.Identity identity, EchoDestinations.Destination destination, EchoDestinations.Document document) throws QException
+   void select(String id, MobileDeviceAuthorization.Identity identity, EchoDestinations.Destination destination, EchoDestinations.Document document, int copies) throws QException
    {
       try(Connection connection = dataSource.getConnection())
       {
@@ -66,7 +66,7 @@ final class EchoStore
          try
          {
             Run current = run(connection, id, identity);
-            if("OPEN".equals(current.state()) && current.destination().equals(destination) && document.equals(current.document()))
+            if("OPEN".equals(current.state()) && current.destination().equals(destination) && document.equals(current.document()) && copies == current.copies())
             {
                connection.commit();
                return;
@@ -75,10 +75,10 @@ final class EchoStore
             {
                throw new QException("Echo setup is already complete or closed. Leave Echo to choose again.");
             }
-            write(connection, "UPDATE echo_run SET state='OPEN',printerRecordId=?,mediaId=?,mediaRevision=?,widthMicrons=?,heightMicrons=?,dpiX=?,dpiY=?,templateId=?,templateRevisionId=? WHERE id=?",
+            write(connection, "UPDATE echo_run SET state='OPEN',printerRecordId=?,mediaId=?,mediaRevision=?,widthMicrons=?,heightMicrons=?,dpiX=?,dpiY=?,templateId=?,templateRevisionId=?,copies=? WHERE id=?",
                destination.printerRecordId(), destination.mediaId(), destination.mediaRevision(), Integer.toString(destination.widthMicrons()),
                Integer.toString(destination.heightMicrons()), Integer.toString(destination.dpiX()), Integer.toString(destination.dpiY()),
-               document.templateId().toString(), document.templateRevisionId().toString(), id);
+               document.templateId().toString(), document.templateRevisionId().toString(), Integer.toString(copies), id);
             connection.commit();
          }
          catch(Exception failure)
@@ -103,7 +103,7 @@ final class EchoStore
     ** Admit one event per run; same-event accepted retries return their receipt.
     ** Different payloads, concurrent callbacks and other operators cannot reuse it.
     ***************************************************************************/
-   Admission claim(String runId, MobileDeviceAuthorization.Identity identity, EchoService.Scan scan) throws QException
+   Admission claim(String runId, MobileDeviceAuthorization.Identity identity, EchoService.Scan scan, Integer claimedCopies) throws QException
    {
       try(Connection connection = dataSource.getConnection())
       {
@@ -114,6 +114,14 @@ final class EchoStore
             if(!"OPEN".equals(run.state()))
             {
                throw new QException("This Echo run is closed. Open Echo again to choose a printer.");
+            }
+            ///////////////////////////////////////////////////////////////////////////////
+            // the count was pinned at setup; a scan-stage value can only echo it, and  //
+            // a different one is refused before any event row or pending state exists //
+            ///////////////////////////////////////////////////////////////////////////////
+            if(claimedCopies != null && claimedCopies != run.copies())
+            {
+               throw new QException("Copies per scan was chosen at setup and cannot change. Leave Echo and open it again to choose another count.");
             }
             String id = scan.mobileScanId();
             String acceptedJob = null;
@@ -138,11 +146,11 @@ final class EchoStore
                         pinned = new EchoDestinations.Plan(row.getInt("templateId"), row.getInt("templateRevisionId"),
                            new com.kingsrook.qbits.documentgeneration.GenerationPorts.Stock(run.destination().widthMicrons(), run.destination().heightMicrons(),
                               row.getInt("topMicrons"), row.getInt("rightMicrons"), row.getInt("bottomMicrons"), row.getInt("leftMicrons"), run.destination().dpiX()),
-                           com.kingsrook.qbits.documentgeneration.GenerationPorts.Format.valueOf(row.getString("format")));
+                           com.kingsrook.qbits.documentgeneration.GenerationPorts.Format.valueOf(row.getString("format")), run.copies());
                      }
                      if(!scan.barcode().equals(row.getString("barcode")) || !scan.symbology().equals(row.getString("symbology"))
                         || !scan.scanSource().equals(row.getString("scanSource")) || !scan.capturedAt().equals(row.getString("capturedAt"))
-                        || !scan.mobileScanId().equals(row.getString("mobileScanId")))
+                        || !scan.mobileScanId().equals(row.getString("mobileScanId")) || !java.util.Objects.equals(scan.aimIdentifier(), row.getString("aimIdentifier")))
                      {
                         throw new QException("This scan event was already used for different barcode context.");
                      }
@@ -157,7 +165,7 @@ final class EchoStore
             if(acceptedJob != null)
             {
                connection.commit();
-               return new Admission(id, destination, acceptedJob, false, pinned, run.document());
+               return new Admission(id, destination, acceptedJob, false, pinned, run.document(), run.copies());
             }
             if(run.pending() != null && !run.pending().equals(scan.eventId()))
             {
@@ -171,16 +179,16 @@ final class EchoStore
                // event may safely be retried; the pin compare-and-set admits only one caller //
                ////////////////////////////////////////////////////////////////////////////////
                boolean unpinnedRetry = pinned == null && ("ATTENTION".equals(state) || "IN_FLIGHT".equals(state));
-               return new Admission(id, destination, null, !unpinnedRetry, pinned, run.document());
+               return new Admission(id, destination, null, !unpinnedRetry, pinned, run.document(), run.copies());
             }
             else
             {
-               write(connection, "INSERT INTO echo_scan(id,runId,eventId,actorId,deviceId,barcode,symbology,rendererSymbology,scanSource,capturedAt,mobileScanId,receivedAt,state) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                  id, runId, scan.eventId(), identity.actorId(), identity.deviceId(), scan.barcode(), scan.symbology(), scan.rendererSymbology(), scan.scanSource(), scan.capturedAt(), scan.mobileScanId(), scan.receivedAt(), "IN_FLIGHT");
+               write(connection, "INSERT INTO echo_scan(id,runId,eventId,actorId,deviceId,barcode,symbology,rendererSymbology,scanSource,capturedAt,mobileScanId,receivedAt,state,aimIdentifier) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                  id, runId, scan.eventId(), identity.actorId(), identity.deviceId(), scan.barcode(), scan.symbology(), scan.rendererSymbology(), scan.scanSource(), scan.capturedAt(), scan.mobileScanId(), scan.receivedAt(), "IN_FLIGHT", scan.aimIdentifier());
             }
             write(connection, "UPDATE echo_run SET pendingEventId=? WHERE id=?", scan.eventId(), runId);
             connection.commit();
-            return new Admission(id, destination, null, false, null, run.document());
+            return new Admission(id, destination, null, false, null, run.document(), run.copies());
          }
          catch(Exception failure)
          {
@@ -277,6 +285,38 @@ final class EchoStore
 
 
    /***************************************************************************
+    ** Read the run's pinned count under the same ownership checks as every call.
+    ***************************************************************************/
+   int copies(String runId, MobileDeviceAuthorization.Identity identity) throws QException
+   {
+      try(Connection connection = dataSource.getConnection())
+      {
+         connection.setAutoCommit(false);
+         try
+         {
+            int copies = run(connection, runId, identity).copies();
+            connection.commit();
+            return copies;
+         }
+         catch(Exception failure)
+         {
+            rollback(connection, failure);
+            if(failure instanceof QException expected)
+            {
+               throw expected;
+            }
+            throw unavailable();
+         }
+      }
+      catch(SQLException failure)
+      {
+         throw unavailable();
+      }
+   }
+
+
+
+   /***************************************************************************
     ** Explicit end stops admission; existing queue receipts and jobs are retained.
     ***************************************************************************/
    void close(String runId, MobileDeviceAuthorization.Identity identity) throws QException
@@ -326,7 +366,7 @@ final class EchoStore
             return new Run(row.getString("state"), row.getString("pendingEventId"), new EchoDestinations.Destination(row.getString("printerRecordId"),
                row.getString("mediaId"), row.getString("mediaRevision"), row.getInt("widthMicrons"), row.getInt("heightMicrons"), row.getInt("dpiX"), row.getInt("dpiY")),
                row.getObject("templateId") == null || row.getObject("templateRevisionId") == null ? null
-                  : new EchoDestinations.Document(row.getInt("templateId"), row.getInt("templateRevisionId")));
+                  : new EchoDestinations.Document(row.getInt("templateId"), row.getInt("templateRevisionId")), row.getInt("copies"));
          }
       }
    }
@@ -397,7 +437,7 @@ final class EchoStore
    /***************************************************************************
     ** State is loaded only under its database admission lock.
     ***************************************************************************/
-   private record Run(String state, String pending, EchoDestinations.Destination destination, EchoDestinations.Document document)
+   private record Run(String state, String pending, EchoDestinations.Destination destination, EchoDestinations.Document document, int copies)
    {
    }
 
@@ -407,7 +447,7 @@ final class EchoStore
     ** Accepted replay has a job; new/reconciled work does not yet acknowledge.
     ***************************************************************************/
    record Admission(String scanId, EchoDestinations.Destination destination, String acceptedJob, boolean reconciliationOnly, EchoDestinations.Plan pinnedPlan,
-                    EchoDestinations.Document document)
+                    EchoDestinations.Document document, int copies)
    {
    }
 }

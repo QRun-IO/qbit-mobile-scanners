@@ -61,11 +61,19 @@ public interface EchoTemplates
 
 
    /***************************************************************************
-    ** Fit-profile symbologies the template reproduces from the exact scanned text.
-    ** EAN/UPC are excluded: the worker converts their full-length scanned values
-    ** only in scanner mode, which needs the AIM identifier Echo does not record.
+    ** Fit-profile symbologies the plain-mode template reproduces from the exact
+    ** scanned text, with no scanner metadata.
     ***************************************************************************/
    java.util.List<String> SYMBOLOGIES = java.util.List.of("code128", "qr", "code39", "datamatrix", "pdf417", "aztec");
+
+
+
+   /***************************************************************************
+    ** EAN/UPC: the worker converts their full-length scanned values only in
+    ** scanner mode, which needs the recorded label and AIM identifier. Only the
+    ** scanner-fidelity document (see EchoTemplatePublisher) reproduces them.
+    ***************************************************************************/
+   java.util.List<String> SCANNER_SYMBOLOGIES = java.util.List.of("ean13", "ean8", "upca", "upce");
 
 
 

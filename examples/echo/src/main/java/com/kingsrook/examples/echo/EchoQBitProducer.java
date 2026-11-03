@@ -16,6 +16,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueRangeBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.PermissionLevel;
@@ -80,6 +81,7 @@ public final class EchoQBitProducer
          scan.withField(text(name, 200).withIsEditable(false));
       }
       scan.withField(text("barcode", 4096).withIsEditable(false));
+      scan.withField(text("aimIdentifier", 3).withIsEditable(false));
       instance.addTable(scan);
       instance.addWidget(new QWidgetMetaData().withName(WIDGET).withType("composite").withLabel("Echo barcode scanner")
          .withCodeReference(new QCodeReference(EchoWidget.class)).withPermissionRules(rules()));
@@ -92,6 +94,8 @@ public final class EchoQBitProducer
                .withPossibleValueSourceName(config.mediaPossibleValues).withPossibleValueSourceDependsOn(List.of("printerId")))
             .withFormField(new QFieldMetaData("templateId", QFieldType.INTEGER).withLabel("Document").withIsRequired(true)
                .withPossibleValueSourceName(EchoDocumentChoices.NAME).withPossibleValueSourceDependsOn(List.of("printerId", "mediaId")))
+            .withFormField(new QFieldMetaData("copies", QFieldType.INTEGER).withLabel("Copies per scan").withDefaultValue(1).withIsRequired(false)
+               .withBehavior(new ValueRangeBehavior().withMinValue(1).withMaxValue(EchoService.MAXIMUM_COPIES)))
             .withComponent(new QFrontendComponentMetaData().withType(QComponentType.EDIT_FORM)))
          .withStep(new QBackendStepMetaData().withName("start").withCode(new QCodeReference(EchoSteps.Start.class)))
          .withStep(new QFrontendStepMetaData().withName("scan").withLabel("Echo — scan to print").withFormat("scanner")

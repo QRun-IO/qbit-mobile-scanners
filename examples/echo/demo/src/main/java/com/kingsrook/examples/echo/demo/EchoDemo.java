@@ -29,6 +29,7 @@ import com.kingsrook.qbits.documentgeneration.recordfiles.RetainedAssetReader;
 import com.kingsrook.qbits.documentgeneration.renderer.IsolatedRendererBridge;
 import com.kingsrook.qbits.mobilescanners.MobileScannersRouteProvider;
 import com.kingsrook.qbits.mobilescanners.demo.MobileScannersDemo;
+import com.kingsrook.qbits.mobilescanners.recordfiles.MobileRecordFilesContract;
 import com.kingsrook.qbits.printing.PrintingRealtimeRoutes;
 import com.kingsrook.qbits.printing.PrintingRoutes;
 import com.kingsrook.qbits.printing.PrintingService;
@@ -64,8 +65,8 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
 {
    static final String BACKEND = "mobileDb";
    private static final Set<Integer> TOLERATED_REAPPLY = Set.of(42101, 42111, 42121, 90045);
-   private static final List<String> GENERATION_MIGRATIONS = List.of("20261031-output-filenames-h2.sql", "20261031-warm-batch-completion-h2.sql",
-      "20261101-print-media-profile-h2.sql");
+   static final List<String> GENERATION_MIGRATIONS = List.of("20261031-output-filenames-h2.sql", "20261031-warm-batch-completion-h2.sql",
+      "20261101-print-media-profile-h2.sql", "20261102-print-copies-h2.sql");
 
    private final EchoDemoSettings settings;
    private final GenerationPorts.IsolatedRenderer renderer;
@@ -220,8 +221,13 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
       // ECHO_TEMPLATE_* host pin no longer selects one.
       EchoHost.install(instance, new EchoHost.Deployment(BACKEND, BACKEND, BACKEND, dataSource, printing, renderer, maximumOutputBytes));
       RecordFilesQBitConfig recordFiles = new RecordFilesQBitConfig().withBackendName(BACKEND).withParentTables(List.of(EchoQBitProducer.SCAN_TABLE))
-         .withQuarantineGeneratedFiles(settings.releaseGeneratedFiles() ? Boolean.FALSE : null);
+         .withQuarantineGeneratedFiles(settings.releaseGeneratedFiles() ? Boolean.FALSE : null)
+         .withUploadConfiguration(EchoPhotoCapture.uploadConfiguration());
       new RecordFilesQBitProducer().withQBitConfig(recordFiles).produce(instance);
+      // Configuring uploads makes the producer register the versioned record-files extension; the mobile widget
+      // vocabulary and the Echo photo process are added through the same ordinary metadata, never a custom route.
+      MobileRecordFilesContract.register(instance);
+      EchoPhotoCapture.register(instance);
       // The server only validates the instance, it never enriches it. Enrichment (after every QBit) is what
       // registers Collaboration's record-feature permissions (QInstanceEnricher -> RecordFeaturePermissionsRegistrar).
       new QInstanceEnricher(instance).enrich();
@@ -231,7 +237,9 @@ public class EchoDemo extends MobileScannersDemo implements AutoCloseable
 
    /***************************************************************************
     ** Mobile schema and the two seeded accounts come from the existing demo; the
-    ** owners' schemas are then applied. Existing databases are not migrated: an
+    ** owners' schemas are then applied, then Generation's additive migrations (the
+    ** newest adds the nullable print `copies` column, null meaning one copy) so an
+    ** existing development database is current before any request is read. An
     ** already-present object is skipped and anything else fails startup.
     ***************************************************************************/
    @Override

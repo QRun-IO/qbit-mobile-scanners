@@ -1,5 +1,13 @@
 # QQQ Mobile Scanners TODO
 
+Latest checkpoint (November 2; supersedes older runtime/version and unrun-test notes):
+
+- [x] Optional Copies per scan defaults to 1, accepts 1–100 and remains server-pinned for every scan/retry. Live on the original local server57832; normal TC22 setup shows 1.
+- [x] Verify 377 unique server/owner tests across the module runs, plus real TC22 ten-stage/116-request semantic acceptance with simulated scans/printing.
+- [x] Adopt mobile-scanners1.5 and actual mobile-record-files1.0/Echo photo composition locally, preserving the original database and printer settings. Photo authorization tests pass.
+- [ ] Confirm physical label count/fidelity and real camera/GPS/projection/provider behavior; operator currently remote. Temporary Authentik CA installation is unconfirmed.
+- [ ] Obtain canonical owner adoption/publication of the verified Generation copies handoff: ten hash-checked files for the Kof22 release repository's `third-party-src/qbit-document-generation` (base verified identical), then a published Generation coherent with Echo's `generation.version`; complete coherent artifacts/CI. Signing/distribution stays last.
+
 Current demo path (November2; supersedes historical runtime/pairing notes below):
 
 - [x] Implement and verify additive mobile1.5 raw-byte/AIM transport, exact retry binding, optional context and preserving H2 migration:135 scanner/demo/Echo tests pass. Android counterpart is implemented; native capture and installed-runtime adoption remain open.

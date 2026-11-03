@@ -83,6 +83,16 @@ The legacy `ECHO_TEMPLATE_ID`, `ECHO_TEMPLATE_MEDIA_ID` and `ECHO_TEMPLATE_MEDIA
 2. As `admin`, publish one or more ZPL templates for the reported media in Document Generation (scene per `EchoTemplatePublisher`; give each its own name with `EchoTemplatePublisher.publish(definitions, media, name)`). Each published, compatible template becomes a separate Document choice.
 3. As the scanner, open Echo: choose the printer, then the paper or label size, then the Document (offered only from published `echoScan` templates whose stock equals that size and whose scene draws the scanned value and type dynamically). The three choices are fixed for the run; leave Echo and reopen it to change them.
 
+## Echo scan photos (mobile Record Files)
+
+The host also installs the existing `qbit-mobile-scanners-record-files` integration, so an approved scanner can attach photos to one of its own retained Echo scans. Nothing new is served: Record Files' registered, versioned `record-files` upload API (`/qqq/v1/qbit/record-files/...`) and the independently versioned `mobile-record-files` widget vocabulary are advertised in `/qqq/v1/version`, behind the same native auth and device guards.
+
+- **Process:** `echoScanPhotos` ("Echo scan photos"), listed in the Echo app. It requires `echo.use`, `echoScan.attach` and a verified approved device. The first step lists the actor's own scans (the table's record security lock decides; label is the barcode and type, never the record id). The server then re-reads the chosen scan through the collaboration owner's visibility and `attach` checks and builds the `RECORD_FILES_CAPTURE` widget from the record that check returned, on the fixed `echoScan` table. The client never supplies a table or record reference, and rendering the widget directly names no parent. Record Files authorizes the parent again on every upload operation.
+- **Policy:** JPEG/PNG only, 20 MiB per file, up to four files, 256 KiB chunks, private staging under the demo's `objects` directory (separate staging namespace). Retained originals follow the existing Record Files quarantine setting.
+- **Needs a real scan first:** the list is empty until the scanner has Echo scans. Nothing is seeded outside this module's tests.
+- **Existing databases:** the Record Files upload tables are added by the same tolerated-reapply schema step; plan the migration for a database from another version.
+- **Not claimed:** no real photo upload, native capture or device run has been verified here. That needs the Android host against this server.
+
 ## Existing databases
 
-Startup applies each owner schema with "already exists" tolerated, plus the three shipped Generation H2 migrations. It does not migrate a database created by a different version. Plan migration separately for anything beyond a fresh demo root.
+Startup applies each owner schema with "already exists" tolerated, plus the four shipped Generation H2 migrations (output filenames, warm batch completion, print media profile and print copies, the last adding the nullable `copies` column where null means one copy). It does not migrate a database created by a different version. Plan migration separately for anything beyond a fresh demo root.

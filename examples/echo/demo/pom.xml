@@ -23,6 +23,7 @@
       <renderer.version>${generation.version}</renderer.version>
       <printing.version>0.4.0-SNAPSHOT</printing.version>
       <recordfiles.version>0.1.0-SNAPSHOT</recordfiles.version>
+      <mobilerecordfiles.version>0.1.0-SNAPSHOT</mobilerecordfiles.version>
       <collaboration.version>0.1.0-record-files-SNAPSHOT</collaboration.version>
    </properties>
    <dependencyManagement><dependencies>
@@ -36,6 +37,7 @@
       <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-document-generation-printing</artifactId><version>${generation.version}</version></dependency>
       <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-printing</artifactId><version>${printing.version}</version></dependency>
       <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-record-files</artifactId><version>${recordfiles.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-mobile-scanners-record-files</artifactId><version>${mobilerecordfiles.version}</version></dependency>
       <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-collaboration</artifactId><version>${collaboration.version}</version></dependency>
       <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-backend-module-rdbms</artifactId></dependency>
       <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-frontend-next</artifactId><version>1.0.0-RC.35</version></dependency>

@@ -36,6 +36,29 @@ public final class EchoWidget extends AbstractWidgetRenderer
     ***************************************************************************/
    public static final class Data extends MobileScannerWidget.ScannerWidgetData
    {
+      private final int copies;
+
+
+
+      /***********************************************************************
+       ** Before setup completes the count is unknown: the plain instructions.
+       ***********************************************************************/
+      public Data()
+      {
+         this(1);
+      }
+
+
+
+      /***********************************************************************
+       ** The run's server-pinned copies per scan, shown while scanning.
+       ***********************************************************************/
+      public Data(int copies)
+      {
+         this.copies = copies;
+      }
+
+
       /***********************************************************************
        ** Make queue versus paper semantics and leave behavior visible.
        ***********************************************************************/
@@ -44,7 +67,9 @@ public final class EchoWidget extends AbstractWidgetRenderer
       {
          return List.of(Map.of("blockId", "echoScanner", "blockType", "SCANNER", "values",
             new java.util.HashMap<>(Map.of("title", "Echo — scan to print", "instructions",
-               "Scan one barcode and wait for print queue acceptance. Leaving stops new scans; work already processing or accepted may still print.",
+               "Scan one barcode and wait for print queue acceptance."
+                  + (copies > 1 ? " Each scan prints " + copies + " copies." : "")
+                  + " Leaving stops new scans; work already processing or accepted may still print.",
                "acknowledgmentLabel", "Print queued", "manualEntryEnabled", false, "maxLength", 4096))));
       }
    }

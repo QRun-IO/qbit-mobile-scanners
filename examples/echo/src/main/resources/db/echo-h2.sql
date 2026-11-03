@@ -18,3 +18,9 @@ CREATE TABLE IF NOT EXISTS echo_scan (
    printJobId VARCHAR(200), UNIQUE(runId, eventId)
    ,templateId INT, templateRevisionId INT, format VARCHAR(10), topMicrons INT, rightMicrons INT, bottomMicrons INT, leftMicrons INT
 );
+-- Preserving migration: the scanner's AIM identifier (for example ]E0), when the capture carried one. Existing rows keep NULL
+-- (no AIM was recorded) and are never rewritten. Other databases need the equivalent additive nullable VARCHAR(3) column.
+ALTER TABLE echo_scan ADD COLUMN IF NOT EXISTS aimIdentifier VARCHAR(3);
+-- Preserving migration: copies printed per scan, chosen once at setup. Existing runs keep exactly one copy (their prior behaviour).
+-- Other databases need the equivalent additive INT NOT NULL DEFAULT 1 column.
+ALTER TABLE echo_run ADD COLUMN IF NOT EXISTS copies INT NOT NULL DEFAULT 1;

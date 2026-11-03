@@ -18,6 +18,8 @@ public interface EchoGenerator
 {
    /***************************************************************************
     ** Keep the same key for retries; an unavailable result never means absence.
+    ** The plan's copies is the run's pinned count, to be printed by ONE job; a
+    ** generator never queues one job per copy or renders once per copy.
     ***************************************************************************/
    String accept(EchoDestinations.Plan plan, String scanId, String requestKey, EchoDestinations.Destination destination) throws QException;
 

@@ -107,7 +107,7 @@ public final class EchoDocumentGenerator implements EchoGenerator
       GenerationPorts.PrintAcceptance printing = accepted.printing();
       if(printing == null || printing.jobId() == null || printing.jobId().isBlank() || printing.request() == null
          || !request.mediaProfile().equals(printing.request().mediaProfile()) || !request.source().equals(printing.request().source())
-         || !request.destination().equals(printing.request().destination()))
+         || !request.destination().equals(printing.request().destination()) || !Objects.equals(request.copies(), printing.request().copies()))
       {
          throw new QException("Print acceptance requires owner reconciliation. Leave Echo to stop scanning; do not create a replacement print.");
       }
@@ -130,7 +130,18 @@ public final class EchoDocumentGenerator implements EchoGenerator
       {
          throw new QException("Choose an authorized printer and supported paper or label size.");
       }
-      return new DocumentGenerationService.Request(plan.templateId(), new GenerationPorts.Source(EchoQBitProducer.SCAN_TABLE, scanId), plan.format(),
-         requestKey, destination.printerRecordId(), new DocumentGenerationService.Expected(plan.templateId(), plan.templateRevisionId(), plan.stock()), media);
+      /////////////////////////////////////////////////////////////////////////////////////////
+      // the run's pinned count rides in the same request as the media pin: Generation binds //
+      // it to the request key and submits ONE job whose options carry it (1..100)           //
+      /////////////////////////////////////////////////////////////////////////////////////////
+      try
+      {
+         return new DocumentGenerationService.Request(plan.templateId(), new GenerationPorts.Source(EchoQBitProducer.SCAN_TABLE, scanId), plan.format(),
+            requestKey, destination.printerRecordId(), new DocumentGenerationService.Expected(plan.templateId(), plan.templateRevisionId(), plan.stock()), media, plan.copies());
+      }
+      catch(IllegalArgumentException invalid)
+      {
+         throw new QException("Copies per scan must be a whole number from 1 to " + EchoService.MAXIMUM_COPIES + ".");
+      }
    }
 }

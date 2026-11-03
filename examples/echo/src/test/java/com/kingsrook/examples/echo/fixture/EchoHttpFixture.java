@@ -55,6 +55,7 @@ public final class EchoHttpFixture implements AutoCloseable
    public static final int DOCUMENT_A = 7;
    public static final int DOCUMENT_B = 8;
    private final MobileScannersDemo application;
+   private final Generator generator = new Generator();
    private QApplicationJavalinServer server;
 
 
@@ -79,7 +80,7 @@ public final class EchoHttpFixture implements AutoCloseable
          .withEnumValues(List.of(new QPossibleValue<>(PRINTER, "Simulated printer"))));
       instance.addPossibleValueSource(new QPossibleValueSource().withName("echoFixtureMedia").withType(QPossibleValueSourceType.ENUM)
          .withEnumValues(List.of(new QPossibleValue<>(MEDIA, "Simulated 4 x 6 in — 300 dpi"))));
-      EchoConfig config = new EchoConfig("mobileDb", dataSource, "echoFixturePrinters", "echoFixtureMedia", new Destinations(), new Generator());
+      EchoConfig config = new EchoConfig("mobileDb", dataSource, "echoFixturePrinters", "echoFixtureMedia", new Destinations(), generator);
       new EchoQBitProducer().produce(instance, config);
       QTableMetaData run = new QTableMetaData().withName(RUN_TABLE).withLabel("Simulated Echo run inspection").withBackendName("mobileDb")
          .withBackendDetails(new RDBMSTableBackendDetails().withTableName("echo_run")).withPrimaryKeyField("id")
@@ -91,6 +92,7 @@ public final class EchoHttpFixture implements AutoCloseable
       }
       run.withField(new QFieldMetaData("templateId", QFieldType.INTEGER).withIsEditable(false));
       run.withField(new QFieldMetaData("templateRevisionId", QFieldType.INTEGER).withIsEditable(false));
+      run.withField(new QFieldMetaData("copies", QFieldType.INTEGER).withIsEditable(false));
       instance.addTable(run);
       try(var connection = dataSource.getConnection(); var resource = EchoHttpFixture.class.getResourceAsStream("/db/echo-h2.sql"))
       {
@@ -129,6 +131,26 @@ public final class EchoHttpFixture implements AutoCloseable
       }
       server = application.start(port);
       LogManager.getLogger(EchoHttpFixture.class).info("ECHO_UI_E2E_READY port={} simulatedPrinting=true", port);
+   }
+
+
+
+   /***************************************************************************
+    ** Distinct simulated acceptances so far: one per scan, however many copies.
+    ***************************************************************************/
+   public int acceptedJobCount()
+   {
+      return generator.receipts.size();
+   }
+
+
+
+   /***************************************************************************
+    ** The copies each simulated acceptance was asked for, in no fixed order.
+    ***************************************************************************/
+   public List<Integer> acceptedCopies()
+   {
+      return generator.receipts.values().stream().map(receipt -> receipt.plan().copies()).toList();
    }
 
 

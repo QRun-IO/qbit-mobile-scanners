@@ -60,14 +60,19 @@ public final class EchoSteps
       @Override
       public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
       {
+         String run = null;
          try
          {
-            String run = boundRun(input, output);
-            EchoConfig.current().service.select(run, input.getValueString("printerId"), input.getValueString("mediaId"), documentId(input.getValue("templateId")));
-            output.addValue(EchoQBitProducer.WIDGET, new EchoWidget.Data());
+            run = boundRun(input, output);
+            Integer chosen = copies(input.getValue("copies"));
+            int copies = chosen == null ? 1 : chosen;
+            EchoConfig.current().service.select(run, input.getValueString("printerId"), input.getValueString("mediaId"), documentId(input.getValue("templateId")), copies);
+            output.addValue("copies", copies);
+            output.addValue(EchoQBitProducer.WIDGET, new EchoWidget.Data(copies));
          }
          catch(QException failure)
          {
+            restorePinnedCopies(run, output);
             recoverable(output, failure);
          }
       }
@@ -87,11 +92,13 @@ public final class EchoSteps
       @Override
       public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
       {
+         String run = null;
          try
          {
-            String run = boundRun(input, output);
+            run = boundRun(input, output);
+            Integer claimed = copies(input.getValue("copies"));
             var context = MobileScannerActions.capture(input, EchoQBitProducer.APP);
-            EchoService.Acceptance accepted = EchoConfig.current().service.print(run, context);
+            EchoService.Acceptance accepted = EchoConfig.current().service.print(run, context, claimed);
             output.addValue("scanContext", new HashMap<>(context));
             output.addValue("scanId", context.get("scanId"));
             output.addValue("echoScanId", accepted.scanId());
@@ -99,11 +106,13 @@ public final class EchoSteps
             output.addValue("scanSaved", true);
             output.addValue("printJobId", accepted.printJobId());
             output.addValue("printStatus", "QUEUED");
-            output.addValue(EchoQBitProducer.WIDGET, new EchoWidget.Data());
+            output.addValue("copies", accepted.copies());
+            output.addValue(EchoQBitProducer.WIDGET, new EchoWidget.Data(accepted.copies()));
             output.getProcessState().setNextStepName("scan");
          }
          catch(QException failure)
          {
+            restorePinnedCopies(run, output);
             recoverable(output, failure);
          }
       }
@@ -162,6 +171,58 @@ public final class EchoSteps
       if(value == null || value < 1 || value > Integer.MAX_VALUE)
       {
          throw new QException("Choose an available document for this printer and paper or label size.");
+      }
+      return value.intValue();
+   }
+
+
+
+   /***************************************************************************
+    ** A refused or invalid value must not linger in the stored process values
+    ** and block later, legitimate scans: put the server's own count back.
+    ***************************************************************************/
+   private static void restorePinnedCopies(String run, RunBackendStepOutput output)
+   {
+      if(run == null)
+      {
+         return;
+      }
+      try
+      {
+         output.addValue("copies", EchoConfig.current().service.pinnedCopies(run));
+      }
+      catch(QException unavailable)
+      {
+         // nothing to restore; the original failure is still reported
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Strict whole-number copies: an integral number or plain digits. Absent or
+    ** blank (a cleared optional field) is null, which setup resolves to one and
+    ** the scan stage treats as no claim. Fractions, exponents, signs, other types
+    ** and out-of-range values are refused rather than coerced.
+    ***************************************************************************/
+   static Integer copies(java.io.Serializable raw) throws QException
+   {
+      if(raw == null || raw instanceof String blank && blank.isBlank())
+      {
+         return null;
+      }
+      Long value = null;
+      if(raw instanceof Integer || raw instanceof Long || raw instanceof Short || raw instanceof Byte)
+      {
+         value = ((Number) raw).longValue();
+      }
+      else if(raw instanceof String text && text.matches("[0-9]{1,6}"))
+      {
+         value = Long.parseLong(text);
+      }
+      if(value == null || value < 1 || value > EchoService.MAXIMUM_COPIES)
+      {
+         throw new QException("Copies per scan must be a whole number from 1 to " + EchoService.MAXIMUM_COPIES + ".");
       }
       return value.intValue();
    }

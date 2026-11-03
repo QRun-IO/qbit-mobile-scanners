@@ -70,18 +70,7 @@ class EchoHttpFixtureTest
             }
          }
          assertTrue(mobile15);
-         String scanner = login("scanner", scannerPassword);
-         String admin = login("admin", adminPassword);
-         HttpResponse<String> enrolled = request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner,
-            new JSONObject().put("installationId", UUID.randomUUID().toString()).toString(), false);
-         assertTrue(enrolled.statusCode() == 200 || enrolled.statusCode() == 201);
-         JSONObject device = new JSONObject(enrolled.body());
-         deviceId = device.getString("deviceId");
-         deviceToken = device.getString("deviceToken");
-         JSONObject approval = complete(form("/qqq/v1/processes/mobileDeviceApprove/init", admin,
-            new JSONObject().put("recordsParam", "recordIds").put("recordIds", deviceId).put("tableName", "mobileDevice"), false), "mobileDeviceApprove", admin, false);
-         complete(form("/qqq/v1/processes/mobileDeviceApprove/" + approval.getString("processUUID") + "/step/input", admin, new JSONObject(), false),
-            "mobileDeviceApprove", admin, false);
+         String scanner = enrollApprovedScanner(scannerPassword, adminPassword);
          HttpResponse<String> metadata = request("GET", "/qqq/v1/metaData", scanner, null, true);
          assertEquals(200, metadata.statusCode());
          assertTrue(metadata.body().contains("\"echo\""));
@@ -148,6 +137,324 @@ class EchoHttpFixtureTest
 
 
    /***************************************************************************
+    ** Real login, device enrollment and administrator approval; returns the
+    ** scanner's session and sets this test's approved device headers.
+    ***************************************************************************/
+   private String enrollApprovedScanner(String scannerPassword, String adminPassword) throws Exception
+   {
+      String scanner = login("scanner", scannerPassword);
+      String admin = login("admin", adminPassword);
+      HttpResponse<String> enrolled = request("POST", "/qqq/v1/qbit/mobile-scanners/devices/enroll", scanner,
+         new JSONObject().put("installationId", UUID.randomUUID().toString()).toString(), false);
+      assertTrue(enrolled.statusCode() == 200 || enrolled.statusCode() == 201);
+      JSONObject device = new JSONObject(enrolled.body());
+      deviceId = device.getString("deviceId");
+      deviceToken = device.getString("deviceToken");
+      JSONObject approval = complete(form("/qqq/v1/processes/mobileDeviceApprove/init", admin,
+         new JSONObject().put("recordsParam", "recordIds").put("recordIds", deviceId).put("tableName", "mobileDevice"), false), "mobileDeviceApprove", admin, false);
+      complete(form("/qqq/v1/processes/mobileDeviceApprove/" + approval.getString("processUUID") + "/step/input", admin, new JSONObject(), false),
+         "mobileDeviceApprove", admin, false);
+      return scanner;
+   }
+
+
+
+   /***************************************************************************
+    ** A reserved loopback port, released immediately for the fixture to bind.
+    ***************************************************************************/
+   private int freePort() throws Exception
+   {
+      try(ServerSocket reservation = new ServerSocket(0, 0, InetAddress.getLoopbackAddress()))
+      {
+         origin = "http://127.0.0.1:" + reservation.getLocalPort();
+         return reservation.getLocalPort();
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Start the Echo process and return its protected process id.
+    ***************************************************************************/
+   private String open(String scanner) throws Exception
+   {
+      JSONObject launched = complete(form("/qqq/v1/processes/echoPrint/init", scanner, new JSONObject(), true), EchoQBitProducer.PROCESS, scanner, true);
+      assertEquals("setup", launched.getString("nextStep"));
+      return launched.getString("processUUID");
+   }
+
+
+
+   /***************************************************************************
+    ** The setup form's values: the simulated printer, media and second document,
+    ** plus whatever copies entry a test supplies (or none).
+    ***************************************************************************/
+   private static JSONObject setupValues(Object... copies)
+   {
+      JSONObject values = new JSONObject().put("printerId", EchoHttpFixture.PRINTER).put("mediaId", EchoHttpFixture.MEDIA).put("templateId", EchoHttpFixture.DOCUMENT_B);
+      if(copies.length == 1)
+      {
+         values.put("copies", copies[0]);
+      }
+      return values;
+   }
+
+
+
+   /***************************************************************************
+    ** One native step request; the finished response, whether it succeeded or not.
+    ***************************************************************************/
+   private JSONObject attempt(String process, String step, String scanner, JSONObject values) throws Exception
+   {
+      return finish(form("/qqq/v1/processes/echoPrint/" + process + "/step/" + step, scanner, values, true), EchoQBitProducer.PROCESS, scanner, true);
+   }
+
+
+
+   /***************************************************************************
+    ** True when the server reported the step as failed rather than completed.
+    ***************************************************************************/
+   private static boolean failed(JSONObject response)
+   {
+      return response.has("error") || response.has("errorMessage") || "ERROR".equals(response.optString("type"));
+   }
+
+
+
+   /***************************************************************************
+    ** The pinned copies, instructions and accepted printing of one finished step.
+    ***************************************************************************/
+   private static String instructions(JSONObject finished)
+   {
+      return finished.getJSONObject("values").getJSONObject(EchoQBitProducer.WIDGET).getJSONArray("subBlocks").getJSONObject(0).getJSONObject("values").getString("instructions");
+   }
+
+
+
+   /***************************************************************************
+    ** The persisted run rows, by id, as ordinary authorized native queries.
+    ***************************************************************************/
+   private JSONObject runRow(String scanner, String run) throws Exception
+   {
+      for(Object item : query(EchoHttpFixture.RUN_TABLE, scanner))
+      {
+         JSONObject values = ((JSONObject) item).getJSONObject("values");
+         if(run.equals(values.getString("id")))
+         {
+            return values;
+         }
+      }
+      throw new AssertionError("The run row is not visible to its scanner.");
+   }
+
+
+
+   /***************************************************************************
+    ** The setup form advertises one optional integer with explicit 1..100 limits
+    ** and the default of one, from the same registered process metadata the
+    ** native client reads.
+    ***************************************************************************/
+   @Test
+   void setupMetadataAdvertisesOptionalCopiesWithExplicitLimits() throws Exception
+   {
+      com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager.resetConnectionProviders();
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      int port = freePort();
+      try(EchoHttpFixture fixture = new EchoHttpFixture(scannerPassword, adminPassword))
+      {
+         fixture.start(port);
+         String scanner = enrollApprovedScanner(scannerPassword, adminPassword);
+         HttpResponse<String> response = request("GET", "/qqq/v1/metaData/process/echoPrint", scanner, null, true);
+         assertEquals(200, response.statusCode());
+         JSONObject field = findField(new JSONObject(response.body()), "copies");
+         assertEquals("Copies per scan", field.getString("label"));
+         assertEquals("INTEGER", field.getString("type").toUpperCase(java.util.Locale.ROOT));
+         assertEquals("1", String.valueOf(field.get("defaultValue")));
+         assertFalse(field.optBoolean("isRequired", false));
+         JSONObject validation = field.getJSONObject("validation");
+         assertEquals("1", String.valueOf(validation.get("minValue")));
+         assertEquals("100", String.valueOf(validation.get("maxValue")));
+         assertTrue(validation.optBoolean("minInclusive", true));
+         assertTrue(validation.optBoolean("maxInclusive", true));
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Depth-first search for the named form field in the process metadata.
+    ***************************************************************************/
+   private static JSONObject findField(Object node, String name)
+   {
+      if(node instanceof JSONObject object)
+      {
+         if(name.equals(object.optString("name")) && object.has("label"))
+         {
+            return object;
+         }
+         for(String key : object.keySet())
+         {
+            JSONObject found = findField(object.get(key), name);
+            if(found != null)
+            {
+               return found;
+            }
+         }
+      }
+      else if(node instanceof JSONArray array)
+      {
+         for(Object item : array)
+         {
+            JSONObject found = findField(item, name);
+            if(found != null)
+            {
+               return found;
+            }
+         }
+      }
+      return null;
+   }
+
+
+
+   /***************************************************************************
+    ** Omitted, null and blank setup entries all mean one copy, shown and pinned.
+    ***************************************************************************/
+   @Test
+   void copiesDefaultToOneWhenOmittedClearedOrBlank() throws Exception
+   {
+      com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager.resetConnectionProviders();
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      int port = freePort();
+      try(EchoHttpFixture fixture = new EchoHttpFixture(scannerPassword, adminPassword))
+      {
+         fixture.start(port);
+         String scanner = enrollApprovedScanner(scannerPassword, adminPassword);
+         int expectedJobs = 0;
+         for(Object entry : new Object[] { "omitted", JSONObject.NULL, "", "   " })
+         {
+            String process = open(scanner);
+            JSONObject selected = attempt(process, "setup", scanner, "omitted".equals(entry) ? setupValues() : setupValues(entry));
+            assertFalse(failed(selected));
+            assertEquals(1, selected.getJSONObject("values").getInt("copies"));
+            assertFalse(instructions(selected).contains("copies"));
+            String run = selected.getJSONObject("values").getString("echoRunId");
+            JSONObject scanned = attempt(process, "scan", scanner, event("LABEL-TYPE-CODE128"));
+            assertFalse(failed(scanned));
+            assertEquals(1, scanned.getJSONObject("values").getInt("copies"));
+            assertEquals(++expectedJobs, fixture.acceptedJobCount());
+            assertEquals(1, runRow(scanner, run).getInt("copies"));
+            assertEquals(200, form("/qqq/v1/processes/echoPrint/" + process + "/cancel", scanner, new JSONObject(), true).statusCode());
+         }
+         assertEquals(java.util.List.of(1, 1, 1, 1), fixture.acceptedCopies());
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Three copies are chosen once, shown, pinned in the run, and used by every
+    ** scan as ONE job each; retries add no job and every mutation is refused.
+    ***************************************************************************/
+   @Test
+   void chosenCopiesStayPinnedAcrossScansRetriesAndMutations() throws Exception
+   {
+      com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager.resetConnectionProviders();
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      int port = freePort();
+      try(EchoHttpFixture fixture = new EchoHttpFixture(scannerPassword, adminPassword))
+      {
+         fixture.start(port);
+         String scanner = enrollApprovedScanner(scannerPassword, adminPassword);
+         String process = open(scanner);
+         JSONObject selected = attempt(process, "setup", scanner, setupValues(3));
+         assertFalse(failed(selected));
+         assertEquals("scan", selected.getString("nextStep"));
+         assertEquals(3, selected.getJSONObject("values").getInt("copies"));
+         assertTrue(instructions(selected).contains("Each scan prints 3 copies."));
+         String run = selected.getJSONObject("values").getString("echoRunId");
+         assertEquals(3, runRow(scanner, run).getInt("copies"));
+
+         JSONObject firstEvent = event("LABEL-TYPE-CODE128");
+         JSONObject first = attempt(process, "scan", scanner, firstEvent);
+         assertFalse(failed(first));
+         assertEquals(3, first.getJSONObject("values").getInt("copies"));
+         String job = first.getJSONObject("values").getString("printJobId");
+         assertEquals(1, fixture.acceptedJobCount());
+         JSONObject retry = attempt(process, "scan", scanner, firstEvent);
+         assertFalse(failed(retry));
+         assertEquals(job, retry.getJSONObject("values").getString("printJobId"));
+         assertEquals(1, fixture.acceptedJobCount());
+         JSONObject second = attempt(process, "scan", scanner, event("QRCODE"));
+         assertFalse(failed(second));
+         assertEquals(3, second.getJSONObject("values").getInt("copies"));
+         assertEquals(2, fixture.acceptedJobCount());
+         assertEquals(java.util.List.of(3, 3), fixture.acceptedCopies());
+
+         // a scan-stage value that differs from the pinned count is refused: no event, no job
+         for(Object forged : new Object[] { 1, 2, 4, 9, 100, 0, 101, "abc", 2.5 })
+         {
+            JSONObject mutation = event("LABEL-TYPE-CODE128").put("copies", forged);
+            assertTrue(failed(attempt(process, "scan", scanner, mutation)), "forged copies " + forged);
+         }
+         // a repeated setup cannot change the pinned count either
+         for(Object other : new Object[] { 1, 5 })
+         {
+            assertTrue(failed(attempt(process, "setup", scanner, setupValues(other))), "setup replay " + other);
+         }
+         assertEquals(2, fixture.acceptedJobCount());
+         assertEquals(2, query(EchoQBitProducer.SCAN_TABLE, scanner).length());
+         assertEquals(3, runRow(scanner, run).getInt("copies"));
+
+         // the refused values do not poison the run: the next ordinary scan still prints three
+         JSONObject third = attempt(process, "scan", scanner, event("QRCODE"));
+         assertFalse(failed(third), third.toString());
+         assertEquals(3, third.getJSONObject("values").getInt("copies"));
+         assertEquals(3, fixture.acceptedJobCount());
+         assertEquals(java.util.List.of(3, 3, 3), fixture.acceptedCopies());
+         assertEquals(3, query(EchoQBitProducer.SCAN_TABLE, scanner).length());
+         assertEquals(200, form("/qqq/v1/processes/echoPrint/" + process + "/cancel", scanner, new JSONObject(), true).statusCode());
+         assertEquals(3, runRow(scanner, run).getInt("copies"));
+         assertEquals("CLOSED", runRow(scanner, run).getString("state"));
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Fractions, zero, out-of-range and text are rejected at setup; the run stays
+    ** in setup, so a valid count then completes it.
+    ***************************************************************************/
+   @Test
+   void invalidCopiesAreRejectedAtSetupBeforeAnyRunIsPinned() throws Exception
+   {
+      com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager.resetConnectionProviders();
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      int port = freePort();
+      try(EchoHttpFixture fixture = new EchoHttpFixture(scannerPassword, adminPassword))
+      {
+         fixture.start(port);
+         String scanner = enrollApprovedScanner(scannerPassword, adminPassword);
+         String process = open(scanner);
+         for(Object invalid : new Object[] { 0, -1, 101, 1000, 2.5, "2.5", "abc", "1e1", true })
+         {
+            assertTrue(failed(attempt(process, "setup", scanner, setupValues(invalid))), "setup copies " + invalid);
+         }
+         JSONObject selected = attempt(process, "setup", scanner, setupValues(100));
+         assertFalse(failed(selected), selected.toString());
+         assertEquals(100, selected.getJSONObject("values").getInt("copies"));
+         assertEquals(100, runRow(scanner, selected.getJSONObject("values").getString("echoRunId")).getInt("copies"));
+         assertEquals(0, fixture.acceptedJobCount());
+      }
+   }
+
+
+
+   /***************************************************************************
     ** QQQ validates Basic credentials; secrets never appear in assertion output.
     ***************************************************************************/
    private String login(String username, String password) throws Exception
@@ -181,6 +488,23 @@ class EchoHttpFixtureTest
    private JSONObject complete(HttpResponse<String> response, String process, String session, boolean device) throws Exception
    {
       assertEquals(200, response.statusCode(), "Native fixture process request failed.");
+      JSONObject body = finish(response, process, session, device);
+      assertFalse(body.has("error"), "Native fixture process returned an error.");
+      return body;
+   }
+
+
+
+   /***************************************************************************
+    ** Poll an async step to its end and return what the server said, including
+    ** a refusal, which is reported as an object with an error key.
+    ***************************************************************************/
+   private JSONObject finish(HttpResponse<String> response, String process, String session, boolean device) throws Exception
+   {
+      if(response.statusCode() != 200)
+      {
+         return new JSONObject().put("error", "HTTP " + response.statusCode());
+      }
       JSONObject body = new JSONObject(response.body());
       String processId = body.optString("processUUID");
       String jobId = body.optString("jobUUID");
@@ -190,10 +514,12 @@ class EchoHttpFixtureTest
          assertTrue(System.nanoTime() < deadline, "Native fixture process timed out.");
          Thread.sleep(25);
          response = request("GET", "/qqq/v1/processes/" + process + "/" + processId + "/status/" + jobId, session, null, device);
-         assertEquals(200, response.statusCode());
+         if(response.statusCode() != 200)
+         {
+            return new JSONObject().put("error", "HTTP " + response.statusCode());
+         }
          body = new JSONObject(response.body());
       }
-      assertFalse(body.has("error"), "Native fixture process returned an error.");
       return body;
    }
 

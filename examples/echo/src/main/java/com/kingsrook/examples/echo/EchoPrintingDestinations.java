@@ -115,6 +115,11 @@ public final class EchoPrintingDestinations implements EchoDestinations
       {
          throw new QException("The chosen document changed or was withdrawn. Leave Echo and choose again.");
       }
+      String refusal = refusal(current.mode(), scan);
+      if(refusal != null)
+      {
+         throw new QException(refusal);
+      }
       return current.plan();
    }
 
@@ -175,55 +180,108 @@ public final class EchoPrintingDestinations implements EchoDestinations
       QRecord revision = get(GenerationTables.REVISION, revisionId);
       String source = format == GenerationPorts.Format.PDF ? revision.getValueString("pdfSource") : revision.getValueString("zplSource");
       GenerationPorts.Stock stock = stock(revision);
+      SceneMode mode = format == GenerationPorts.Format.ZPL ? sceneMode(source) : SceneMode.PLAIN;
       if(!templateId.equals(revision.getValueInteger("templateId")) || !EchoQBitProducer.SCAN_TABLE.equals(revision.getValueString("tableName"))
          || "PREVIEW".equals(revision.getValueString("purpose")) || source == null || source.isBlank()
          || !Integer.valueOf(destination.widthMicrons()).equals(stock.widthMicrons()) || !Integer.valueOf(destination.heightMicrons()).equals(stock.heightMicrons())
-         || !Integer.valueOf(destination.dpiX()).equals(stock.dpi()) || (format == GenerationPorts.Format.ZPL && !reproducesScannedSymbology(source)))
+         || !Integer.valueOf(destination.dpiX()).equals(stock.dpi()) || mode == null)
       {
          throw new QException(UNAVAILABLE);
       }
-      return new Resolved(new Document(templateId, revisionId), new Plan(templateId, revisionId, stock, format));
+      return new Resolved(new Document(templateId, revisionId), new Plan(templateId, revisionId, stock, format), mode);
+   }
+
+
+
+   /***************************************************************************
+    ** How a published scene feeds the renderer: PLAIN passes only the scanned
+    ** text and type; SCANNER also passes the scanner label and AIM identifier so
+    ** the worker verifies them (and converts EAN/UPC). Anything else is not an
+    ** Echo document.
+    ***************************************************************************/
+   enum SceneMode
+   {
+      PLAIN, SCANNER
    }
 
 
 
    /***************************************************************************
     ** The published scene must draw the scanned value with the scanned type via
-    ** dynamic binding, and allow every symbology Echo admits - never a fixed one.
+    ** dynamic binding, and allow every symbology of its mode - never a fixed one.
     ***************************************************************************/
-   static boolean reproducesScannedSymbology(String zplScene)
+   static SceneMode sceneMode(String zplScene)
    {
       try
       {
          JSONObject scene = new JSONObject(zplScene);
          if(!"qqq-zpl-scene/1".equals(scene.optString("schema")))
          {
-            return false;
+            return null;
          }
          for(Object item : scene.getJSONArray("elements"))
          {
             JSONObject element = (JSONObject) item;
-            if("barcode".equals(element.optString("type")) && "/record/rendererSymbology".equals(element.optString("symbologyPath"))
-               && "/record/barcode".equals(element.optString("valuePath")) && element.optJSONArray("allowedSymbologies") != null
-               && element.getJSONArray("allowedSymbologies").toList().containsAll(EchoTemplates.SYMBOLOGIES))
+            if(!"barcode".equals(element.optString("type")) || !"/record/rendererSymbology".equals(element.optString("symbologyPath"))
+               || !"/record/barcode".equals(element.optString("valuePath")) || element.optJSONArray("allowedSymbologies") == null)
             {
-               return true;
+               continue;
+            }
+            java.util.List<Object> allowed = element.getJSONArray("allowedSymbologies").toList();
+            boolean scanner = element.has("scannerSymbologyPath") || element.has("aimIdentifierPath");
+            if(!scanner && allowed.containsAll(EchoTemplates.SYMBOLOGIES))
+            {
+               return SceneMode.PLAIN;
+            }
+            if(scanner && "/record/symbology".equals(element.optString("scannerSymbologyPath")) && "/record/aimIdentifier".equals(element.optString("aimIdentifierPath"))
+               && allowed.containsAll(EchoTemplates.SYMBOLOGIES) && allowed.containsAll(EchoTemplates.SCANNER_SYMBOLOGIES))
+            {
+               return SceneMode.SCANNER;
             }
          }
-         return false;
+         return null;
       }
       catch(RuntimeException failure)
       {
-         return false;
+         return null;
       }
    }
 
 
 
    /***************************************************************************
-    ** One template's pinned document and the plan derived from it.
+    ** True for any scene that is an Echo document in either mode.
     ***************************************************************************/
-   private record Resolved(Document document, Plan plan)
+   static boolean reproducesScannedSymbology(String zplScene)
+   {
+      return sceneMode(zplScene) != null;
+   }
+
+
+
+   /***************************************************************************
+    ** Plain scenes reproduce text only and refuse EAN/UPC outright; the
+    ** scanner-fidelity scene needs this scan's AIM identifier. Null means usable.
+    ***************************************************************************/
+   static String refusal(SceneMode mode, EchoService.Scan scan)
+   {
+      if(mode == SceneMode.PLAIN && EchoTemplates.SCANNER_SYMBOLOGIES.contains(scan.rendererSymbology()))
+      {
+         return "EAN and UPC need the scanner-fidelity document. Leave Echo and choose it; no print was requested.";
+      }
+      if(mode == SceneMode.SCANNER && scan.aimIdentifier() == null)
+      {
+         return "The scanner-fidelity document needs the scanner's AIM identifier and this scan has none. Leave Echo and choose the plain document; no print was requested.";
+      }
+      return null;
+   }
+
+
+
+   /***************************************************************************
+    ** One template's pinned document, the plan derived from it and its scene mode.
+    ***************************************************************************/
+   private record Resolved(Document document, Plan plan, SceneMode mode)
    {
    }
 
