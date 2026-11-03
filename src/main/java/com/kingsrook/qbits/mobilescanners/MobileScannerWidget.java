@@ -30,6 +30,8 @@ public class MobileScannerWidget extends AbstractWidgetRenderer
       return new RenderWidgetOutput(new ScannerWidgetData());
    }
 
+
+
    /***************************************************************************
     ** Native widget wire shape. RC20's closed WidgetBlock enum predates SCANNER,
     ** so this extension supplies its wire fields directly as QWidgetData.
@@ -45,6 +47,8 @@ public class MobileScannerWidget extends AbstractWidgetRenderer
          return "composite";
       }
 
+
+
       /***********************************************************************
        ** Android's native DataWedge-enabled renderer.
        ***********************************************************************/
@@ -53,13 +57,16 @@ public class MobileScannerWidget extends AbstractWidgetRenderer
          return "COMPOSITE";
       }
 
+
+
       /***********************************************************************
        ** One scanner component; the surrounding process owns its actions.
        ***********************************************************************/
       public List<Map<String, Serializable>> getSubBlocks()
       {
          return List.of(Map.of("blockId", "barcodeScanner", "blockType", "SCANNER", "values",
-            new java.util.HashMap<>(Map.of("title", "Scan a barcode", "instructions", "Scan with the trigger or enter a barcode. Saved scans appear in Mobile Scanner Administration."))));
+            new java.util.HashMap<>(Map.of("title", "Scan a barcode", "instructions", "Scan with the trigger or enter a barcode. Saved scans appear in Mobile Scanner Administration.",
+               "manualLabel", "Manual barcode", "submitLabel", "Submit barcode", "maxLength", 4096))));
       }
    }
 }

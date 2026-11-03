@@ -6,11 +6,13 @@
 package com.kingsrook.qbits.mobilescanners;
 
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
-import com.kingsrook.qqq.backend.core.model.data.QRecord;
 
 
 /*******************************************************************************
@@ -24,11 +26,15 @@ public class MobileScanStep implements BackendStep
    @Override
    public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
    {
-      QRecord saved = MobileService.capture(input.getValues());
-      output.addValue("acknowledgedEventId", saved.getValueString("eventId"));
-      output.addValue("scanId", saved.getValueString("id"));
+      Map<String, Serializable> context = MobileScannerActions.capture(input);
+      output.addValue("scanContext", new HashMap<>(context));
+      output.addValue("acknowledgedEventId", context.get("eventId"));
+      output.addValue("scanId", context.get("scanId"));
       output.addValue("scanSaved", true);
       output.addValue(MobileScannersQBitProducer.WIDGET, new MobileScannerWidget.ScannerWidgetData());
-      output.getProcessState().setNextStepName("scan");
+      if(input.getProcess().getStepList().getLast().getName().equals(input.getStepName()))
+      {
+         output.getProcessState().setNextStepName("scan");
+      }
    }
 }

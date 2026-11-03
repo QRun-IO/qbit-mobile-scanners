@@ -1,19 +1,22 @@
 # QQQ Mobile Scanners
 
-Server support for approved Android handhelds running native QQQ apps. The first app, **Scan Capture**, stores barcode events in a QQQ table. The companion Android application is [QQQ Android's scanner host](https://github.com/QRun-IO/qqq-android/tree/feature/mobile-scanner-host/scanner-host), currently in [pull request #8](https://github.com/QRun-IO/qqq-android/pull/8).
+Server support for approved Android handhelds running native QQQ apps. The first app, **Scan Capture**, stores barcode events in a QQQ table. The companion Android application is [QQQ Android's scanner host](https://git.kof22.com/QRun-IO/qqq-android) (`scanner-host` directory), reviewed in [pull request 8](https://git.kof22.com/QRun-IO/qqq-android/pulls/8) and [pull request 10](https://git.kof22.com/QRun-IO/qqq-android/pulls/10). Gitea is primary; the GitHub copy is a shadow/archive.
 
 Version one is online only. Devices require an authenticated user and administrator approval. Android renders existing QQQ app, process, frontend-step and widget metadata; this qbit adds the scanner widget and enrollment lifecycle.
+
+App discovery and process execution use the versioned semantic UI/UX API at `/qqq/v1`. Enrollment, branding and status are registered operations in the independently versioned `mobile-scanners` extension at `/qqq/v1/qbit/mobile-scanners`. The Android host checks core and extension compatibility before login. See [the semantic API contract](docs/UI-API.md). Metadata changes using supported native components can be delivered by the server; new required component types need a shared Android client update. This contract does not imply full web-client feature coverage.
 
 ## Project layout
 
 - `src/main`: reusable qbit, device enrollment routes, device approval/revocation, scan process and table metadata.
 - `src/test`: server behavior and permission checks.
 - `demo`: local QQQ server with persistent H2 storage, native administration UI and password login.
+- `e2e`: browser acceptance tests against the packaged frontend and isolated real demo server.
 - `docs/TC22-ACCEPTANCE.md`: build, install and hardware verification.
 
 ## Build
 
-Use Java 21 and Maven 3.9+. The implementation targets QQQ `4.1.0-RC.20`; QQQ `4.0.0` does not provide the password session exchange needed by this demo.
+Use Java 21 and Maven 3.9+. The implementation targets QQQ `4.1.0-RC.21`; QQQ `4.0.0` does not provide the password session exchange needed by this demo.
 
 ```powershell
 .\mvnw.cmd verify install
@@ -24,6 +27,8 @@ The wrapper pins Maven 3.9.9. On Unix, use `./mvnw` in place of `mvnw.cmd`. This
 
 For the Windows demo, follow [local startup and credentials](docs/LOCAL-DEMO.md). For the scanner, follow [TC22 installation and acceptance](docs/TC22-ACCEPTANCE.md).
 
+See [process acceptance tests](docs/TESTING.md) for server, browser, and native Android E2E commands. Approval and revocation support record actions and bulk selections with a confirmation and visible result.
+
 ## Customer branding and connection diagnostics
 
 Configure the customer name, primary color and optional HTTPS logo on the server; the same Android APK applies them before login and throughout the mobile screens. See [branding configuration](docs/BRANDING.md). The shared launcher remains QQQ Mobile.
@@ -32,7 +37,7 @@ The app footer checks server reachability while foregrounded. Tap it to inspect 
 
 ## Contributing and CI
 
-Development pull requests target `develop`. CircleCI uses the shared QRun-IO QBit pipeline; GitHub Actions runs the demo HTTP contract and CodeQL. All Maven publication switches start disabled. See [contributing](CONTRIBUTING.md), [CI and release operation](docs/CI-CD.md), [security reporting](SECURITY.md) and the [code of conduct](CODE_OF_CONDUCT.md). This project is licensed under [Apache 2.0](LICENSE).
+The primary forge is Gitea (`git.kof22.com/QRun-IO`); GitHub is a shadow/archive and receives no ordinary writes. Development pull requests target `develop`. The CircleCI and GitHub workflow files in this repository describe the legacy shared QBit pipeline and demo HTTP/browser/CodeQL checks; see [CI and release operation](docs/CI-CD.md) for how to run the same checks locally. All Maven publication switches start disabled. Current progress and dependency status live in [session state](docs/SESSION-STATE.md), not here. See [contributing](CONTRIBUTING.md), [CI and release operation](docs/CI-CD.md), [security reporting](SECURITY.md) and the [code of conduct](CODE_OF_CONDUCT.md). This project is licensed under [Apache 2.0](LICENSE).
 
 ## Embed in a QQQ application
 
@@ -52,4 +57,8 @@ The app must show server acknowledgement before reporting a save. A network time
 
 ## Scope
 
-Initial support is single-barcode Zebra DataWedge intent delivery and QQQ table-based username/password login. Other identity providers need Android host configuration before use. Additional apps can use QQQ's existing native process and widget metadata; their server-side permission rules must explicitly protect their actions. A visual mobile app designer, offline workflows, camera scanning, MDM rollout and remote fleet management are separate future work. The supplied SQL schema targets H2; other database migrations belong to the host application.
+The tested handheld path uses single-barcode capture through the Zebra EMDK service on the Android host (no DataWedge profile) and QQQ table-based login. The host conditionally configures AIM output and reads back the configuration before extracting an AIM identifier. SDK raw bytes can accompany either plain or AIM capture (mobile-scanners 1.5). Actual hardware AIM output, print and rescan fidelity is not yet qualified, so no exact-AIM or all-symbology claim is made. The Android client also implements metadata-advertised native OAuth2 login for servers providing the explicit UI API 1.9 contract; configured-provider acceptance and production scanner-ingress hardening remain release gates. See the client repository's authentication guide (`docs/AUTHENTICATION.md` in [the Gitea repository](https://git.kof22.com/QRun-IO/qqq-android)).
+
+Device/session records, online activity, administrator session termination, own-app screen viewing and optional foreground location are implemented. Extension1.2 adds optional [operator-consented device-screen viewing](docs/DEVICE-SCREEN-VIEWING.md); actual Android projection acceptance remains open. Camera/gallery record uploads use the optional Record Files bridge and require its compatible dependency tuple; production publication and actual camera acceptance remain open. Additional apps use QQQ's native process/widget metadata, and their server-side permission rules must explicitly protect their actions.
+
+A visual mobile app designer, offline workflows, camera-based barcode decoding and applied MDM rollout remain outside this version. The Android host implements company managed configuration, a profile generator and a live wallpaper (see `docs/` in the client repository); applied MDM/device-owner rollout of them is not yet qualified. The supplied SQL schema targets H2; other database migrations belong to the host application.

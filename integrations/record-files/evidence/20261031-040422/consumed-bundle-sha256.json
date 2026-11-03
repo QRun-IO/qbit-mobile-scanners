@@ -1,0 +1,78 @@
+[
+  {
+    "path": "AUTHORIZED-BROWSING.md",
+    "sha256": "ebc2a4db713b1f47722a6f5e466b956704aca45e6536469fac18f0635a058c02"
+  },
+  {
+    "path": "CONTENT-READER.md",
+    "sha256": "2897cb46e64b865fd25d0dd0315443bb8eff6152033a031293de5c66a61a00c4"
+  },
+  {
+    "path": "HTTP-CONSUMER-FIXTURE.md",
+    "sha256": "0e3d0021f30d07e8ccac6d75d7fb231fe9ccfbffc2e41c2ba9eeff9faaaaf713"
+  },
+  {
+    "path": "INGESTION-CONTRACT.md",
+    "sha256": "d0d94906b7a461208df4614f97892214ce71cb618f01f990f82f8e89589092d8"
+  },
+  {
+    "path": "MYSQL.md",
+    "sha256": "16b3759e2d3c9609c903e8dca7162156e73e61cca45daff6e4cf531a83a57927"
+  },
+  {
+    "path": "NATIVE-WORKFLOWS.md",
+    "sha256": "691e5a37f3566c4f7f7c2c0c5b0f212f54fd946f39d95ed5972e0266a4347331"
+  },
+  {
+    "path": "owner218-bridge-verification.log",
+    "sha256": "9a98438e78fa6011b3449b42b7946420527e376504d9efcde7fa5814a14d2cc1"
+  },
+  {
+    "path": "PRINT-OBSERVATIONS.md",
+    "sha256": "0d927dbe4b0d5f93291726f73192682b38b955a3f39189e24f07fde9353206a4"
+  },
+  {
+    "path": "qbit-collaboration-0.1.0-record-files-SNAPSHOT.jar",
+    "sha256": "87c6a9aac52a0821edd66dad2924a014d2c70aa929ead011dcf7a89a0f94c854"
+  },
+  {
+    "path": "qbit-collaboration.pom.xml",
+    "sha256": "3edb8deabe52093cf868d1972a5d70fccf46930e20b9e49451518f40b18566e0"
+  },
+  {
+    "path": "qbit-record-files-0.1.0-SNAPSHOT-tests.jar",
+    "sha256": "65d2f53aa112673c87bf2a40671c01b7755b0a99b174a5186080e13e0b217bfe"
+  },
+  {
+    "path": "qbit-record-files-0.1.0-SNAPSHOT.jar",
+    "sha256": "a49f1eb3ff27c720fbd09c2af8c63704b3c157c9603da6307b0356e2b939a347"
+  },
+  {
+    "path": "qbit-record-files.pom.xml",
+    "sha256": "ee17af6afbdff319d24e7e536813e13a04c8e0f8934c40b2ccb16a8c2392cfe0"
+  },
+  {
+    "path": "qqq-backend-core-4.1.0-isolated-record-files-SNAPSHOT.jar",
+    "sha256": "2d3ff9af8b63f46653fcb2eafbab0c34a86f7c83b93c045d1a59e96ce2baf63f"
+  },
+  {
+    "path": "qqq-backend-core.pom.xml",
+    "sha256": "86fe5d56a9ce05be5dc1e788448ea0967206cf3ce990c0f8d5bdb477fc4651ee"
+  },
+  {
+    "path": "qqq-backend-module-rdbms-4.1.0-isolated-record-files-SNAPSHOT.jar",
+    "sha256": "e3af4b9367548fb340f3860516b9fea27cfb8920331568b40c1aac8cfaa5dc85"
+  },
+  {
+    "path": "qqq-backend-module-rdbms.pom.xml",
+    "sha256": "a68b0f27b41a21591051da23bf27eb625fe8aace88de5d63519ffd2a417a666a"
+  },
+  {
+    "path": "README.md",
+    "sha256": "27589cc2218808fccd02c15cc911e0be12ce24b46af53775644e1e5108bc8187"
+  },
+  {
+    "path": "TRACKED-DOWNLOADS.md",
+    "sha256": "b66782966acf7162d6de0528a8979d3f4829c4e7285c6cb001c97e22e6cd65ef"
+  }
+]

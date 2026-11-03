@@ -1,0 +1,8 @@
+{
+  "h2Version": "2.2.224",
+  "duplicateQqqClasses": 0,
+  "baseBuildMode": "module-only-prior-scanner-binary",
+  "classCount": 3162,
+  "derivedCollaborationPomSha256": "32bb2afb6645f525323e500570f71b319cc13d00403c7555d4b3e23d6e0ea766",
+  "scannerJarSha256": "af1e72f6f79e4f37010710eae1147fd7edc93a309add32e5f54e976a993b6696"
+}

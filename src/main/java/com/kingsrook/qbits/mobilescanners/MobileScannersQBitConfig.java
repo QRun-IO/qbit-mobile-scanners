@@ -23,6 +23,8 @@ public class MobileScannersQBitConfig implements QBitConfig
    private String primaryColor = "#1565C0";
    private String logoUrl;
 
+
+
    /***************************************************************************
     ** Public customer name shown by the shared mobile client.
     ***************************************************************************/
@@ -30,6 +32,8 @@ public class MobileScannersQBitConfig implements QBitConfig
    {
       return displayName;
    }
+
+
 
    /***************************************************************************
     ** Plain display text only, never markup or control characters.
@@ -45,6 +49,8 @@ public class MobileScannersQBitConfig implements QBitConfig
       return this;
    }
 
+
+
    /***************************************************************************
     ** Opaque RGB theme color; clients choose readable foreground colors.
     ***************************************************************************/
@@ -52,6 +58,8 @@ public class MobileScannersQBitConfig implements QBitConfig
    {
       return primaryColor;
    }
+
+
 
    /***************************************************************************
     ** Restrict branding to a six-digit hex color, not arbitrary CSS.
@@ -66,6 +74,8 @@ public class MobileScannersQBitConfig implements QBitConfig
       return this;
    }
 
+
+
    /***************************************************************************
     ** Optional public logo; no authenticated assets or embedded data.
     ***************************************************************************/
@@ -73,6 +83,8 @@ public class MobileScannersQBitConfig implements QBitConfig
    {
       return logoUrl;
    }
+
+
 
    /***************************************************************************
     ** The client loads an HTTPS image without forwarding QQQ credentials.
@@ -100,6 +112,8 @@ public class MobileScannersQBitConfig implements QBitConfig
       return this;
    }
 
+
+
    /***************************************************************************
     ** Read the configured backend.
     ***************************************************************************/
@@ -107,6 +121,8 @@ public class MobileScannersQBitConfig implements QBitConfig
    {
       return backendName;
    }
+
+
 
    /***************************************************************************
     ** Configure the host-owned durable backend.
@@ -116,6 +132,8 @@ public class MobileScannersQBitConfig implements QBitConfig
       this.backendName = backendName;
       return this;
    }
+
+
 
    /***************************************************************************
     ** Fail startup when the backend is absent.

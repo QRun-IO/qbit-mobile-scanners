@@ -1,0 +1,16 @@
+{
+  "uploadId" : "8f361db2-db9f-4dc2-a17f-1de7493b38cf",
+  "collectionId" : 1,
+  "state" : "COMPLETE",
+  "completedAt" : "2026-10-31T09:04:17.060380500Z",
+  "items" : [ {
+    "itemId" : "20000000-0000-0000-0000-000000000001",
+    "fileId" : "efcbbb47-8fb3-46c5-a879-36dd21639a6a",
+    "versionId" : 1,
+    "attachmentId" : 1,
+    "sizeBytes" : 3,
+    "sha256" : "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81",
+    "position" : 0,
+    "lifecycleAtCommit" : "QUARANTINED"
+  } ]
+}

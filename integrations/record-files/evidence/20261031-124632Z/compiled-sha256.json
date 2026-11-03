@@ -1,0 +1,74 @@
+[
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\classes\\com\\kingsrook\\qbits\\mobilescanners\\recordfiles\\MobileCaptureIdentityProvider.class",
+    "sha256": "6506e89ec283179799bc436b9c6799deb5a38e1a08f216964800614f1737b1c3"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\classes\\com\\kingsrook\\qbits\\mobilescanners\\recordfiles\\MobileRecordFilesContract.class",
+    "sha256": "b176691c11247551a814ccacc438f3e7a2c3a77c37cfe796a54104ae63ed5764"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\classes\\com\\kingsrook\\qbits\\mobilescanners\\recordfiles\\MobileRecordFilesContract$NonblankString.class",
+    "sha256": "6136fbcce0c473a011920b7f55d2991e29f8af486c831480886049f118f70853"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\classes\\com\\kingsrook\\qbits\\mobilescanners\\recordfiles\\RecordFilesCaptureWidgetData.class",
+    "sha256": "243b074a2845b0943f3281aafa0ed57badc5b347a81e98a077540ea49f9e9d8f"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\DiskAttachmentStorage.class",
+    "sha256": "d4837b9318aaa3ad41d6011a1f756e8c9a4f401ec20ff7f9d88a7fe09f80f8f3"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\DiskAttachmentStorage$1.class",
+    "sha256": "b72af87ca3af6257a228ab208352529e926521af32241c94434365a5a7026970"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\DiskAttachmentStorage$Staging.class",
+    "sha256": "b9cc2861ed24958bbc3013f981962041c0706971819f83322da9513138b0142e"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileAuthorizationCommitProbe.class",
+    "sha256": "b4217282fe808e2b4d4c23f8901307b6ca02c9b47d7a55a823b14df49a1dab38"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileAuthorizationCommitProbe$1.class",
+    "sha256": "fb2b84e4729ff3ae79e2cb12b2fbe485cceac61cb0dff4c3e75bde9bd024ce67"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileRecordFilesIntegrationTest.class",
+    "sha256": "53def5b7f47c4b461a50e089d7ca139419fa57a2e8dc89dfb78fb60f54877039"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileRecordFilesIntegrationTest$1.class",
+    "sha256": "ac8d5cf26f60881b1c346dc12279f9215fe83b5bf6bb3d1cd7786db2322bd14c"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileRecordFilesIntegrationTest$2.class",
+    "sha256": "bfc7c61c2ecb2336483bc811c1556693db3a7c31c62c7ded8617104f80fa6ab8"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileRecordFilesIntegrationTest$Authentication.class",
+    "sha256": "d2b09800a35e77171e819d4588fc4d2aea5e79f89871b1da94d83c9334edb41e"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileRecordFilesIntegrationTest$CapturePermissions.class",
+    "sha256": "139922c0ce45fcbf0eaaa81cab73e648b4ca82c4297e73b280eaebdf179a6bca"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileRecordFilesIntegrationTest$CapturePrepare.class",
+    "sha256": "7340cb6f5e696a27fbd3243b5af1c0349bf4d392ae1d0a93d35aa2df0deeb486"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileRecordFilesIntegrationTest$CaptureWidget.class",
+    "sha256": "91d1773385de3f78f4dfa1490b6245c07c823faee52e5ebcf0ed31ddcb8efaad"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\MobileRecordFilesIntegrationTest$ObservedAttachmentLifecycle.class",
+    "sha256": "16307903cc407d50de9dcd1db0844c331b8b5e3d5e6698d522d56980b6124ed2"
+  },
+  {
+    "path": "R:\\Git.Local\\QRunIO\\qbit-mobile-scanners\\integrations\\record-files\\target\\module\\test-classes\\com\\kingsrook\\qbits\\mobilescanners\\RecordFilesCaptureContractTest.class",
+    "sha256": "52e60f29889fb662a12930e9d796ca46d59013d176103644f1dcd4254e322777"
+  }
+]

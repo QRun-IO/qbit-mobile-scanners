@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>com.kingsrook.qbits</groupId>
+   <artifactId>qbit-mobile-scanners-record-files</artifactId>
+   <version>0.1.0-SNAPSHOT</version>
+   <name>QQQ Mobile Scanners Record Files integration</name>
+   <description>Optional verified mobile capture attribution and semantic camera widget.</description>
+   <properties>
+      <maven.compiler.release>21</maven.compiler.release>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <!-- the same property names the root POM and the Echo demo use, with their defaults -->
+      <qqq.version>4.1.0-RC.21</qqq.version>
+      <mobile.version>0.1.0-SNAPSHOT</mobile.version>
+      <recordfiles.version>0.1.0-SNAPSHOT</recordfiles.version>
+      <collaboration.version>0.1.0-record-files-SNAPSHOT</collaboration.version>
+      <!-- developer-script override for core and rdbms only; by default it is the single qqq line, never a second one -->
+      <qqq.frozen.version>${qqq.version}</qqq.frozen.version>
+   </properties>
+   <dependencyManagement><dependencies>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-bom-pom</artifactId><version>${qqq.version}</version><type>pom</type><scope>import</scope></dependency>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-backend-core</artifactId><version>${qqq.frozen.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-backend-module-rdbms</artifactId><version>${qqq.frozen.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qqq</groupId><artifactId>qqq-middleware-javalin</artifactId><version>${qqq.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-collaboration</artifactId><version>${collaboration.version}</version></dependency>
+   </dependencies></dependencyManagement>
+   <dependencies>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-mobile-scanners</artifactId><version>${mobile.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-record-files</artifactId><version>${recordfiles.version}</version></dependency>
+      <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-record-files</artifactId><version>${recordfiles.version}</version><classifier>tests</classifier><type>test-jar</type><scope>test</scope></dependency>
+      <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><version>2.2.224</version><scope>test</scope></dependency>
+      <!-- no own version: the imported qqq BOM manages the Jupiter engine and params (6.0.2); the engine brings the matching API -->
+      <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-engine</artifactId><scope>test</scope></dependency>
+      <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-params</artifactId><scope>test</scope></dependency>
+      <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId><version>3.27.7</version><scope>test</scope></dependency>
+   </dependencies>
+   <build><directory>${project.basedir}/target/module</directory><plugins>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.2</version><configuration><systemPropertyVariables><qqq.logger.logSessionId.disabled>true</qqq.logger.logSessionId.disabled></systemPropertyVariables></configuration></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-checkstyle-plugin</artifactId><version>3.6.0</version>
+         <dependencies><dependency><groupId>com.puppycrawl.tools</groupId><artifactId>checkstyle</artifactId><version>14.3.0</version></dependency></dependencies>
+         <configuration><configLocation>../../checkstyle/checkstyle.xml</configLocation><includeTestSourceDirectory>true</includeTestSourceDirectory><failOnViolation>true</failOnViolation><violationSeverity>warning</violationSeverity></configuration>
+         <executions><execution><id>style</id><phase>validate</phase><goals><goal>check</goal></goals></execution></executions>
+      </plugin>
+   </plugins></build>
+</project>

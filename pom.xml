@@ -33,7 +33,7 @@
    <properties>
       <revision>0.1.0-SNAPSHOT</revision>
       <maven.compiler.release>21</maven.compiler.release>
-      <qqq.version>4.1.0-RC.20</qqq.version>
+      <qqq.version>4.1.0-RC.21</qqq.version>
    </properties>
    <dependencyManagement>
       <dependencies>

@@ -1,0 +1,10 @@
+{
+  "h2Version": "2.2.224",
+  "bundleName": "retained-contract-20261031-0515",
+  "repositoryName": "isolated-m2-0515",
+  "derivedCollaborationPomSha256": "32bb2afb6645f525323e500570f71b319cc13d00403c7555d4b3e23d6e0ea766",
+  "duplicateQqqClasses": 0,
+  "classCount": 3180,
+  "scannerJarSha256": "e9504632ec308cbad080afcce7da0fb7037f7d9b153359d1653729cb8e33af17",
+  "baseBuildMode": "fresh-source-clean-base-build"
+}

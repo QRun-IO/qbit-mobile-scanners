@@ -1,0 +1,30 @@
+[
+  {
+    "path": "src/main/java/com/kingsrook/qbits/recordfiles/api/CaptureIdentityProvider.java",
+    "sha256": "80194faa0a14baa955418ac57f9bbd816a3d41f19ed21d441409452adafd80ff"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/recordfiles/ingestion/UploadSessionService.java",
+    "sha256": "eafd981d8ec0b91d59ffdcea8654db7dbd670101e7b1540bb99885852f27fc4c"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/recordfiles/ingestion/UploadFinalizer.java",
+    "sha256": "569d3971a34af168216bd30e6837e42a8669d3fad84e33ce76260fb204b3e9cf"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/recordfiles/ingestion/UploadMaintenance.java",
+    "sha256": "25acb4bc8a983bafce3794444300f2e9fb54a25ee6122bcbdcc07be1a2bddf58"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/recordfiles/ingestion/UploadRuntime.java",
+    "sha256": "efe94032239b3053282fb8b0696e35c46b266b9dc815b68ba33efd0947a69f63"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/recordfiles/ingestion/UploadSessionServiceTest.java",
+    "sha256": "4c3677d7804a1a975792f1b92a9ddaa563f2fb8c44d10887b5f8dc5e54952e3e"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/recordfiles/ingestion/UploadApiHttpTest.java",
+    "sha256": "df14757c362d25a2135f45884404006b6c08ee335fe9aeaa9180717667c0aa73"
+  }
+]

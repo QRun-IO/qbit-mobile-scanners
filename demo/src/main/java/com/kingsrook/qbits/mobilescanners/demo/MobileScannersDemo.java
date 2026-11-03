@@ -50,6 +50,18 @@ public class MobileScannersDemo extends AbstractQQQApplication
       this.jdbcUrl = jdbcUrl;
    }
 
+
+
+   /*******************************************************************************
+    ** Keep H2 open between QQQ connections; normal JVM shutdown flushes the file.
+    *******************************************************************************/
+   static String fileDatabaseUrl(Path database)
+   {
+      return "jdbc:h2:file:" + database.toAbsolutePath().normalize().toString().replace('\\', '/') + ";DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1";
+   }
+
+
+
    /*******************************************************************************
     ** Configure the same public appearance for every client of this demo server.
     *******************************************************************************/
@@ -106,7 +118,8 @@ public class MobileScannersDemo extends AbstractQQQApplication
       }
       instance.getTable("demoUser").getField("passwordHash").setIsHidden(true);
       new MobileScannersQBitProducer().withConfig(mobileConfig).produce(instance, "mobile");
-      for(String name : List.of(MobileScannersQBitProducer.DEVICE, MobileScannersQBitProducer.CREDENTIAL, MobileScannersQBitProducer.SCAN))
+      for(String name : List.of(MobileScannersQBitProducer.DEVICE, MobileScannersQBitProducer.CREDENTIAL, MobileScannersQBitProducer.SCAN,
+         MobileScannersQBitProducer.SESSION, MobileScannersQBitProducer.SESSION_BINDING))
       {
          QTableMetaData table = instance.getTable(name);
          table.withBackendDetails(new RDBMSTableBackendDetails().withTableName(name));
@@ -207,7 +220,7 @@ public class MobileScannersDemo extends AbstractQQQApplication
       Integer port = args.length == 0 ? 8080 : Integer.valueOf(args[0]);
       Path database = Path.of("data", "mobile").toAbsolutePath().normalize();
       Files.createDirectories(database.getParent());
-      MobileScannersDemo application = new MobileScannersDemo("jdbc:h2:file:" + database.toString().replace('\\', '/') + ";DATABASE_TO_UPPER=FALSE");
+      MobileScannersDemo application = new MobileScannersDemo(fileDatabaseUrl(database));
       application.withBranding(System.getenv("MOBILE_BRAND_DISPLAY_NAME"), System.getenv("MOBILE_BRAND_PRIMARY_COLOR"), System.getenv("MOBILE_BRAND_LOGO_URL"));
       application.initializeDatabase(System.getenv("MOBILE_DEMO_SCANNER_PASSWORD"), System.getenv("MOBILE_DEMO_ADMIN_PASSWORD"));
       application.start(port);

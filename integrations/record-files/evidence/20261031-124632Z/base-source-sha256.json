@@ -1,0 +1,178 @@
+[
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileAdminSelection.java",
+    "sha256": "b75a07a190f145607833221add118f5b5abd30af9ce18bee9348a8c9d36e1911"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileBrandingSpec.java",
+    "sha256": "c55315e0bedaeaccb942876015200388058998d65a3f5342fca0625770c526de"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileCurrentDeviceSpec.java",
+    "sha256": "88b46b516315b86e0feca1b84072b7f92a6176498a2192fd2ccaa6b3c682fcf5"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileDeviceActivity.java",
+    "sha256": "30f272ba5fc327f38c964ca9cadfa156071fc47b0f27f7535634f549a9dbf1f6"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileDeviceAdminPrepareStep.java",
+    "sha256": "ed198b98e3a3650c27b831364a458451af2b1ea901a557ff68bce737ea8d6f94"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileDeviceAdminStep.java",
+    "sha256": "6cd7cc95b39ea3d88df55338c6ac608dfd62f4f5417f2b6ddc75ac06924f4127"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileDeviceAuthorization.java",
+    "sha256": "fe4867a0bb52e467085683e7dbd06ecdec4c31098ca20f0b99aeedf7f540ae4d"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileDeviceJsonSpec.java",
+    "sha256": "b022b30aca36c8cf81eecb8487a377946a3806d15030da0ec3322e99e9a00898"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileDeviceOnline.java",
+    "sha256": "f9f8599ac1e760a9118a9033ddc5ee87f1f7f693ebb26fc6faa0cad5d2e65df2"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileDeviceProfileCustomizer.java",
+    "sha256": "4d03f0239087dad69ef4777b31c55ff7a28b1dcce4df6e48a79d354e4958d00d"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileDeviceStatusWidget.java",
+    "sha256": "ef4e34f563f191cb5491c4c53674c50aae43384065c3d33187a57c31f33e13a0"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileEnrollSpec.java",
+    "sha256": "2381509d6004d484c68d0f99c5e236a3402406552d2057a42e976cf71510204e"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileJsonSpec.java",
+    "sha256": "835ff77447c4354d8b7bc95806bf719830879f145c52db8744dca7165b33728e"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobilePermissions.java",
+    "sha256": "8928b22dcf1777d32a8bf6eba246289ad1d81e51afe295a0bf6772d08ca6f385"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobilePrepareStep.java",
+    "sha256": "ae7f00e81bd4bef6793d94a8fbc379c130767ffec35835a43b4f19962c6cecf4"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileScannersQBitConfig.java",
+    "sha256": "1af7dfca2ca25dc8b14e06426d3451ba022ebccf45cab50060c85fa2f916a30d"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileScannersQBitProducer.java",
+    "sha256": "6831c0d1a370af3183741d83dbf52cfd9cd678410666c43259c573095430b689"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileScannersRouteProvider.java",
+    "sha256": "8cf719aa6fa631b44d804a42a7fd1d6f10284a25f7d3eb092505de4b5d03dfc1"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileScannersSchemas.java",
+    "sha256": "f3e657dabda29a0f42228e2fd4df017e4cf7ce325f0b61d659a5e2a1dd26577c"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileScannersUiApi.java",
+    "sha256": "4df72a01346d699720eb2658dfb63daa661f72deed3209606553bfc7af14bf96"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileScannerWidget.java",
+    "sha256": "717ee52cffc3352ad4f7107a44ed5c1011319ea31b18eae1af694d78ca59d7af"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileScanStep.java",
+    "sha256": "210c8a60b527936acd7a2b32ac59e8c8de16545c85ae99e36d49cbc1139c341b"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileScreenService.java",
+    "sha256": "89328a28b67ab1a09ad7c3bf77a68f19038f1df2799934636073babac417b089"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileService.java",
+    "sha256": "578ff6e515d7826884dccb234302a7b5030514cb01560d8df5887dd97b4588be"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionAdminPrepareStep.java",
+    "sha256": "09f799d79c8f0eaae1675fbd9b50f5e1434d2ca7e8b0c7a85424b886fd9b6a25"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionAdminStep.java",
+    "sha256": "0582748768aef2c7dda91bc8b0e1c01497d2d9ccbcacc55f7cfdd70e57ed2af7"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionEndSpec.java",
+    "sha256": "495220183b66ba15e1efbda8f33614b53b53353e9bd32d96c7c161bb3c569110"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionHeartbeatSpec.java",
+    "sha256": "785773998656e9c024ba2cc8c59ded1f0ddda9136f674488c8b36a2d9d2a453a"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionMetadata.java",
+    "sha256": "75a4b1cce043e3ae648fa25cad54e18b9df51b54b933c62f666d6d74534368dd"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionSchemas.java",
+    "sha256": "20da7d815bbf5971df83974c26801c91ad856cb78ba4580cfa70683fd4b700aa"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionScreenSpec.java",
+    "sha256": "83e6f22113f23b7302b33745351f4826c4b563eb8f78d9ae9cae397f6af9de5a"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionScreenWidget.java",
+    "sha256": "048387b1bd22b978d0b7f817946f9b9ee0ed9c05cb2606c49e3bb4677087b288"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileSessionService.java",
+    "sha256": "a2fa184661e2a32837ad986255e25bd5bafea288ab0ebe0e064645f8123095ee"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/MobileStatusSpec.java",
+    "sha256": "45bec687a048c35c05eb389a012ae4bb915069e81c7e426e45cf6a9d495f1447"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/VerifiedDeviceSession.java",
+    "sha256": "010b1940647715eb6a8bfe9c6b23a28d68146dbdfc63a337e64fafddf1b43d76"
+  },
+  {
+    "path": "src/main/resources/db/mobile-scanners-h2.sql",
+    "sha256": "8ef3fbb331466b36b4e8a1745bd85f16366556535ca347456b4d87b7f00c59d8"
+  },
+  {
+    "path": "src/main/resources/openapi/qqq-v1/mobile-scanners.yaml",
+    "sha256": "143db29c5ff2de68e028b85fe1c08545f0328146318899f915c3a8512c2b306d"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/mobilescanners/MobileBrandingTest.java",
+    "sha256": "6291c67e809ac553c5697104cc3d2b9c37e4c1481a2d82c0557b6f7a7b3b1bd7"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/mobilescanners/MobileScannersApiContractTest.java",
+    "sha256": "be95dad90cbf8e7a9252c1662bbede8573d9c73143999944e637191c77ed657e"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/mobilescanners/MobileScannersTest.java",
+    "sha256": "7c4a8f0a6280e8b4184e53532c4848c399e5817b6430c4b6ee8e809a3891c1bd"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/mobilescanners/MobileScreenServiceTest.java",
+    "sha256": "da3db234b759a053a49e2f08b9b392ef223245435f232d6d1c5adccb5dfd3541"
+  },
+  {
+    "path": "src/test/resources/openapi/mobile-scanners-1.0.0.yaml",
+    "sha256": "3ba318904d726390e343eedc314d4247aa97b6533d41712515e1a8c2c7d542b6"
+  },
+  {
+    "path": "src/test/resources/openapi/mobile-scanners-1.1.0.yaml",
+    "sha256": "143db29c5ff2de68e028b85fe1c08545f0328146318899f915c3a8512c2b306d"
+  },
+  {
+    "path": "pom.xml",
+    "sha256": "e46f02e2946f4ae3dd685852185db16abb0b87a43561812719dc23d27279ce1b"
+  }
+]

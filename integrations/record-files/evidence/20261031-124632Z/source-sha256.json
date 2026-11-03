@@ -1,0 +1,50 @@
+[
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/recordfiles/MobileCaptureIdentityProvider.java",
+    "sha256": "8801988fb5d0b129056ace39b11b2eb286d22e1e1bf9ba7252b25de228fcb464"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/recordfiles/MobileRecordFilesContract.java",
+    "sha256": "6b308e31d890f11e5c22fe7ed959f7d694fe647e9d385212a347bea3183e5846"
+  },
+  {
+    "path": "src/main/java/com/kingsrook/qbits/mobilescanners/recordfiles/RecordFilesCaptureWidgetData.java",
+    "sha256": "9e546c32241e8a0f7f50e678f4c14399c77ab9a0f66668f52f2c36d544b25bd8"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/mobilescanners/DiskAttachmentStorage.java",
+    "sha256": "10338dc0aab361b6593155a9abea263e372d3d84af15308c6d80e0be3e2928df"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/mobilescanners/MobileAuthorizationCommitProbe.java",
+    "sha256": "e13e8491ac3b0bb1ed596bd753d526485b47bfe54f84ceb050e933e5c12484f7"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/mobilescanners/MobileRecordFilesIntegrationTest.java",
+    "sha256": "3cdc55a8b1c8072870f57535a47043d790e3025146b9ffbf60bceef8465c3f4a"
+  },
+  {
+    "path": "src/test/java/com/kingsrook/qbits/mobilescanners/RecordFilesCaptureContractTest.java",
+    "sha256": "fb6e1284b5a049df8baaa283d6f5ccd89d7c5faeac692d8e350fb1dc1355ad03"
+  },
+  {
+    "path": "pom.xml",
+    "sha256": "9cb4c6ab8a8dadec5b688ceb5205a0fe8b3d63923527cd45dd1e838abd8a738e"
+  },
+  {
+    "path": "Verify-Isolated.ps1",
+    "sha256": "ef8cc22a18f4805919f196fb08e155c4a874c5d6725567fe05bd89fb391f0f7a"
+  },
+  {
+    "path": "IsolatedBuildPaths.ps1",
+    "sha256": "b11555eb1363222b17a1cdea3570d199b64a27d67a1382256f92b640362906ea"
+  },
+  {
+    "path": "Test-IsolatedBuildPaths.ps1",
+    "sha256": "59567af660410037002865284106777fb89172342f01704215e432d6f0069e09"
+  },
+  {
+    "path": "Start-ConsumerFixture.ps1",
+    "sha256": "f5d8d1b137900c32108c90f8df3634cb9bd2a2d1ed816e94c446780119256c9d"
+  }
+]
