@@ -10,7 +10,7 @@
       <maven.compiler.release>21</maven.compiler.release>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <!-- the same property names the root POM and the Echo demo use, with their defaults -->
-      <qqq.version>4.1.0-RC.20</qqq.version>
+      <qqq.version>4.1.0-RC.21</qqq.version>
       <mobile.version>0.1.0-SNAPSHOT</mobile.version>
       <recordfiles.version>0.1.0-SNAPSHOT</recordfiles.version>
       <collaboration.version>0.1.0-record-files-SNAPSHOT</collaboration.version>
@@ -29,7 +29,9 @@
       <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-record-files</artifactId><version>${recordfiles.version}</version></dependency>
       <dependency><groupId>com.kingsrook.qbits</groupId><artifactId>qbit-record-files</artifactId><version>${recordfiles.version}</version><classifier>tests</classifier><type>test-jar</type><scope>test</scope></dependency>
       <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><version>2.2.224</version><scope>test</scope></dependency>
-      <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.11.4</version><scope>test</scope></dependency>
+      <!-- no own version: the imported qqq BOM manages the Jupiter engine and params (6.0.2); the engine brings the matching API -->
+      <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-engine</artifactId><scope>test</scope></dependency>
+      <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-params</artifactId><scope>test</scope></dependency>
       <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId><version>3.27.7</version><scope>test</scope></dependency>
    </dependencies>
    <build><directory>${project.basedir}/target/module</directory><plugins>

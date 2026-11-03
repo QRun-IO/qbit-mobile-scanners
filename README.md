@@ -16,7 +16,7 @@ App discovery and process execution use the versioned semantic UI/UX API at `/qq
 
 ## Build
 
-Use Java 21 and Maven 3.9+. The implementation targets QQQ `4.1.0-RC.20`; QQQ `4.0.0` does not provide the password session exchange needed by this demo.
+Use Java 21 and Maven 3.9+. The implementation targets QQQ `4.1.0-RC.21`; QQQ `4.0.0` does not provide the password session exchange needed by this demo.
 
 ```powershell
 .\mvnw.cmd verify install

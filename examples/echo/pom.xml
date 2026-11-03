@@ -16,7 +16,7 @@
    <properties>
       <maven.compiler.release>21</maven.compiler.release>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <qqq.version>4.1.0-RC.20</qqq.version>
+      <qqq.version>4.1.0-RC.21</qqq.version>
       <mobile.version>0.1.0-SNAPSHOT</mobile.version>
       <!-- Echo's copies per scan needs a Generation build with the print-copies change (appended copies on
            DocumentGenerationService.Request and GenerationPorts.PrintRequest, supportsCopies on the printing bridge,

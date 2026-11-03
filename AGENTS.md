@@ -1,6 +1,6 @@
 # QQQ Mobile Scanners
 
-This is an application QBit and a separate local demo, using Java 21 and QQQ 4.1.0-RC.20.
+This is an application QBit and a separate local demo, using Java 21 and QQQ 4.1.0-RC.21.
 The Android host is maintained in [QRun-IO/qqq-android](https://github.com/QRun-IO/qqq-android).
 
 ## Build and verify

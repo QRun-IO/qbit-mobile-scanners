@@ -16,7 +16,7 @@
    <properties>
       <maven.compiler.release>21</maven.compiler.release>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <qqq.version>4.1.0-RC.20</qqq.version>
+      <qqq.version>4.1.0-RC.21</qqq.version>
       <mobile.version>0.1.0-SNAPSHOT</mobile.version>
       <echo.version>0.1.0-SNAPSHOT</echo.version>
       <generation.version>0.1.0-SNAPSHOT</generation.version>

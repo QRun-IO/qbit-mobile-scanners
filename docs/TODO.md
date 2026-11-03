@@ -1,6 +1,16 @@
 # QQQ Mobile Scanners TODO
 
-Latest checkpoint (November 2; supersedes older runtime/version and unrun-test notes):
+Current checkpoint (November 3; supersedes the notes below where they differ):
+
+- [x] Server `45f9cbd` is signed and pushed (Gitea PR 7). Android `f72b90d` is signed and pushed to the existing AGit PR 10 head and Gitea CI 3480 succeeded on it (pull requests #8 and #10 still open; not merged, not released). Updated normal APK installed without clearing data; fresh disposable TC22 Echo run passed 109/109 semantic requests (simulated inputs/printing).
+- [x] Final RC.21 gate PASS: 377 unique tests (Generation 179, Printing bridge 16, scanner 53, demo 8, mobile Record Files 18, Echo 68, Echo demo 35), zero failures/errors/skips, Checkstyle PASS, plus 15 real admin-browser E2E on public RC.21. The earlier MySQL timeouts did not recur (focused 31, full 179). Evidence: `C:/Users/james/.cache/qqq-rc21-copies-gate-076d059d8d0641d9a85874ec64008def/verified-summary.json`.
+- [x] Verified dependency update: five RC.21 POM pins and the record-files POM test fix (BOM-managed Jupiter engine/params, all 6.0.2).
+- [ ] This is public core RC.21 plus qualified owner inputs, not a fully public or released cohort: the 16 Printing-bridge tests still resolve three private `pu507` QQQ libraries through the owner Printing POM, and the other owner qbits remain qualified private inputs. Public reproducible owner inputs, primary source CI, merge and release remain open. No normal-runtime core upgrade was done.
+- [x] Generation copies: signed `aac68907e67906aeef4e0cd687d28bc98b738f8c` on `feature/echo-generation-copies` (base PR 343 head `8f473fa`) in `Website-Backend/third-party-src/qbit-document-generation`; 13 paths, 21/21 manifest match; real PostgreSQL 17 migration passes. [ ] Owner integration and public artifact publication not yet acknowledged.
+- [x] Fresh real Authentik desktop acceptance passes; native harness integrated (8 guards pass). [ ] Native TC22 run needs the temporary CA and PIN (pending); no trust bypass.
+- [ ] Manual physical checks: trigger, AIM, fidelity, label count, photo, GPS, projection. [ ] Signing and distribution last, by user decision.
+
+Previous checkpoint (November 2; historical, superseded by the current checkpoint above):
 
 - [x] Optional Copies per scan defaults to 1, accepts 1–100 and remains server-pinned for every scan/retry. Live on the original local server57832; normal TC22 setup shows 1.
 - [x] Verify 377 unique server/owner tests across the module runs, plus real TC22 ten-stage/116-request semantic acceptance with simulated scans/printing.
