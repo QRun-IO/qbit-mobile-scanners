@@ -58,6 +58,7 @@ public final class MobileScannerActions
       }
       Map<String, Serializable> submitted = new HashMap<>(input.getValues());
       input.getValues().keySet().removeAll(List.of("barcode", "symbology", "scanSource", "eventId", "capturedAt", "receivedAt",
+         "aimIdentifier", "rawDataBase64",
          "scanContext", "scanSaved", "scanId", "acknowledgedEventId", "userId", "deviceId", "appId", "processName"));
       if(MobileDeviceAuthorization.captureCurrent().isEmpty())
       {
@@ -68,6 +69,15 @@ public final class MobileScannerActions
       for(String field : List.of("barcode", "symbology", "scanSource", "eventId", "deviceId", "userId", "appId", "processName"))
       {
          context.put(field, saved.getValueString(field));
+      }
+      for(String field : List.of("aimIdentifier", "rawDataBase64"))
+      {
+         // Optional metadata: omit the key entirely for older clients and manual capture.
+         String value = saved.getValueString(field);
+         if(value != null)
+         {
+            context.put(field, value);
+         }
       }
       context.put("capturedAt", saved.getValueInstant("capturedAt").toString());
       context.put("receivedAt", saved.getValueInstant("receivedAt").toString());

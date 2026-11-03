@@ -98,6 +98,14 @@ after the DDL connection closes (`ConditionInConstantSet` references its closed
 session). A complete runtime manifest is necessary; matching only a core version
 label is insufficient evidence of compatibility.
 
+Host authentication order: after validating the login (in both `createSession` and
+session revalidation such as `isSessionValid`) and assigning the host's own roles and
+keys, call `CollaborationSecurity.applyToSession(QInstance, QSession)`
+(`com.kingsrook.qbits.collaboration`). This must happen before the first Mobile
+capture; the scanner compares security keys as sets, so repeating the call is safe, but
+adding or changing keys after capture is treated as an authority change and is rejected.
+There is no late wrapper mutation or exemption.
+
 The HTTP fixture uses real QQQ table/password sessions, native enrollment and
 record-screen approval processes, native Record Files capabilities/create/chunks/
 finalize, disk-backed H2 metadata and the standard attachment owner with a

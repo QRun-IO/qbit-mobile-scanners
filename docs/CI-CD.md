@@ -1,6 +1,8 @@
 # CI and release operation
 
-This repository follows the current QRun-IO QBit pipeline structure: a canonical CircleCI setup caller and a small `.qqq-ci.yml` manifest. The default development branch is `develop`; `main` is reserved for reviewed releases.
+The primary forge for source, reviews and checks is Gitea (`git.kof22.com/QRun-IO`); GitHub is a shadow/archive and receives no ordinary writes. The CircleCI and GitHub Actions material below describes the legacy shared QBit pipeline files kept in this repository and is not a statement of which hosted checks currently gate Gitea changes; confirm the checks a pull request actually runs on Gitea. Run the commands in Verification locally either way.
+
+This repository follows the QRun-IO QBit pipeline structure: a canonical CircleCI setup caller and a small `.qqq-ci.yml` manifest. The default development branch is `develop`; `main` is reserved for reviewed releases.
 
 ## Verification
 

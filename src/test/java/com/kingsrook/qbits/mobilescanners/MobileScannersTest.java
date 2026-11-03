@@ -10,8 +10,13 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper;
@@ -38,6 +43,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.authentication.AuthScope;
 import com.kingsrook.qqq.backend.core.model.metadata.authentication.QAuthenticationMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
+import com.kingsrook.qqq.backend.core.model.session.QCredentialScope;
 import com.kingsrook.qqq.backend.core.model.session.QSession;
 import com.kingsrook.qqq.backend.core.model.session.QUser;
 import com.kingsrook.qqq.backend.module.rdbms.model.metadata.RDBMSBackendMetaData;
@@ -50,6 +56,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -111,6 +120,7 @@ class MobileScannersTest
    void clear()
    {
       MobilePermissions.REQUEST_DEVICE.remove();
+      SessionMutator.hook = null;
       QContext.clear();
    }
 
@@ -140,6 +150,256 @@ class MobileScannersTest
       MobileService.setApproval(id, false);
       QContext.init(instance, bound);
       assertThrows(QException.class, () -> MobileService.capture(scan()));
+   }
+
+
+
+   /***************************************************************************
+    ** Unchanged authority keeps the exact wrapper so scoped session state is stable.
+    ***************************************************************************/
+   @Test
+   void repeatedCaptureRetainsSameVerifiedSession() throws Exception
+   {
+      bind(approvedDevice());
+      QSession bound = QContext.getQSession();
+      var first = MobileDeviceAuthorization.captureCurrent();
+      assertSame(bound, QContext.getQSession());
+      var second = MobileDeviceAuthorization.captureCurrent();
+      assertSame(bound, QContext.getQSession());
+      assertTrue(first.isPresent());
+      assertEquals(first, second);
+   }
+
+
+
+   /***************************************************************************
+    ** A retained wrapper never grants after approval, permission, binding or device changes.
+    ***************************************************************************/
+   @Test
+   void retainedSessionRejectsChangedAuthority() throws Exception
+   {
+      String id = approvedDevice();
+      bind(id);
+      QSession bound = QContext.getQSession();
+      var identity = MobileDeviceAuthorization.captureCurrent().orElseThrow();
+
+      MobilePermissions.REQUEST_DEVICE.set(UUID.randomUUID().toString());
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      MobilePermissions.REQUEST_DEVICE.remove();
+      assertSame(bound, QContext.getQSession());
+
+      bound.setUser(new QUser().withIdReference("someoneElse"));
+      assertThrows(QException.class, () -> MobileDeviceAuthorization.revalidate(identity));
+      bound.setUser(new QUser().withIdReference("scanner"));
+      MobileDeviceAuthorization.revalidate(identity);
+
+      String uuid = bound.getUuid();
+      bound.setUuid(UUID.randomUUID().toString());
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.setUuid(uuid);
+
+      var permissions = bound.getPermissions();
+      bound.setPermissions(new HashSet<>());
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.setPermissions(permissions);
+      MobileDeviceAuthorization.captureCurrent();
+      assertSame(bound, QContext.getQSession());
+
+      QContext.init(instance, admin);
+      MobileService.setApproval(id, false);
+      QContext.init(instance, bound);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertThrows(QException.class, () -> MobileDeviceAuthorization.revalidate(identity));
+   }
+
+
+
+   /***************************************************************************
+    ** Credential ceilings, auth selectors, channel and keys cannot change under a retained wrapper.
+    ***************************************************************************/
+   @Test
+   void retainedSessionRejectsCredentialScopeAndSelectorChanges() throws Exception
+   {
+      String id = approvedDevice();
+      Set<String> apps = new HashSet<>(instance.getApps().keySet());
+      Set<String> tables = new HashSet<>(instance.getTables().keySet());
+      scanner.setClientChannel("token:cred-1");
+      scanner.setCredentialScope(new QCredentialScope().withCredentialId("cred-1").withApps(apps).withTables(tables));
+      QContext.init(instance, scanner);
+      bind(id);
+      QSession bound = QContext.getQSession();
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      assertSame(bound, QContext.getQSession());
+
+      QCredentialScope scope = bound.getCredentialScope();
+      assertNotSame(scanner.getCredentialScope(), scope);
+      Set<String> widerTables = new HashSet<>(tables);
+      widerTables.add("extraTable");
+      assertUnchangedAfterRestore(bound, () -> scope.withTables(widerTables), () -> scope.withTables(tables));
+      assertUnchangedAfterRestore(bound, () -> scope.withTables(null), () -> scope.withTables(tables));
+      assertUnchangedAfterRestore(bound, () -> scope.withApps(null), () -> scope.withApps(apps));
+      assertUnchangedAfterRestore(bound, () -> scope.withProcesses(Set.of()), () -> scope.withProcesses(null));
+      assertUnchangedAfterRestore(bound, () -> scope.withReports(Set.of("r")), () -> scope.withReports(null));
+      assertUnchangedAfterRestore(bound, () -> scope.withWidgets(Set.of("w")), () -> scope.withWidgets(null));
+      assertUnchangedAfterRestore(bound, () -> scope.withOperationIds(Set.of("GET /x")), () -> scope.withOperationIds(null));
+      assertUnchangedAfterRestore(bound, () -> scope.withReadOnly(true), () -> scope.withReadOnly(false));
+      assertUnchangedAfterRestore(bound, () -> scope.withCredentialId("cred-2"), () -> scope.withCredentialId("cred-1"));
+      assertUnchangedAfterRestore(bound, () -> bound.setCredentialScope(null), () -> bound.setCredentialScope(scope));
+      assertUnchangedAfterRestore(bound, () -> bound.setClientChannel("web"), () -> bound.setClientChannel("token:cred-1"));
+      assertUnchangedAfterRestore(bound, () -> bound.withSecurityKeyValue("tenant", "t1"), () -> bound.clearSecurityKeyValues());
+      assertUnchangedAfterRestore(bound, () -> bound.withBackendVariants(Map.of("db", "other")), () -> bound.withBackendVariants(null));
+      assertUnchangedAfterRestore(bound, () -> bound.withPermission(MobilePermissions.ADMIN), () -> bound.getPermissions().remove(MobilePermissions.ADMIN));
+      assertSame(bound, QContext.getQSession());
+   }
+
+
+
+   /***************************************************************************
+    ** Test-only post-query hook on the device read that approval/observation perform.
+    ***************************************************************************/
+   public static class SessionMutator extends MobileDeviceOnline
+   {
+      static Runnable hook;
+
+
+
+      /***********************************************************************
+       ** Run the pending change once, in the middle of the authorization checks.
+       ***********************************************************************/
+      @Override
+      public java.util.List<QRecord> apply(java.util.List<QRecord> records)
+      {
+         Runnable pending = hook;
+         hook = null;
+         if(pending != null)
+         {
+            pending.run();
+         }
+         return super.apply(records);
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Grants or ceilings changed by host hooks during the checks are never retained.
+    ***************************************************************************/
+   @Test
+   void authorityChangedDuringChecksIsNotRetained() throws Exception
+   {
+      String id = approvedDevice();
+      Set<String> tables = new HashSet<>(instance.getTables().keySet());
+      scanner.setClientChannel("token:cred-1");
+      scanner.setCredentialScope(new QCredentialScope().withCredentialId("cred-1").withTables(tables));
+      QContext.init(instance, scanner);
+      bind(id);
+      QSession bound = QContext.getQSession();
+      // swap the production MobileDeviceOnline for a subclass that runs it unchanged after the observed mutation
+      var role = com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers.POST_QUERY_RECORD.getRole();
+      var deviceCustomizers = instance.getTable(MobileScannersQBitProducer.DEVICE).getCustomizers();
+      assertEquals(MobileDeviceOnline.class.getName(), deviceCustomizers.get(role).getName());
+      deviceCustomizers.put(role, new com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference(SessionMutator.class));
+
+      // scoped first capture wraps a copy with exactly the same ceilings and grants
+      QContext.init(instance, scanner);
+      MobileDeviceAuthorization.captureCurrent();
+      QSession wrapped = QContext.getQSession();
+      assertInstanceOf(VerifiedDeviceSession.class, wrapped);
+      assertNotSame(scanner.getCredentialScope(), wrapped.getCredentialScope());
+      assertEquals(tables, wrapped.getCredentialScope().getTables());
+      assertEquals(scanner.getPermissions(), wrapped.getPermissions());
+      assertEquals("token:cred-1", wrapped.getClientChannel());
+
+      // retained wrapper: ceiling widened mid-check
+      QContext.init(instance, bound);
+      SessionMutator.hook = () -> bound.getCredentialScope().withTables(null);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertNull(SessionMutator.hook);
+      bound.getCredentialScope().withTables(tables);
+      MobileDeviceAuthorization.captureCurrent();
+
+      // retained wrapper: grant added mid-check
+      SessionMutator.hook = () -> bound.withPermission(MobilePermissions.ADMIN);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertNull(SessionMutator.hook);
+      bound.getPermissions().remove(MobilePermissions.ADMIN);
+
+      // retained wrapper: context session replaced mid-check
+      QSession other = new QSession().withUser(bound.getUser());
+      QContext.init(instance, bound);
+      SessionMutator.hook = () -> QContext.setQSession(other);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertNull(SessionMutator.hook);
+
+      // first capture: ceiling widened mid-check is not wrapped
+      QContext.init(instance, scanner);
+      SessionMutator.hook = () -> scanner.getCredentialScope().withTables(null);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertNull(SessionMutator.hook);
+      assertSame(scanner, QContext.getQSession());
+   }
+
+
+
+   /***************************************************************************
+    ** Security keys compare as sets: repeats and order are not authority changes, new values are.
+    ***************************************************************************/
+   @Test
+   void securityKeysCompareAsSets() throws Exception
+   {
+      String id = approvedDevice();
+      scanner.withSecurityKeyValue("tenant", "t1").withSecurityKeyValue("tenant", "t2");
+      bind(id);
+      QSession bound = QContext.getQSession();
+      List<java.io.Serializable> original = new ArrayList<>(bound.getSecurityKeyValues().get("tenant"));
+
+      bound.withSecurityKeyValue("tenant", "t1");
+      bound.withSecurityKeyValue("tenant", "t1");
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      bound.getSecurityKeyValues().put("tenant", new ArrayList<>(List.of("t2", "t1")));
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      assertSame(bound, QContext.getQSession());
+
+      bound.withSecurityKeyValue("tenant", "t3");
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.getSecurityKeyValues().put("tenant", new ArrayList<>(List.of("t1", "t3")));
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.getSecurityKeyValues().put("tenant", new ArrayList<>(original));
+      bound.withSecurityKeyValue("other", "x");
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      bound.getSecurityKeyValues().remove("other");
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      bound.setUser(new QUser().withIdReference("someoneElse"));
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+   }
+
+
+
+   /***************************************************************************
+    ** Mutable Serializable key/variant values cannot be proven unchanged, so they fail closed.
+    ***************************************************************************/
+   @Test
+   void mutableSessionValuesFailClosed() throws Exception
+   {
+      String id = approvedDevice();
+      scanner.withSecurityKeyValue("tenant", new java.util.ArrayList<>(java.util.List.of("a")));
+      bind(id);
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+   }
+
+
+
+   /***************************************************************************
+    ** Apply a change (must fail closed, wrapper kept), then restore (must pass again).
+    ***************************************************************************/
+   private void assertUnchangedAfterRestore(QSession bound, Runnable change, Runnable restore) throws Exception
+   {
+      change.run();
+      assertThrows(QException.class, MobileDeviceAuthorization::captureCurrent);
+      assertSame(bound, QContext.getQSession());
+      restore.run();
+      assertTrue(MobileDeviceAuthorization.captureCurrent().isPresent());
+      assertSame(bound, QContext.getQSession());
    }
 
 
@@ -265,6 +525,151 @@ class MobileScannersTest
       input.addValue("symbology", "QR_CODE");
       assertThrows(QException.class, () -> MobileScannerActions.capture(input));
       assertFalse(input.getValues().containsKey("symbology"), "A rejected event must not contaminate the following submission.");
+   }
+
+
+
+   /***************************************************************************
+    ** Exact SDK bytes, including NUL and high bytes, persist and return unchanged.
+    ***************************************************************************/
+   @Test
+   void rawBytesAndAimIdentifierRoundTripExactlyAndBindRetries() throws Exception
+   {
+      bind(approvedDevice());
+      byte[] raw = new byte[] { 0, 'A', 0, (byte) 0xFF, (byte) 0x80, 0x1D, '0', '0' };
+      String encoded = Base64.getEncoder().encodeToString(raw);
+      Map<String, Serializable> input = scan();
+      input.put("barcode", "00001234");
+      input.put("aimIdentifier", "]C0");
+      input.put("rawDataBase64", encoded);
+      QRecord saved = MobileService.capture(input);
+      assertEquals("00001234", saved.getValueString("barcode"));
+      assertEquals("]C0", saved.getValueString("aimIdentifier"));
+      QRecord stored = MobileService.get(MobileScannersQBitProducer.SCAN, saved.getValueString("id"));
+      assertEquals(encoded, stored.getValueString("rawDataBase64"));
+      assertTrue(java.util.Arrays.equals(raw, Base64.getDecoder().decode(stored.getValueString("rawDataBase64"))));
+      assertEquals(saved.getValueString("id"), MobileService.capture(input).getValueString("id"), "Exact retry returns the same row.");
+
+      Map<String, Serializable> changedBytes = new HashMap<>(input);
+      changedBytes.put("rawDataBase64", Base64.getEncoder().encodeToString(new byte[] { 0, 'A', 0, (byte) 0xFE }));
+      assertThrows(QException.class, () -> MobileService.capture(changedBytes));
+      Map<String, Serializable> changedAim = new HashMap<>(input);
+      changedAim.put("aimIdentifier", "]Q1");
+      assertThrows(QException.class, () -> MobileService.capture(changedAim));
+      Map<String, Serializable> absentAim = new HashMap<>(input);
+      absentAim.remove("aimIdentifier");
+      assertThrows(QException.class, () -> MobileService.capture(absentAim), "Absent versus present metadata must conflict.");
+      Map<String, Serializable> absentRaw = new HashMap<>(input);
+      absentRaw.remove("rawDataBase64");
+      assertThrows(QException.class, () -> MobileService.capture(absentRaw), "Absent versus present metadata must conflict.");
+      assertEquals(1, scanRows());
+
+      Map<String, Serializable> legacy = scan();
+      QRecord legacyRow = MobileService.capture(legacy);
+      assertNull(legacyRow.getValueString("aimIdentifier"));
+      assertNull(legacyRow.getValueString("rawDataBase64"));
+      assertEquals(legacyRow.getValueString("id"), MobileService.capture(legacy).getValueString("id"));
+      Map<String, Serializable> addedLater = new HashMap<>(legacy);
+      addedLater.put("rawDataBase64", encoded);
+      assertThrows(QException.class, () -> MobileService.capture(addedLater), "A historical NULL row cannot be retried with new metadata.");
+      assertEquals(2, scanRows());
+   }
+
+
+
+   /***************************************************************************
+    ** Present optional metadata must be well typed, canonical and bounded.
+    ***************************************************************************/
+   @Test
+   void malformedAimAndRawMetadataAreRejectedWithoutSaving() throws Exception
+   {
+      bind(approvedDevice());
+      Base64.Encoder encoder = Base64.getEncoder();
+      List<Map<String, Serializable>> invalid = new ArrayList<>();
+      for(String aim : new String[] { "", " ", "]C", "]C10", "C01", "]01", "]c!", "]C-", "]C0\n" })
+      {
+         invalid.add(Map.of("aimIdentifier", aim));
+      }
+      invalid.add(Map.of("aimIdentifier", 7));
+      invalid.add(Map.of("aimIdentifier", true));
+      for(String raw : new String[] { "", " ", "AEEA/4AdMDA", "AEEA/4AdMDA=\n", "AEEA_4AdMDA=", "AEEA/4AdMDA==", "AEF=", "!!!!", "QQ=", encoder.encodeToString(new byte[8193]) })
+      {
+         invalid.add(Map.of("rawDataBase64", raw));
+      }
+      invalid.add(Map.of("rawDataBase64", 12));
+      invalid.add(Map.of("rawDataBase64", new byte[] { 1 }));
+      invalid.add(Map.of("rawDataBase64", "A".repeat(MobileService.RAW_DATA_MAXIMUM_CHARACTERS + 1)));
+      for(Map<String, Serializable> metadata : invalid)
+      {
+         Map<String, Serializable> input = scan();
+         input.putAll(metadata);
+         assertThrows(QException.class, () -> MobileService.capture(input), metadata.toString());
+      }
+      assertEquals(0, scanRows());
+      Map<String, Serializable> boundary = scan();
+      boundary.put("rawDataBase64", encoder.encodeToString(new byte[MobileService.RAW_DATA_MAXIMUM_BYTES]));
+      assertEquals(encoder.encodeToString(new byte[MobileService.RAW_DATA_MAXIMUM_BYTES]), MobileService.capture(boundary).getValueString("rawDataBase64"));
+      Map<String, Serializable> one = scan();
+      one.put("rawDataBase64", encoder.encodeToString(new byte[] { 0 }));
+      assertEquals("AA==", MobileService.capture(one).getValueString("rawDataBase64"));
+   }
+
+
+
+   /***************************************************************************
+    ** Context omits missing keys, replaces forged values and never carries
+    ** the previous event's metadata into the next event.
+    ***************************************************************************/
+   @Test
+   void processContextCarriesOptionalMetadataOnlyForTheAcceptedEvent() throws Exception
+   {
+      bind(approvedDevice());
+      String encoded = Base64.getEncoder().encodeToString(new byte[] { 0, (byte) 0xC3, 0x28 });
+      RunBackendStepInput input = new RunBackendStepInput().withProcessName(MobileScannersQBitProducer.CAPTURE).withValues(scan());
+      input.addValue("aimIdentifier", "]E0");
+      input.addValue("rawDataBase64", encoded);
+      Map<String, Serializable> first = MobileScannerActions.capture(input);
+      assertEquals("]E0", first.get("aimIdentifier"));
+      assertEquals(encoded, first.get("rawDataBase64"));
+      assertFalse(input.getValues().containsKey("aimIdentifier"));
+      assertFalse(input.getValues().containsKey("rawDataBase64"));
+
+      input.addValue("scanContext", new HashMap<>(Map.of("aimIdentifier", "]Q1", "rawDataBase64", "Zm9yZ2Vk")));
+      input.addValue("scanSaved", true);
+      input.addValue("acknowledgedEventId", first.get("eventId"));
+      input.addValue("barcode", "00001234");
+      input.addValue("eventId", UUID.randomUUID().toString());
+      input.addValue("capturedAt", "2026-11-01T12:00:00Z");
+      Map<String, Serializable> legacy = MobileScannerActions.capture(input);
+      assertFalse(legacy.containsKey("aimIdentifier"), "Missing optional keys are omitted, not null or inherited.");
+      assertFalse(legacy.containsKey("rawDataBase64"), "Missing optional keys are omitted, not null or inherited.");
+      assertEquals("scanner", legacy.get("userId"));
+
+      input.addValue("scanContext", new HashMap<>(legacy));
+      input.addValue("scanSaved", true);
+      input.addValue("acknowledgedEventId", legacy.get("eventId"));
+      input.addValue("barcode", "00001234");
+      input.addValue("eventId", UUID.randomUUID().toString());
+      input.addValue("capturedAt", "2026-11-01T12:00:00Z");
+      input.addValue("rawDataBase64", "not base64!");
+      assertThrows(QException.class, () -> MobileScannerActions.capture(input));
+      assertFalse(input.getValues().containsKey("rawDataBase64"), "A rejected event must not contaminate the following submission.");
+      assertFalse(input.getValues().containsKey("aimIdentifier"));
+   }
+
+
+
+   /***************************************************************************
+    ** Count persisted scans through JDBC, outside the guarded QQQ actions.
+    ***************************************************************************/
+   private int scanRows() throws Exception
+   {
+      try(Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+         var statement = connection.createStatement(); var rows = statement.executeQuery("SELECT COUNT(*) FROM mobileScan"))
+      {
+         assertTrue(rows.next());
+         return rows.getInt(1);
+      }
    }
 
 

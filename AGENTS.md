@@ -1,7 +1,7 @@
 # QQQ Mobile Scanners
 
-This is an application QBit and a separate local demo, using Java 21 and QQQ 4.1.0-RC.20.
-The Android host is maintained in [QRun-IO/qqq-android](https://github.com/QRun-IO/qqq-android).
+This is an application QBit and a separate local demo, using Java 21 and QQQ 4.1.0-RC.21.
+The Android host is maintained in [QRun-IO/qqq-android on Gitea](https://git.kof22.com/QRun-IO/qqq-android) (reviews: pulls/8 and pulls/10).
 
 ## Build and verify
 
@@ -25,6 +25,7 @@ The Android host is maintained in [QRun-IO/qqq-android](https://github.com/QRun-
 ## Repository workflow
 
 - `develop` is the development default; make feature/fix branches and pull requests into it. `main` is reserved for reviewed releases.
-- CircleCI uses the central qbit manifest profile on the managed `0.8` track. Keep the three version declarations identical. Extra demo verification belongs in its dedicated GitHub workflow, not the canonical setup caller.
+- The primary forge for source, reviews and checks is Gitea (`git.kof22.com/QRun-IO`); GitHub is a shadow/archive, so make no ordinary GitHub writes.
+- The CircleCI manifest (central qbit profile, managed `0.8` track; keep the three version declarations identical) and the GitHub demo workflow are retained legacy definitions: preserve the existing managed files, but primary CI changes follow current Gitea policy and should not be directed into GitHub.
 - All publication switches start disabled. Creating a repo or pushing a branch is not permission to publish Maven artifacts or cut a release.
 - Preserve unrelated work. Update `docs/SESSION-STATE.md` and `docs/TODO.md` when project state changes. Commit, push, release, deployment and external communication require authorization in the active task.

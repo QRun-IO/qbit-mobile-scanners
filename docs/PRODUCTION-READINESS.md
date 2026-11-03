@@ -2,7 +2,15 @@
 
 Status: not release-ready. The user requested a full client/server audit and production-ready 1.0. This is an evidence ledger; a numerical quality score does not replace the gates below.
 
-## Latest verified checkpoint — November 1, 17:34 UTC
+## Current checkpoint — November 2
+
+Server `e3b775e` (Gitea PR 7) fixes the Generation/renderer output-limit mismatch and passes 45 Echo library plus 29 composed demo tests with zero Checkstyle violations. Android implementation `fb3cc5d`, published with documentation at `ffc5b49` (Gitea PR 10), passes 174 JVM tests, lint with zero errors and warnings, and the debug APK build. One local server on host port 57832 runs Echo, Record Files, Document Generation and Printing together (API 1.10.0, mobile 1.4.0, printing 2.3.0). The normal TC22 and the installed print client work against it, and the real 4x1 stock, media revision and Echo document are published and selectable. The earlier native acceptance (7 stages, 112 requests) used simulated printing and inputs.
+
+The synthetic HTTP event `ECHO-HTTP-TEST-001` has one matching scan and one actual ZPL print job in `SPOOLED`, with a Windows spooler job assigned and its process closed. A read-only recheck at 16:31 UTC confirmed that receipt, server HTTP 200, the running print service, and the TC22 showing Echo / Scanner ready / Connected. No Windows administrator prompt or printer pairing is pending. Paper output and physical TC22 print/rescan remain unconfirmed; see the [delivery receipt](../examples/echo/demo/docs/echo-delivery-acceptance.json).
+
+Still not release-ready. Open: physical Code128 and leading-zero QR scan, print and rescan; extended barcode fidelity beyond the currently admitted types; full provider, camera, GPS, projection and device qualification; public coherent artifacts; primary Gitea CI; and final signing and distribution, which is deliberately last. Core PR 1337 was reviewed with its 57 focused tests verified, but normal CI and publication are not established and default dependencies are not repinned. Where dated checkpoints below describe the same-origin fix, printer connection, media, document or server composition as pending, this section supersedes them.
+
+## Superseded checkpoint — November 1, 17:34 UTC
 
 Server standards checkpoint0b53f34 is signed/pushed and all eight hosted checks pass; a fresh private API1.10 cohort passes39 server, six demo HTTP and18 Record Files consumer cases with Checkstyle. Client strict compilation and163 JVM tests pass; final TC22 native acceptance is running and the Query artwork density warning is being corrected before installation. About includes bundled Query artwork and the exact public Dogfooding/Query links.
 

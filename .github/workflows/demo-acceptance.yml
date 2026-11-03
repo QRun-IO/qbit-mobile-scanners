@@ -23,7 +23,9 @@ jobs:
         run: |
           Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Scope CurrentUser -Force
           $scriptPaths = @(Get-ChildItem -LiteralPath scripts, integrations/record-files -File -Filter '*.ps1')
+          # An analyzer crash is not ignored: the failing file is named and the step still fails.
           $findings = @($scriptPaths | ForEach-Object {
+            Write-Output "Analyzing $($_.FullName)" | Out-Host
             Invoke-ScriptAnalyzer -Path $_.FullName -Settings scripts/PSScriptAnalyzerSettings.psd1
           })
           $findings | Format-Table -AutoSize
