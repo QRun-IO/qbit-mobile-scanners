@@ -21,7 +21,7 @@
       <echo.version>0.1.0-SNAPSHOT</echo.version>
       <generation.version>0.1.0-SNAPSHOT</generation.version>
       <renderer.version>${generation.version}</renderer.version>
-      <printing.version>0.4.0-SNAPSHOT</printing.version>
+      <printing.version>1.0.0</printing.version>
       <recordfiles.version>0.1.0-SNAPSHOT</recordfiles.version>
       <mobilerecordfiles.version>0.1.0-SNAPSHOT</mobilerecordfiles.version>
       <collaboration.version>0.1.0-record-files-SNAPSHOT</collaboration.version>

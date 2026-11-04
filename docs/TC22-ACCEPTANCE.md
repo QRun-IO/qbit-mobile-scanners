@@ -2,6 +2,14 @@
 
 This checklist records steps to run on physical hardware. A passing JVM test or APK build does not establish that a TC22 scan succeeded.
 
+## Operator acceptance — November 4, 2026
+
+**PASS — operator reported.** The user confirmed in the project conversation: "i have ran the manual tests - it all works". This closes the outstanding manual acceptance group for the installed local demo. The user did not supply separate per-case logs or output samples; this entry records their acceptance without inventing those artifacts. No repeat of the same manual checks is requested.
+
+The last recorded installed configuration was the normal TC22 APK with SHA-256 `38A11155BF6A9C089A1EE6D9E44401E8FF39497B7150B51A85F1F916148BE60D`, connected to the local composed server on port 57832 with public QQQ RC.21 and Printing 1.0.0. This identifies our last deployment record, not a new device inspection at the time of the user's tests.
+
+Release packaging/publication and the documented unsupported barcode profiles remain separate from this manual acceptance. Production signing and distribution remain deferred by the user. The procedures below are retained for future deployments and regressions.
+
 ## Start the server
 
 From `qbit-mobile-scanners`, build and install the qbit, then build the demo:
