@@ -1,5 +1,7 @@
 # Echo runnable demo checkpoint
 
+> Historical checkpoint (2026-11-02). Its test counts and "Remaining" list are superseded: see the [demo README](README.md) and [session state](../../../docs/SESSION-STATE.md) for current status.
+
 Date: 2026-11-02. Scope: `examples/echo/demo/**`. Source checkpoint, not a release.
 
 ## Verified status

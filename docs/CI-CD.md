@@ -22,17 +22,17 @@ Run the same project checks locally with `./mvnw verify install` and `./mvnw -f 
 
 For workflow syntax, run `actionlint .github/workflows/codeql.yml .github/workflows/demo-acceptance.yml`. Validate the setup caller with `circleci config validate --org gh/QRun-IO .circleci/config.yml`, using your existing CircleCI authentication. The shared orb is private; without organization scope and authorization, the compiler can report that it cannot find the orb. Do not place tokens in config files or command arguments.
 
-## Development snapshot publication (proposed, November 3)
+## Development snapshot publication (enabled, November 3)
 
-PR 7 merged as `795a0a2`. Its exact feature head `090e3c1` passed Gitea CI 3603 (2m09s), and post-merge run 3607 on `develop` passed (2m08s), but it captured nothing because `publish.snapshot` was false. The shared CI owner confirmed that flag as the cause. The proposed change sets only `publish.snapshot: true` in `.qqq-ci.yml`, so `develop` builds publish development snapshots (revision `0.1.0-SNAPSHOT`). Every other value is unchanged: `publish.release_candidate`, `release`, `feature`, `hotfix` and `asciidoc`, `release_on_main` and `release_completion` all stay false, and the orb stays on `0.8`. This is not a stable release or a promotion to `main`, and the central `.gitea` caller is not edited.
+PR 7 merged as `795a0a2`; its post-merge run 3607 on `develop` passed but captured nothing because `publish.snapshot` was false. PR 12 set only `publish.snapshot: true` in `.qqq-ci.yml` and merged as `286e2e0`. Run 3645 succeeded and the snapshot `0.1.0-20261103.233448-3645` was read back anonymously from Central (JAR, POM, sources and Javadocs; the 37 published Java source files match the reviewed source). PR 13 (`1345197`, Echo defaults to released Printing `1.0.0`) then passed CI runs 4157 and 4158.
 
-Still required: owner enrollment reconciliation, normal CI and merge of this change, and actual receipt of a snapshot artifact. Until an artifact is received, no publication is claimed. Source publication does not equal 1.0.
+`develop` builds therefore publish development snapshots. Every other publication value is unchanged: `publish.release_candidate`, `release`, `feature`, `hotfix` and `asciidoc`, `release_on_main` and `release_completion` stay false, and the orb stays on `0.8`. A snapshot is not a stable release or a promotion to `main`, and source publication does not equal production 1.0.
 
 ## Initial publishing policy (historical bootstrap)
 
-At bootstrap, every `publish` switch and `release_completion` was explicitly false; only the snapshot switch is proposed to change above. Branch pushes, including initial `main`/`develop` pushes, and `vX.Y.Z` tags perform verification without deploying Maven artifacts. There is no automatic RC-cut workflow in this bootstrap configuration. GitHub test-report artifacts are diagnostic outputs, not releases.
+At bootstrap, every `publish` switch and `release_completion` was explicitly false; only the snapshot switch has since changed (above). Branch pushes, including initial `main`/`develop` pushes, and `vX.Y.Z` tags perform verification without deploying Maven artifacts. There is no automatic RC-cut workflow in this bootstrap configuration. GitHub test-report artifacts are diagnostic outputs, not releases.
 
-RC and stable publication still require a reviewed manifest change after TC22 acceptance and production readiness work are complete. Verify the organization registry context, signing configuration and Maven coordinates. Add the then-current shared `qbit-release-rc.yml` caller pinned to an immutable commit before enabling `release_completion`. Update protections and documentation using observed checks from successful hosted runs. The authorized development-snapshot change above does not enable these release paths.
+RC and stable publication still require a reviewed manifest change after TC22 acceptance and production readiness work are complete. Verify the organization registry context, signing configuration and Maven coordinates. Add the then-current shared `qbit-release-rc.yml` caller pinned to an immutable commit before enabling `release_completion`. Update protections and documentation using observed checks from successful hosted runs. The development-snapshot change above does not enable these release paths. The local demo does not depend on any of this pipeline.
 
 ## Repository settings
 

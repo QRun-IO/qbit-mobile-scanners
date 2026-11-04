@@ -2,7 +2,20 @@
 
 Optional module (`qqq-echo-demo`) that turns the Echo example into a server you can start. The library module `examples/echo` does not depend on it. It reuses `MobileScannersDemo` (database, `scanner`/`admin` accounts, native server) and adds Collaboration, Record Files, Printing, Document Generation and Echo from their public production classes. Nothing is simulated: the renderer is the owner's cold Docker bridge, output is retained by Record Files, and printing is Printing's own service. The server binds `127.0.0.1` only.
 
-Status: the demo and Echo library tests pass with Checkstyle clean (current counts and progress: [session state](../../../docs/SESSION-STATE.md); the qqq version default is 4.1.0-RC.21 and Printing defaults to released 1.0.0, while the other owner qbits remain qualified private inputs). The composed acceptance test passes: an authenticated approved scanner, two scans, two retained originals and two accepted Printing jobs on one printer, an idempotent retry, and leaving closes the run. It uses a controlled synthetic renderer and a simulated Printing queue, so it is **not physical output**; physical TC22 acceptance is separately operator-reported as passing (November 4, group report). The production `EchoDemo` default is unchanged and fails closed (the owner's cold bridge needs `runsc`; Windows Docker Desktop reports `runc`). A local run prints its URL in the startup log (`ECHO_DEMO_READY port=<port>`, then `http://127.0.0.1:<port>`; the port is chosen per run). Not production-ready and not a public SDK release. See `CLAUDE-HANDOFF.md` for status and what remains.
+## Which launcher?
+
+| Goal | Use |
+| --- | --- |
+| Try login, device approval and basic barcode capture only | The basic Scan Capture demo, `scripts/Start-Demo.ps1` ([local demo](../../../docs/LOCAL-DEMO.md)). Not this module. |
+| Run the full scan, render and print flow on a developer machine | `TrustedLocalEchoDemo` (below). |
+| Production-style cold renderer sandbox | `EchoDemo`; it fails closed unless the owner's `runsc` runtime is available. |
+| Keep using the maintained local server's existing database | Either launcher with `ECHO_EXISTING_DATABASE` set ([adoption notes](docs/LOCAL-SERVER-ADOPTION.md)). Only this mode accepts host port `57832`. |
+
+There is **no default port**: pass one as the argument or set `ECHO_DEMO_PORT`. A local run prints its URL in the startup log (`ECHO_DEMO_READY port=<port>`, then `http://127.0.0.1:<port>`).
+
+## Status
+
+The demo and Echo library tests pass with Checkstyle clean (current cohort: Echo 68, composed demo 35 tests; see [session state](../../../docs/SESSION-STATE.md)). The QQQ default is 4.1.0-RC.21 and Printing defaults to released 1.0.0; the other owner qbits remain qualified owner inputs until their public release. The composed acceptance test passes with a controlled synthetic renderer and a simulated Printing queue, so it is **not physical output**. TC22 physical acceptance is separately operator-reported as passing (November 4, group report). Not production-ready and not a public SDK release. The dated [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md) is a historical checkpoint.
 
 ## Trusted local development launcher
 
@@ -44,7 +57,7 @@ Set the configuration below in the environment (never on the command line), then
 java -cp "examples\echo\demo\target\classes;$(Get-Content examples\echo\demo\target\classpath.txt)" com.kingsrook.examples.echo.demo.EchoDemo 48123
 ```
 
-The optional argument is the port; otherwise `ECHO_DEMO_PORT`. There is no default port. Ports 1024-65535 are accepted except the protected local runtimes listed in `EchoDemoSettings`. `mvnw.cmd -f examples\echo\demo\pom.xml exec:java` is equivalent when the environment is set.
+The optional argument is the port; otherwise `ECHO_DEMO_PORT`. There is no default port, and the sign-in passwords are never given on the command line (see below; to copy an existing demo account's password without displaying it, use `scripts/Copy-DemoPassword.ps1`). Ports 1024-65535 are accepted except the protected local runtimes listed in `EchoDemoSettings`. `mvnw.cmd -f examples\echo\demo\pom.xml exec:java` is equivalent when the environment is set.
 
 ## Configuration (environment only)
 

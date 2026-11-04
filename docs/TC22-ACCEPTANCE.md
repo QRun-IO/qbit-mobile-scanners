@@ -8,7 +8,13 @@ This checklist records steps to run on physical hardware. A passing JVM test or 
 
 The last recorded installed configuration was the normal TC22 APK with SHA-256 `38A11155BF6A9C089A1EE6D9E44401E8FF39497B7150B51A85F1F916148BE60D`, connected to the local composed server on port 57832 with public QQQ RC.21 and Printing 1.0.0. This identifies our last deployment record, not a new device inspection at the time of the user's tests.
 
-Release packaging/publication and the documented unsupported barcode profiles remain separate from this manual acceptance. Production signing and distribution remain deferred by the user. The procedures below are retained for future deployments and regressions.
+Release packaging/publication and the documented unsupported barcode profiles remain separate from this manual acceptance. Signed-build HTTPS device qualification and distribution remain deferred by the user. The procedures below are retained for future deployments and regressions.
+
+The development APK used for this acceptance is version 0.1.0 (code 1). The server it connected to is the local composed server described in [session state](SESSION-STATE.md).
+
+## Second handheld: Zebra MC9400 (Android 13)
+
+The MC9400 was installed and launched with a signed 1.0 release build. At the user's request it was then configured like the TC22 for now: the same development APK as the TC22, device port 8080 forwarded to the host server over paired wireless ADB, signed in as the `scanner` account, and approved through the ordinary **Approve Device** process. The original TC22 is unchanged. **Pending:** one physical trigger scan and the matching backend scan record. Run the acceptance sequence below on it when convenient; the November 4 operator pass above covered the TC22 only.
 
 ## Start the server
 
@@ -52,7 +58,7 @@ Create a dedicated profile associated with package `io.qrun.mobile.scanner` and 
 
 In Intent Output's Component Information, restrict delivery to `io.qrun.mobile.scanner` and enable its application signature check. Use single-decode mode. Zebra documents barcode text, symbology and source in its [DataWedge 13 Intent Output guide](https://techdocs.zebra.com/datawedge/13-0/guide/output/intent/).
 
-## Observed hardware results, 2026-10-30
+## Observed hardware results, 2026-10-30 (historical record)
 
 The attached TC22 runs Android 14, DataWedge 13.0.325 and QQQ Mobile 0.1.0. Installation, sign-in, pending enrollment, approval from the browser record Actions menu, native app discovery and opening Scan Capture passed. Updating the APK preserved login. The profile uses the package/activity, input/output and explicit package/signature settings above.
 
@@ -60,7 +66,7 @@ The user confirmed two deliberate physical trigger presses; two scan records wer
 
 The user then confirmed a saved physical QR scan; the backend record preserved `001234567890` exactly, with `LABEL-TYPE-QRCODE`, source `scanner`, and matching TC22/user/app/process and capture/receipt metadata. Three physical records are now verified: two deliberate Code128 captures and one QR capture. Physical QR delivery and leading-zero preservation passed.
 
-Physical connection-loss/retry and revocation-denial cases remain pending. Complete the remaining sequence below before claiming full hardware acceptance.
+The connection-loss/retry and revocation-denial cases were still open when this was written; the operator's November 4 report above covers them as part of the outstanding manual group, without separate per-case artifacts.
 
 ## Acceptance sequence
 
@@ -75,4 +81,4 @@ Physical connection-loss/retry and revocation-denial cases remain pending. Compl
 9. Sign out. Confirm the scanner cannot save under the previous user and the previous user session is ended.
 10. Restart the server and application. Confirm saved scans and device approval persist. Reinstallation/data reset must not silently inherit approval.
 
-Record pass/fail and observations in `SESSION-STATE.md`. Hardware acceptance remains pending until these steps are actually performed on the TC22.
+For a new device or a regression run, record pass/fail and observations in [session state](SESSION-STATE.md) without device serials, addresses or credentials. A device is not accepted until its own steps have actually been performed or reported.

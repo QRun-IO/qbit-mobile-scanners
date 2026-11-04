@@ -1,10 +1,12 @@
 # Running all qbits in the local test server
 
+> The combined server is the maintained local server (host port 57832 in this mode only; public QQQ RC.21, Printing 1.0.0; API 1.10, mobile 1.5, printing 2.3). The "now responds ... Mobile Scanners 1.4" sentence at the end is a November 2 note; see [session state](../../../../docs/SESSION-STATE.md) for the current versions.
+
 One server, one database: the existing `MobileScannersDemo` data file is opened in place by the combined `EchoDemo` (Mobile Scanners/Echo, Collaboration/Record Files, Document Generation, Printing). No second server, network bridge or reset.
 
 ## Environment contract (public values only; no secrets are read from or written to this file)
 Use the existing `TrustedLocalEchoDemo` (or `EchoDemo`) launcher plus the normal Echo variables, and add:
-- `ECHO_EXISTING_DATABASE` - absolute path of the existing H2 file, ending `.mv.db` (for the normal server: `R:\Git.Local\QRunIO\qbit-mobile-scanners\demo\data\mobile.mv.db`). Setting it is the explicit existing-local-server mode.
+- `ECHO_EXISTING_DATABASE` - absolute path of the existing H2 file, ending `.mv.db` (for the basic demo's database: `demo/data/mobile.mv.db` under your checkout, as an absolute path). Setting it is the explicit existing-local-server mode.
 - `ECHO_DEMO_PORT` - `57832` is accepted only in this mode. Every other protected port (including peer Printing 18081) is still refused, and fresh/private demos still refuse 57832.
 - `ECHO_DEMO_ROOT` - existing absolute directory for Record Files objects and renderer state (`objects`, `renderer-state`); the database is NOT taken from it in this mode.
 - Unchanged: `ECHO_PRINTING_TENANT`, `ECHO_PRINTING_ADMIN_TOKEN` (32+ chars), `ECHO_RELEASE_GENERATED_FILES`, renderer variables (`ECHO_LOCAL_RENDERER*` or `ECHO_RENDERER_*`), `MOBILE_BRAND_*`.
