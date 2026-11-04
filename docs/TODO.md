@@ -1,15 +1,18 @@
 # QQQ Mobile Scanners TODO
 
-Snapshot publication (November 3, proposed branch `ci/enable-scanner-snapshots`):
+Current checkpoint (November 4; supersedes historical notes below):
 
-- [x] PR 7 merged as `795a0a2`; feature `090e3c1` CI 3603 PASS (2m09s); post-merge 3607 PASS (2m08s) but snapshot flag was disabled, so no artifact.
-- [x] Propose `publish.snapshot: true` only in `.qqq-ci.yml` (develop development snapshots; not a stable release or `main` promotion).
-- [ ] Owner enrollment reconciliation; normal CI and merge of this change; actual snapshot artifact receipt.
-- [ ] Local runtime 57832 is still the earlier qualified private core, not upgraded to RC.21.
-- [ ] Generation copies `aac68907` is owner-acknowledged and adoption is underway; no canonical artifact yet.
-- [ ] Physical checks, native Authentik and production Android signing stay deferred. Source publication does not equal 1.0.
+- [x] Scanner PR 12 merged `286e2e0`; full run 3645 succeeded. Central snapshot `0.1.0-20261103.233448-3645` verified anonymously, including all 37 published Java source files.
+- [x] Android PRs 10 and 8 merged into main `0ae2101`; full main lifecycle 3634 succeeded. Shared CI's independent registry readback matched all ten primary library files at `0.1.1-20261103.232145-3634`.
+- [x] Qualify released Printing `1.0.0` with public QQQ RC.21: 198 tests pass, Checkstyle passes, all 94 scanner Java files match reviewed source, and no private QQQ backend artifacts remain in that cohort.
+- [x] Adopt that cohort on local port 57832 while retaining the database/settings. Confirm API health, TC22 Echo setup/Copies 1/Connected and Print Agent Connected and ready after restart.
+- [x] Adopt and review Printing `1.0.0` in both Echo POMs and matching READMEs. Both Maven validate/Checkstyle checks pass; 94 Java inputs match the 198-test qualification.
+- [ ] Document owner: extract reviewed code from host candidate `b6fb238` with provenance, set public dependency pins and standard standalone release wiring, then publish coherent document/files/scripting Maven artifacts including Generation copies. The local standalone directories are not Git repositories and have no workflows; the website image pipeline does not publish these artifacts. Claude access is restored; the dependency owner's actual Claude standalone packaging is active as of November 4, not finished.
+- [x] Outstanding manual acceptance group: user reported on November 4, "i have ran the manual tests - it all works". Recorded as operator acceptance in [TC22 acceptance](TC22-ACCEPTANCE.md); no duplicate manual checks requested. Separate per-case artifacts were not supplied.
+- [ ] Resolve or explicitly scope the unsupported GS1/ECI/binary scanner profiles before claiming universal barcode reproduction.
+- [ ] Production Android signing/distribution last, as requested. Development publication and demo availability are not production 1.0 acceptance.
 
-Current checkpoint (November 3; supersedes the notes below where they differ):
+Historical checkpoint (November 3):
 
 - [x] Server `45f9cbd` is signed and pushed (Gitea PR 7). Android `f72b90d` is signed and pushed to the existing AGit PR 10 head and Gitea CI 3480 succeeded on it (pull requests #8 and #10 still open; not merged, not released). Updated normal APK installed without clearing data; fresh disposable TC22 Echo run passed 109/109 semantic requests (simulated inputs/printing).
 - [x] Final RC.21 gate PASS: 377 unique tests (Generation 179, Printing bridge 16, scanner 53, demo 8, mobile Record Files 18, Echo 68, Echo demo 35), zero failures/errors/skips, Checkstyle PASS, plus 15 real admin-browser E2E on public RC.21. The earlier MySQL timeouts did not recur (focused 31, full 179). Evidence: `C:/Users/james/.cache/qqq-rc21-copies-gate-076d059d8d0641d9a85874ec64008def/verified-summary.json`.
