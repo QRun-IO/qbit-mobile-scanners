@@ -1,7 +1,7 @@
 # QQQ Mobile Scanners
 
-This is an application QBit and a separate local demo, using Java 21 and QQQ 4.1.0-RC.21.
-The Android host is maintained in [QRun-IO/qqq-android on Gitea](https://git.kof22.com/QRun-IO/qqq-android) (reviews: pulls/8 and pulls/10).
+This is an application QBit and a separate local demo, using Java 21 and QQQ 4.1.0-RC.21. Optional `examples/echo` (scan-to-print) uses released Printing 1.0.0; its Generation, Record Files and Scripting owner inputs are not yet public. Contract versions: UI API 1.10, `mobile-scanners` 1.5, `printing` 2.3, `mobile-record-files` 1.0.
+The Android host is maintained in [QRun-IO/qqq-android on Gitea](https://git.kof22.com/QRun-IO/qqq-android) (reviews pulls/8 and pulls/10 are merged into `main`). Present status is in `docs/SESSION-STATE.md`; older logs are in `docs/history/`.
 
 ## Build and verify
 
@@ -28,4 +28,6 @@ The Android host is maintained in [QRun-IO/qqq-android on Gitea](https://git.kof
 - The primary forge for source, reviews and checks is Gitea (`git.kof22.com/QRun-IO`); GitHub is a shadow/archive, so make no ordinary GitHub writes.
 - The CircleCI manifest (central qbit profile, managed `0.8` track; keep the three version declarations identical) and the GitHub demo workflow are retained legacy definitions: preserve the existing managed files, but primary CI changes follow current Gitea policy and should not be directed into GitHub.
 - All publication switches start disabled. Creating a repo or pushing a branch is not permission to publish Maven artifacts or cut a release.
-- Preserve unrelated work. Update `docs/SESSION-STATE.md` and `docs/TODO.md` when project state changes. Commit, push, release, deployment and external communication require authorization in the active task.
+- The local demo must keep working independent of any shared CI redesign. `docs/LOCAL-DEMO.md` distinguishes the basic Scan Capture demo (`scripts/Start-Demo.ps1`) from the full Echo server (`examples/echo/demo`); do not invent port defaults (the Echo launcher has none). Never print or paste demo passwords: use `scripts/Copy-DemoPassword.ps1`. Keep device identifiers, addresses, credentials, workstation paths and vault IDs out of the repository.
+- Do not claim a manual or hardware test beyond what the operator actually reported or what an artifact shows; do not request the already-reported TC22 manual tests again, and do not claim barcode fidelity beyond the documented Echo profiles.
+- Preserve unrelated work. Keep `docs/SESSION-STATE.md` (present status, short), `docs/TODO.md` (open items only) and `docs/PRODUCTION-READINESS.md` current when project state changes, and move superseded detail to `docs/history/` rather than deleting it. Commit, push, release, deployment and external communication require authorization in the active task.

@@ -1,6 +1,6 @@
 # Contributing
 
-Use Java 21 and the checked-in Maven wrapper. Clone this repository and the companion [qqq-android](https://github.com/QRun-IO/qqq-android) when changing the mobile/server contract. No Android SDK is needed for server-only changes.
+Use Java 21 and the checked-in Maven wrapper. Clone this repository and the companion [qqq-android](https://git.kof22.com/QRun-IO/qqq-android) on Gitea (the primary forge; GitHub is a shadow/archive) when changing the mobile/server contract. No Android SDK is needed for server-only changes.
 
 Create `feature/`, `fix/`, `docs/` or `chore/` branches from `develop` and open pull requests into `develop`. Use Conventional Commit subjects and describe the resulting behavior, relevant verification and compatibility changes. Request review from the code owner; do not merge with failing required checks.
 
