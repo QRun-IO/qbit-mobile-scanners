@@ -365,6 +365,7 @@ public final class EchoService
          String renderer = switch(type)
          {
             case "CODE128", "LABEL-TYPE-CODE128" -> "code128";
+            case "EAN128", "LABEL-TYPE-EAN128", "GS1_128", "GS1-128" -> "gs1-128";
             case "QRCODE", "LABEL-TYPE-QRCODE" -> "qr";
             case "CODE39", "LABEL-TYPE-CODE39" -> "code39";
             case "DATAMATRIX", "LABEL-TYPE-DATAMATRIX" -> "datamatrix";
@@ -380,7 +381,13 @@ public final class EchoService
          // the qualified first-physical profile is printable ASCII 0x20..0x7E for all types; //
          // other characters can decode differently under the scanner charset. Never convert. //
          ///////////////////////////////////////////////////////////////////////////////////////
-         if(value.chars().anyMatch(character -> character < 0x20 || character > 0x7E))
+         boolean gs1 = "]C1".equals(context.get("aimIdentifier")) && ("code128".equals(renderer) || "gs1-128".equals(renderer));
+         if(gs1)
+         {
+            renderer = "gs1-128";
+            EchoGs1.parse(value);
+         }
+         else if("gs1-128".equals(renderer) || value.chars().anyMatch(character -> character < 0x20 || character > 0x7E))
          {
             throw new QException("This scan needs control/binary/GS1 or non-ASCII payload handling that Echo has not qualified; only printable ASCII is supported. No print was requested.");
          }
@@ -399,7 +406,8 @@ public final class EchoService
       private static String requireFidelityMetadata(Map<String, Serializable> context, String renderer, String value) throws QException
       {
          String aim = context.get("aimIdentifier") == null ? null : requireText(context.get("aimIdentifier"), 3);
-         if(aim != null && !PLAIN_AIM.get(renderer).equals(aim))
+         boolean gs1 = "gs1-128".equals(renderer);
+         if(aim != null && !(gs1 ? "]C1" : PLAIN_AIM.get(renderer)).equals(aim))
          {
             throw new QException("This scan reports a barcode mode (GS1, ECI, structured or full-ASCII) that Echo cannot reproduce faithfully. No print was requested.");
          }
@@ -415,6 +423,10 @@ public final class EchoService
             }
          }
          Object raw = context.get("rawDataBase64");
+         if(gs1 && raw == null)
+         {
+            throw new QException("GS1-128 duplication needs the scanner's original raw bytes and AIM identifier. No print was requested.");
+         }
          if(raw != null)
          {
             byte[] bytes;

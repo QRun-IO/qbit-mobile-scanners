@@ -356,6 +356,26 @@ class EchoOwnerAdaptersTest
 
 
    /***************************************************************************
+    ** GS1 uses a dedicated document with both the symbol and readable value.
+    ***************************************************************************/
+   @Test
+   void gs1DocumentRequiresMatchingScanAndPrintedValue() throws Exception
+   {
+      EchoService.Scan gs1 = new EchoService.Scan("e", "0109501101530003", "EAN128", "gs1-128", "zebra-emdk", "c", "m", "r", "]C1");
+      EchoService.Scan plain = new EchoService.Scan("e", "001234", "CODE128", "code128", "zebra-emdk", "c", "m", "r", "]C0");
+      org.json.JSONObject scene = new org.json.JSONObject(EchoTemplatePublisher.zplGs1Scene(DESTINATION));
+      assertEquals(EchoPrintingDestinations.SceneMode.GS1, EchoPrintingDestinations.sceneMode(scene.toString()));
+      assertEquals(null, EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.GS1, gs1));
+      assertTrue(EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.PLAIN, gs1).contains("GS1-128"));
+      assertTrue(EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.SCANNER, gs1).contains("GS1-128"));
+      assertTrue(EchoPrintingDestinations.refusal(EchoPrintingDestinations.SceneMode.GS1, plain).contains("GS1-128"));
+      scene.getJSONArray("elements").remove(1);
+      assertEquals(null, EchoPrintingDestinations.sceneMode(scene.toString()));
+   }
+
+
+
+   /***************************************************************************
     ** Only a scene that draws the scanned value with the scanned type, allowing
     ** every admitted symbology, is an eligible document - never a static one.
     ***************************************************************************/

@@ -74,6 +74,8 @@ class EchoHttpFixtureTest
          HttpResponse<String> metadata = request("GET", "/qqq/v1/metaData", scanner, null, true);
          assertEquals(200, metadata.statusCode());
          assertTrue(metadata.body().contains("\"echo\""));
+         JSONObject navigation = new JSONObject(metadata.body());
+         assertTrue(navigation.getJSONObject("tables").has("echoScan"), "Echo scan table must be discoverable for native browsing.");
          JSONObject launched = complete(form("/qqq/v1/processes/echoPrint/init", scanner, new JSONObject(), true), EchoQBitProducer.PROCESS, scanner, true);
          assertEquals("setup", launched.getString("nextStep"));
          String process = launched.getString("processUUID");
@@ -168,6 +170,45 @@ class EchoHttpFixtureTest
       {
          origin = "http://127.0.0.1:" + reservation.getLocalPort();
          return reservation.getLocalPort();
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** GS1 decoder evidence crosses the real native contract, persists original
+    ** and derived fields, and retries the same job. Printing here is simulated.
+    ***************************************************************************/
+   @Test
+   void gs1HttpCapturePreservesPayloadAndPrintedInterpretation() throws Exception
+   {
+      com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager.resetConnectionProviders();
+      String scannerPassword = UUID.randomUUID().toString();
+      String adminPassword = UUID.randomUUID().toString();
+      try(EchoHttpFixture fixture = new EchoHttpFixture(scannerPassword, adminPassword))
+      {
+         fixture.start(freePort());
+         String scanner = enrollApprovedScanner(scannerPassword, adminPassword);
+         String process = open(scanner);
+         assertFalse(failed(attempt(process, "setup", scanner, setupValues())));
+         String payload = "01095011015300031120101421TEST000123";
+         JSONObject event = event("EAN128").put("barcode", payload).put("aimIdentifier", "]C1")
+            .put("rawDataBase64", Base64.getEncoder().encodeToString(payload.getBytes(StandardCharsets.US_ASCII)));
+         JSONObject result = attempt(process, "scan", scanner, event);
+         assertFalse(failed(result));
+         JSONObject saved = result.getJSONObject("values");
+         assertTrue(saved.getBoolean("scanSaved"));
+         assertEquals(event.getString("eventId"), saved.getString("acknowledgedEventId"));
+         assertEquals(saved.getString("printJobId"), attempt(process, "scan", scanner, event).getJSONObject("values").getString("printJobId"));
+         JSONArray rows = query(EchoQBitProducer.SCAN_TABLE, scanner);
+         assertEquals(1, rows.length());
+         JSONObject values = rows.getJSONObject(0).getJSONObject("values");
+         assertEquals(payload, values.getString("barcode"));
+         assertEquals("]C1", values.getString("aimIdentifier"));
+         assertEquals("gs1-128", values.getString("rendererSymbology"));
+         assertEquals("[01]09501101530003[11]201014[21]TEST000123", values.getString("rendererValue"));
+         assertEquals("(01)09501101530003(11)201014(21)TEST000123", values.getString("humanReadable"));
+         assertEquals(200, form("/qqq/v1/processes/echoPrint/" + process + "/cancel", scanner, new JSONObject(), true).statusCode());
       }
    }
 

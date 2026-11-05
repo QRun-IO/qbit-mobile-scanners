@@ -81,6 +81,8 @@ public final class EchoQBitProducer
          scan.withField(text(name, 200).withIsEditable(false));
       }
       scan.withField(text("barcode", 4096).withIsEditable(false));
+      scan.withField(text("rendererValue", 4096).withIsEditable(false));
+      scan.withField(text("humanReadable", 4096).withIsEditable(false));
       scan.withField(text("aimIdentifier", 3).withIsEditable(false));
       instance.addTable(scan);
       instance.addWidget(new QWidgetMetaData().withName(WIDGET).withType("composite").withLabel("Echo barcode scanner")
@@ -102,7 +104,7 @@ public final class EchoQBitProducer
             .withComponent(new QFrontendComponentMetaData().withType(QComponentType.WIDGET).withValue("widgetName", WIDGET)))
          .withStep(new QBackendStepMetaData().withName("print").withCode(new QCodeReference(EchoSteps.Print.class))));
       instance.addApp(new QAppMetaData().withName(APP).withLabel("Echo").withPermissionRules(rules())
-         .withSection(new QAppSection().withName("echo").withLabel("Scan and print").withProcesses(List.of(PROCESS))));
+         .withSection(new QAppSection().withName("echo").withLabel("Scan and print").withProcesses(List.of(PROCESS)).withTables(List.of(SCAN_TABLE))));
    }
 
 

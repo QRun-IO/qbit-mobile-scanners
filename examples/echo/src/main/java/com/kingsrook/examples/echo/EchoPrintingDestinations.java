@@ -201,7 +201,7 @@ public final class EchoPrintingDestinations implements EchoDestinations
     ***************************************************************************/
    enum SceneMode
    {
-      PLAIN, SCANNER
+      PLAIN, SCANNER, GS1
    }
 
 
@@ -222,6 +222,13 @@ public final class EchoPrintingDestinations implements EchoDestinations
          for(Object item : scene.getJSONArray("elements"))
          {
             JSONObject element = (JSONObject) item;
+            if("barcode".equals(element.optString("type")) && "gs1-128".equals(element.optString("symbology"))
+               && "/record/rendererValue".equals(element.optString("valuePath"))
+               && !element.has("scannerSymbologyPath") && !element.has("aimIdentifierPath") && !element.has("symbologyPath")
+               && element.has("fit") && hasGs1Text(scene, element))
+            {
+               return SceneMode.GS1;
+            }
             if(!"barcode".equals(element.optString("type")) || !"/record/rendererSymbology".equals(element.optString("symbologyPath"))
                || !"/record/barcode".equals(element.optString("valuePath")) || element.optJSONArray("allowedSymbologies") == null)
             {
@@ -260,11 +267,34 @@ public final class EchoPrintingDestinations implements EchoDestinations
 
 
    /***************************************************************************
+    ** GS1 documents must include the derived human-readable value below the bars.
+    ***************************************************************************/
+   private static boolean hasGs1Text(JSONObject scene, JSONObject barcode)
+   {
+      for(Object item : scene.getJSONArray("elements"))
+      {
+         JSONObject text = (JSONObject) item;
+         if("text".equals(text.optString("type")) && "/record/humanReadable".equals(text.optString("valuePath"))
+            && text.optInt("y", -1) > barcode.optInt("y", -1))
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+
+
+   /***************************************************************************
     ** Plain scenes reproduce text only and refuse EAN/UPC outright; the
     ** scanner-fidelity scene needs this scan's AIM identifier. Null means usable.
     ***************************************************************************/
    static String refusal(SceneMode mode, EchoService.Scan scan)
    {
+      if((mode == SceneMode.GS1) != "gs1-128".equals(scan.rendererSymbology()))
+      {
+         return "GS1-128 scans require the GS1-128 document; that document accepts only GS1-128. Leave Echo and choose the matching document; no print was requested.";
+      }
       if(mode == SceneMode.PLAIN && EchoTemplates.SCANNER_SYMBOLOGIES.contains(scan.rendererSymbology()))
       {
          return "EAN and UPC need the scanner-fidelity document. Leave Echo and choose it; no print was requested.";

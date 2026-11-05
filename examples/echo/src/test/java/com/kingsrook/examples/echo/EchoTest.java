@@ -647,7 +647,7 @@ class EchoTest
    {
       String run = config.service.start("printer", "4x6", 7);
       byte[] raw = "001234".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-      for(String[] mode : new String[][] { { "CODE128", "]C1" }, { "CODE128", "]C2" }, { "CODE128", "]C4" }, { "QRCODE", "]Q3" }, { "QRCODE", "]Q2" },
+      for(String[] mode : new String[][] { { "CODE128", "]C2" }, { "CODE128", "]C4" }, { "QRCODE", "]Q3" }, { "QRCODE", "]Q2" },
          { "CODE39", "]A4" }, { "DATAMATRIX", "]d2" }, { "PDF417", "]L2" }, { "AZTEC", "]z1" }, { "CODE128", "]Q1" } })
       {
          var failure = assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence(mode[0], "001234", mode[1], raw)));
@@ -691,6 +691,35 @@ class EchoTest
       // no AIM identifier means no accepted framing: a prefixed raw value does not match
       assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence("CODE128", "123", null, "]C0123".getBytes())));
       assertEquals(2, requests.size());
+   }
+
+
+
+   /***************************************************************************
+    ** GS1 retains original input separately from renderer data and deduplicates.
+    ***************************************************************************/
+   @Test
+   void gs1PersistsCanonicalAndReadableValuesAndRequiresEvidence() throws Exception
+   {
+      String run = config.service.start("printer", "4x6", 7);
+      String payload = "01095011015300031120101421TEST000123";
+      Map<String, Serializable> scan = capturedWithEvidence("EAN128", payload, "]C1", payload.getBytes(StandardCharsets.US_ASCII));
+      var first = config.service.print(run, scan);
+      assertEquals(first, config.service.print(run, scan));
+      assertEquals(1, requests.size());
+      try(Connection connection = dataSource.getConnection(); var query = connection.createStatement(); var rows = query.executeQuery("SELECT barcode,rendererValue,humanReadable,rendererSymbology FROM echo_scan"))
+      {
+         assertTrue(rows.next());
+         assertEquals(payload, rows.getString("barcode"));
+         assertEquals("[01]09501101530003[11]201014[21]TEST000123", rows.getString("rendererValue"));
+         assertEquals("(01)09501101530003(11)201014(21)TEST000123", rows.getString("humanReadable"));
+         assertEquals("gs1-128", rows.getString("rendererSymbology"));
+         assertFalse(rows.next());
+      }
+      assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence("EAN128", payload, null, payload.getBytes(StandardCharsets.US_ASCII))));
+      assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence("EAN128", payload, "]C1", null)));
+      assertThrows(QException.class, () -> config.service.print(run, capturedWithEvidence("EAN128", payload, "]C1", "changed".getBytes(StandardCharsets.US_ASCII))));
+      assertEquals(1, requests.size());
    }
 
 
@@ -1415,6 +1444,8 @@ class EchoTest
       var checker = new EchoSourceReadPermissions();
       checker.checkPermissionsThrowing(probe, scanTable);
       checker.checkPermissionsThrowing(null, scanTable);
+      checker.checkPermissionsThrowing(new com.kingsrook.qqq.backend.core.model.actions.metadata.MetaDataInput(), scanTable);
+      checker.checkPermissionsThrowing(new com.kingsrook.qqq.backend.core.model.actions.metadata.TableMetaDataInput(), scanTable);
       assertThrows(QException.class, () -> checker.checkPermissionsThrowing(new com.kingsrook.qqq.backend.core.model.actions.AbstractActionInput()
       {
       }, scanTable));
