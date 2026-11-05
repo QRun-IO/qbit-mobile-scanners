@@ -132,7 +132,7 @@ public class MobileRecordFilesIntegrationTest extends RecordFilesFixture
          .withStep(new QBackendStepMetaData().withName("prepare").withCode(new QCodeReference(CapturePrepare.class)))
          .withStep(new QFrontendStepMetaData().withName("capture").withLabel("Record photos")
             .withComponent(new QFrontendComponentMetaData().withType(QComponentType.WIDGET).withValue("widgetName", "mobileRecordPhotos"))));
-      instance.getApp(MobileScannersQBitProducer.APP).getSections().getFirst().withProcesses(List.of(MobileScannersQBitProducer.CAPTURE, "mobileRecordPhotos"));
+      instance.getApp(MobileScannersQBitProducer.APP).getSections().getFirst().withProcesses(List.of(MobileScannersQBitProducer.CAPTURE, "mobileRecordPhotos")).withTables(List.of("document"));
       for(var table : instance.getTables().values())
       {
          if(table.getName().startsWith("mobile"))

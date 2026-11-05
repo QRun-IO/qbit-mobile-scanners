@@ -183,8 +183,10 @@ final class EchoStore
             }
             else
             {
-               write(connection, "INSERT INTO echo_scan(id,runId,eventId,actorId,deviceId,barcode,symbology,rendererSymbology,scanSource,capturedAt,mobileScanId,receivedAt,state,aimIdentifier) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                  id, runId, scan.eventId(), identity.actorId(), identity.deviceId(), scan.barcode(), scan.symbology(), scan.rendererSymbology(), scan.scanSource(), scan.capturedAt(), scan.mobileScanId(), scan.receivedAt(), "IN_FLIGHT", scan.aimIdentifier());
+               EchoGs1.Value gs1 = "gs1-128".equals(scan.rendererSymbology()) ? EchoGs1.parse(scan.barcode()) : null;
+               write(connection, "INSERT INTO echo_scan(id,runId,eventId,actorId,deviceId,barcode,symbology,rendererSymbology,scanSource,capturedAt,mobileScanId,receivedAt,state,aimIdentifier,rendererValue,humanReadable) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                  id, runId, scan.eventId(), identity.actorId(), identity.deviceId(), scan.barcode(), scan.symbology(), scan.rendererSymbology(), scan.scanSource(), scan.capturedAt(), scan.mobileScanId(), scan.receivedAt(), "IN_FLIGHT", scan.aimIdentifier(),
+                  gs1 == null ? scan.barcode() : gs1.canonical(), gs1 == null ? scan.barcode() : gs1.readable());
             }
             write(connection, "UPDATE echo_run SET pendingEventId=? WHERE id=?", scan.eventId(), runId);
             connection.commit();

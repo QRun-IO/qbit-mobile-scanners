@@ -4,12 +4,14 @@ Current as of **2026-11-04**. This is the one place for present status; keep it 
 
 ## Source and publication
 
+Active local feature work: GS1-128 duplication (barcode plus HRI), native table/record browsing and record photo attachment. See [implementation plan](GS1-RECORD-PHOTOS-PLAN.md). The GS1 profile covers the requested GTIN/production-date/serial structure and selected additional AIs. Original scans remain unchanged; canonical renderer input and HRI use additive nullable columns. Root/demo and the coherent Echo reactor passed; two synthetic outputs from the real renderer independently decoded with exact GS1 data and matching HRI. The scanner/demo/Echo reactor passed 135 tests. Disposable MC9400 native acceptance passed GS1 capture and saved-record browsing, plus camera/gallery attachment from record details with lifecycle cleanup. Android unit tests, lint and APK builds passed. The composed cohort also passed 188 tests (scanner 53, base demo 8, Record Files 18, Echo 74, Echo demo 35), with Checkstyle. No deployment, physical GS1 print/rescan or production qualification is claimed.
+
 | Item | State |
 | --- | --- |
 | Source repository | Gitea `git.kof22.com/QRun-IO/qbit-mobile-scanners`, default branch `develop`. GitHub is a shadow/archive. |
 | Scanner PR 12 (development snapshots) | Merged as `286e2e0`. Run 3645 succeeded. The snapshot `com.kingsrook.qbits:qbit-mobile-scanners:0.1.0-20261103.233448-3645` was read back anonymously (JAR, POM, sources, Javadocs); its 37 Java source files match the reviewed source. |
 | Scanner PR 13 (Echo uses released Printing) | Merged as `1345197`. Both Echo POMs default to released Printing `1.0.0`. CI runs 4157 and 4158 succeeded. |
-| Android host (`qqq-android`) | PRs 8 and 10 merged into `main` at `0ae2101`. SDK run 3634 passed and its artifacts were verified (`0.1.1-20261103.232145-3634`). Signing/documentation PR 13 is open there. These are development libraries, not a production release. |
+| Android host (`qqq-android`) | PRs 8 and 10 merged into `main` at `0ae2101`. SDK run 3634 passed and its artifacts were verified (`0.1.1-20261103.232145-3634`). Signing/documentation changes are merged through PR 14 (`464814f`), and signed preview `scanner-v1.0.0` is published. These are development libraries, not a production release. |
 | Production 1.0 | Not released. All Maven publication switches other than development snapshots remain off. |
 
 ## Local runtime

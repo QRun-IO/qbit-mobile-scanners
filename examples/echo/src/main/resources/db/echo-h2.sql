@@ -24,3 +24,6 @@ ALTER TABLE echo_scan ADD COLUMN IF NOT EXISTS aimIdentifier VARCHAR(3);
 -- Preserving migration: copies printed per scan, chosen once at setup. Existing runs keep exactly one copy (their prior behaviour).
 -- Other databases need the equivalent additive INT NOT NULL DEFAULT 1 column.
 ALTER TABLE echo_run ADD COLUMN IF NOT EXISTS copies INT NOT NULL DEFAULT 1;
+-- Derived canonical GS1 input and HRI. Original barcode is never rewritten. Other hosts need equivalent nullable columns.
+ALTER TABLE echo_scan ADD COLUMN IF NOT EXISTS rendererValue VARCHAR(4096);
+ALTER TABLE echo_scan ADD COLUMN IF NOT EXISTS humanReadable VARCHAR(4096);

@@ -15,15 +15,17 @@
 
 ## Open gates
 
+Local GS1-128 and native record/photo changes passed 188 server tests, Android unit/lint/build gates, and disposable native Echo/record-photo/process-photo acceptance. They remain uncommitted and undeployed. Synthetic GS1 renderer/decoder evidence does not close physical print/rescan acceptance or the signed-build deployment gates below.
+
 | Gate | What is still required |
 | --- | --- |
 | Public dependency cohort | Public, coherent Generation/bridges/Record Files/Scripting artifacts from their owner; adoption of the Core/Collaboration/Next UI foundations when released. Today these are qualified owner inputs. |
 | Release | Normal Gitea CI on the final revisions, a reviewed release manifest, and release/RC publication, which stays disabled until then. Redesign of the shared CI pipeline is outside this scope. |
-| Signing and distribution | Done: QRun key with backup, signed 1.0 APK, direct/MDM channel. Open: qualification of the signed build on a device against an HTTPS server, then distribution and update path. Nothing is published; no signing CI. Deferred by the user to the very end. |
+| Signing and distribution | Done: QRun key with backup, signed 1.0 APK, direct/MDM channel. Open: qualification of the signed build on a device against an HTTPS server, then distribution and update path. A signed preview is published; it is not a qualified production rollout. No signing CI. Deferred by the user to the very end. |
 | Deployment | HTTPS and the host's identity provider, supported database migration beyond the supplied H2 schema, retention and recovery documentation. The HTTP loopback demo is not a production deployment. |
 | Provider authentication | Native OAuth2 requires UI API 1.10 native-session and nonce-validation support on the server (verified in the Android source). Still open: acceptance against a configured provider (such as Authentik) on a native handheld, including logout and account switching. No such handheld test is claimed. |
 | Further device qualification | MC9400 physical trigger check and MDM-applied managed configuration remain unverified. The TC22 camera, GPS and screen-viewing checks are covered by the accepted operator group report; no separate per-case evidence is claimed or required again for that demo. |
-| Barcode fidelity | Echo's supported profiles are documented ([limits](../examples/echo/README.md#fidelity-and-limits)); GS1, ECI, structured and binary payloads are refused. No universal barcode-reproduction claim. |
+| Barcode fidelity | Echo's supported profiles are documented ([limits](../examples/echo/README.md#fidelity-and-limits)); The local branch supports bounded GS1-128; physical print/rescan remains open. Other GS1, ECI, structured and binary profiles remain refused. No universal barcode-reproduction claim. |
 | Final reviews | Reconcile the dated security, architecture and standards reports to the final revision; they are scoped historical reviews, not a fresh exhaustive scan. |
 
 ## Rules that stay in force

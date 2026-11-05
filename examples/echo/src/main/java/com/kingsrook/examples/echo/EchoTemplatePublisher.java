@@ -124,6 +124,41 @@ public final class EchoTemplatePublisher
 
 
    /***************************************************************************
+    ** GS1 bars use canonical input, with HRI below a non-overlapping fit box.
+    ** Stock too small for both areas refuses instead of clipping or shrinking text.
+    ***************************************************************************/
+   static String zplGs1Scene(EchoDestinations.Destination media) throws QException
+   {
+      stock(media);
+      int textSpace = 5000;
+      int barcodeHeight = media.heightMicrons() - 2 * INSET_MICRONS - textSpace;
+      if(barcodeHeight < 6000)
+      {
+         throw new QException("GS1-128 stock must have space for the barcode and its printed value.");
+      }
+      int inset = (int) Math.ceil(INSET_MICRONS * media.dpiX() / 25400.0);
+      JSONObject barcode = new JSONObject().put("type", "barcode").put("symbology", "gs1-128")
+         .put("valuePath", "/record/rendererValue").put("quiet", QUIET_MODULES).put("x", inset).put("y", inset)
+         .put("fit", new JSONObject().put("widthMicrons", media.widthMicrons() - 2 * INSET_MICRONS).put("heightMicrons", barcodeHeight));
+      JSONObject text = new JSONObject().put("type", "text").put("valuePath", "/record/humanReadable")
+         .put("x", inset).put("y", (int) Math.ceil((media.heightMicrons() - INSET_MICRONS - 3500) * media.dpiX() / 25400.0))
+         .put("height", (int) Math.ceil(3000 * media.dpiX() / 25400.0)).put("width", (int) Math.ceil(1200 * media.dpiX() / 25400.0));
+      return new JSONObject().put("schema", "qqq-zpl-scene/1").put("elements", new JSONArray().put(barcode).put(text)).toString();
+   }
+
+
+
+   /***************************************************************************
+    ** Publish a separate GS1 document without changing existing plain templates.
+    ***************************************************************************/
+   public static Integer publishGs1(DocumentDefinitionService definitions, EchoDestinations.Destination media, String name) throws QException
+   {
+      return publish(definitions, media, name, zplGs1Scene(media), "Echo GS1-128 with printed value ", "Echo GS1-128 label");
+   }
+
+
+
+   /***************************************************************************
     ** Shared definition steps; only the scene and the operator-facing names differ.
     ***************************************************************************/
    private static Integer publish(DocumentDefinitionService definitions, EchoDestinations.Destination media, String name, String scene, String prefix, String typeName) throws QException

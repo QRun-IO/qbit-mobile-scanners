@@ -11,9 +11,12 @@ Note: redesign of the shared CI pipeline is outside this scanner/local Echo scop
 
 ## This repository
 
+- [ ] Finish GS1-128 duplication with printed HRI: native/HTTP acceptance, composed demo verification, GS1 template setup and physical print/rescan of the requested label profile.
+- [ ] Deliver native permitted-table browsing, record details and camera/gallery attachment from the selected record, with permission/lifecycle and native E2E coverage.
+- [ ] Complete the authorized readiness work in [the active plan](GS1-RECORD-PHOTOS-PLAN.md), retaining explicit external/hardware gates.
+
 - [ ] Re-run the full gate (root, demo, Echo, Echo demo, Record Files, browser E2E) on whatever dependency set is adopted next, and record the actual counts.
-- [ ] Keep the Gitea-first documentation accurate when the Android release/signing pull request merges: link the released host version and the verified signed artifact.
-- [ ] Decide whether to support, or keep refusing with a documented message, GS1, ECI, structured and binary scanner profiles in Echo ([limits](../examples/echo/README.md#fidelity-and-limits)).
+- [ ] Qualify the bounded GS1-128 profile and keep explicit refusals for other GS1, ECI, structured and binary scanner profiles in Echo ([limits](../examples/echo/README.md#fidelity-and-limits)).
 
 ## Hardware and device follow-up
 
@@ -22,7 +25,7 @@ Note: redesign of the shared CI pipeline is outside this scanner/local Echo scop
 
 ## Release (deliberately last)
 
-- [ ] Signed-build qualification on a device against an HTTPS server (enrollment, scanner path, navigation, update), then distribution. The QRun key, signed 1.0 APK and direct/MDM channel are done; nothing is published or distributed, and there is no automatic APK-signing CI.
+- [ ] Signed-build qualification on a device against an HTTPS server (enrollment, scanner path, navigation, update), then distribution. The QRun key, signed 1.0 APK and direct/MDM channel are done; a signed preview is published, but no production rollout or automatic APK-signing CI is qualified.
 - [ ] HTTPS deployment, host-owned database migration beyond H2, and the remaining gates in [production readiness](PRODUCTION-READINESS.md).
 
 ## Not in version one

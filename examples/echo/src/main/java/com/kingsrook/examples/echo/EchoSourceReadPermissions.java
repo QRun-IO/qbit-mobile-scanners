@@ -10,6 +10,8 @@ import com.kingsrook.qqq.backend.core.actions.permissions.CustomPermissionChecke
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
 import com.kingsrook.qqq.backend.core.model.actions.AbstractActionInput;
+import com.kingsrook.qqq.backend.core.model.actions.metadata.MetaDataInput;
+import com.kingsrook.qqq.backend.core.model.actions.metadata.TableMetaDataInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.aggregate.AggregateInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.count.CountInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
@@ -27,7 +29,8 @@ public final class EchoSourceReadPermissions implements CustomPermissionChecker
     ** Metadata discovery and explicit read actions only; no saved scanner session
     ** or device identifier is reconstructed for desktop or retained-source reads.
     ** The exact base AbstractActionInput is core's capability/discovery READ probe
-    ** (it carries no subtype); every concrete write or unknown subclass is refused.
+    ** (it carries no subtype). Exact metadata reads are also allowed; every
+    ** concrete write or unknown subclass is refused.
     ***************************************************************************/
    @Override
    public void checkPermissionsThrowing(AbstractActionInput action, MetaDataWithPermissionRules metadata) throws QPermissionDeniedException
@@ -36,6 +39,7 @@ public final class EchoSourceReadPermissions implements CustomPermissionChecker
       if(session == null || session.getUser() == null || session.getUser().getIdReference() == null
          || session.getUser().getIdReference().isBlank() || !session.hasPermission(EchoQBitProducer.PERMISSION)
          || (action != null && action.getClass() != AbstractActionInput.class
+            && action.getClass() != MetaDataInput.class && action.getClass() != TableMetaDataInput.class
             && !(action instanceof GetInput || action instanceof QueryInput || action instanceof CountInput || action instanceof AggregateInput)))
       {
          throw new QPermissionDeniedException("Current Echo access is required; retained scan sources are read-only.");
