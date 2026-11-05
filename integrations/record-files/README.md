@@ -70,6 +70,15 @@ OpenAPI identifiers are `getQbitRecordFilesCapabilities`,
 `postQbitRecordFilesUploadsByUploadIdCancel`. Native invoker/credential-scope IDs
 instead use `METHOD /qbit/record-files/...`; capability gating must distinguish them.
 
+## Publication preparation
+
+This module is a standard QBit module (parent `qbit-build-parent` 2.1.0, Apache-2.0
+metadata, canonical Gitea URLs) and produces a separate JAR from the root
+scanner; the root has no module or dependency on it. Preparing the POM is not
+publication. Publishing still requires a full immutable (non-SNAPSHOT) dependency set
+and the normal hosted qualification and publication path. No public version of this
+module exists, and no release test is claimed here.
+
 ## Reproducible isolated verification
 
 From this directory, run `./Verify-Isolated.ps1`. It verifies every checksum in the
